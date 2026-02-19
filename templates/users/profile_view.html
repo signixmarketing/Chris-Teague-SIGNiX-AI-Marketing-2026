@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Profile — Vehicle Leasing{% endblock %}
+{% block content_header %}Profile{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <dl class="row mb-0">
+      <dt class="col-sm-3">Full name</dt>
+      <dd class="col-sm-9">{{ profile.full_name }}</dd>
+      <dt class="col-sm-3">First name</dt>
+      <dd class="col-sm-9">{{ profile.first_name }}</dd>
+      <dt class="col-sm-3">Last name</dt>
+      <dd class="col-sm-9">{{ profile.last_name }}</dd>
+      <dt class="col-sm-3">Phone</dt>
+      <dd class="col-sm-9">{{ profile.phone_number }}</dd>
+      <dt class="col-sm-3">Email</dt>
+      <dd class="col-sm-9">{{ profile.email }}</dd>
+    </dl>
+    <a href="{% url 'users:profile_edit' %}" class="btn btn-primary">Edit</a>
+  </div>
+</div>
+{% endblock %}
