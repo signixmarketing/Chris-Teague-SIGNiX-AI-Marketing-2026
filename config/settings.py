@@ -39,6 +39,10 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "apps.users",
+    "apps.vehicles",
+    "apps.contacts",
+    "apps.deals",
+    "apps.images",
 ]
 
 MIDDLEWARE = [
@@ -116,7 +120,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
+
+# Media files (user uploads, e.g. images for document templates)
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "/media/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -137,6 +145,10 @@ JAZZMIN_SETTINGS = {
     "custom_links": {
         "main": [
             {"name": "Back to app", "url": "/profile/", "icon": "fas fa-arrow-left"},
+            {"name": "Vehicles", "url": "/vehicles/", "icon": "fas fa-truck"},
+            {"name": "Contacts", "url": "/contacts/", "icon": "fas fa-users"},
+            {"name": "Deals", "url": "/deals/", "icon": "fas fa-file-contract"},
+            {"name": "Images", "url": "/images/", "icon": "fas fa-image"},
             {"name": "Admin", "url": "/admin/", "icon": "fas fa-cog"},
         ],
     },

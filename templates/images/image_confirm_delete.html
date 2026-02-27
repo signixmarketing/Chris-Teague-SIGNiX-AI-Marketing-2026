@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Delete image — Vehicle Leasing{% endblock %}
+{% block content_header %}Delete image{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <p class="mb-3">Are you sure you want to delete <strong>{{ image.name }}</strong>?</p>
+    {% if image.file %}
+    <p class="text-muted small mb-2">URL: {{ image.file.url }}</p>
+    <div class="mb-3">
+      <img src="{{ image.file.url }}" alt="{{ image.name }}" class="img-fluid" style="max-height: 120px; object-fit: contain;">
+    </div>
+    {% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Delete</button>
+      <a href="{% url 'images:image_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

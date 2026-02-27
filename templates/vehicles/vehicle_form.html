@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Edit vehicle{% else %}Add vehicle{% endif %} — Vehicle Leasing{% endblock %}
+{% block content_header %}{% if is_edit %}Edit vehicle{% else %}Add vehicle{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger w-100 mb-3" role="alert">
+        {% for error in form.non_field_errors %}<span class="d-block">{{ error }}</span>{% endfor %}
+      </div>
+      {% endif %}
+      <div class="mb-3">
+        <label for="id_sku" class="form-label">SKU</label>
+        <input type="text" name="sku" id="id_sku" class="form-control {% if form.sku.errors %}is-invalid{% endif %}" value="{{ form.sku.value|default:'' }}" maxlength="200" required>
+        {% if form.sku.errors %}<div class="invalid-feedback d-block">{{ form.sku.errors }}</div>{% endif %}
+      </div>
+      <div class="mb-3">
+        <label for="id_year" class="form-label">Year</label>
+        <input type="text" name="year" id="id_year" class="form-control {% if form.year.errors %}is-invalid{% endif %}" value="{{ form.year.value|default:'' }}" maxlength="10" required>
+        {% if form.year.errors %}<div class="invalid-feedback d-block">{{ form.year.errors }}</div>{% endif %}
+      </div>
+      <div class="mb-3">
+        <label for="id_jpin" class="form-label">JPIN</label>
+        <input type="text" name="jpin" id="id_jpin" class="form-control {% if form.jpin.errors %}is-invalid{% endif %}" value="{{ form.jpin.value|default:'' }}" maxlength="50" required>
+        {% if form.jpin.errors %}<div class="invalid-feedback d-block">{{ form.jpin.errors }}</div>{% endif %}
+      </div>
+      <button type="submit" class="btn btn-primary">{% if is_edit %}Save{% else %}Add vehicle{% endif %}</button>
+      <a href="{% url 'vehicles:vehicle_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

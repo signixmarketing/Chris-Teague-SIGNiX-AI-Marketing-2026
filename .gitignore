@@ -39,6 +39,7 @@ staticfiles/
 
 # IDE / editor
 .idea/
+.cursor/
 *.swp
 *.swo
 *~

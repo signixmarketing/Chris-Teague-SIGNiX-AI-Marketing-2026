@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Edit deal{% else %}Add deal{% endif %} — Vehicle Leasing{% endblock %}
+{% block content_header %}{% if is_edit %}Edit deal{% else %}Add deal{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card deal-form">
+  <div class="card-body">
+    <p class="text-muted mb-3"><strong>Lease officer:</strong> {{ lease_officer.get_username }}{% if is_edit %} (set when deal was created){% else %} (you){% endif %}</p>
+    <form method="post">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger w-100 mb-3" role="alert">
+        {% for error in form.non_field_errors %}<span class="d-block">{{ error }}</span>{% endfor %}
+      </div>
+      {% endif %}
+
+      <h6 class="mt-3 mb-2">Dates</h6>
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label for="id_date_entered" class="form-label">Date entered</label>
+          <input type="date" name="date_entered" id="id_date_entered" class="form-control {% if form.date_entered.errors %}is-invalid{% endif %}" value="{{ form.date_entered.value|date:'Y-m-d'|default:'' }}" required>
+          {% if form.date_entered.errors %}<div class="invalid-feedback d-block">{{ form.date_entered.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="id_lease_start_date" class="form-label">Lease start date</label>
+          <input type="date" name="lease_start_date" id="id_lease_start_date" class="form-control {% if form.lease_start_date.errors %}is-invalid{% endif %}" value="{{ form.lease_start_date.value|date:'Y-m-d'|default:'' }}" required>
+          {% if form.lease_start_date.errors %}<div class="invalid-feedback d-block">{{ form.lease_start_date.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="id_lease_end_date" class="form-label">Lease end date</label>
+          <input type="date" name="lease_end_date" id="id_lease_end_date" class="form-control {% if form.lease_end_date.errors %}is-invalid{% endif %}" value="{{ form.lease_end_date.value|date:'Y-m-d'|default:'' }}" required>
+          {% if form.lease_end_date.errors %}<div class="invalid-feedback d-block">{{ form.lease_end_date.errors }}</div>{% endif %}
+        </div>
+      </div>
+
+      <h6 class="mt-3 mb-2">Payment & terms</h6>
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label for="id_payment_amount" class="form-label">Payment amount</label>
+          <input type="number" step="0.01" name="payment_amount" id="id_payment_amount" class="form-control {% if form.payment_amount.errors %}is-invalid{% endif %}" value="{{ form.payment_amount.value|default:'' }}" required>
+          {% if form.payment_amount.errors %}<div class="invalid-feedback d-block">{{ form.payment_amount.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="id_payment_period" class="form-label">Payment period</label>
+          <input type="text" name="payment_period" id="id_payment_period" class="form-control {% if form.payment_period.errors %}is-invalid{% endif %}" value="{{ form.payment_period.value|default:'month' }}" maxlength="20">
+          {% if form.payment_period.errors %}<div class="invalid-feedback d-block">{{ form.payment_period.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="id_governing_law" class="form-label">Governing law (state)</label>
+          <input type="text" name="governing_law" id="id_governing_law" class="form-control {% if form.governing_law.errors %}is-invalid{% endif %}" value="{{ form.governing_law.value|default:'Delaware' }}" maxlength="100">
+          {% if form.governing_law.errors %}<div class="invalid-feedback d-block">{{ form.governing_law.errors }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="id_security_deposit" class="form-label">Security deposit</label>
+          <input type="number" step="0.01" name="security_deposit" id="id_security_deposit" class="form-control {% if form.security_deposit.errors %}is-invalid{% endif %}" value="{{ form.security_deposit.value|default:'0' }}">
+          {% if form.security_deposit.errors %}<div class="invalid-feedback d-block">{{ form.security_deposit.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="id_insurance_amount" class="form-label">Insurance amount (required of lessee)</label>
+          <input type="number" step="0.01" name="insurance_amount" id="id_insurance_amount" class="form-control {% if form.insurance_amount.errors %}is-invalid{% endif %}" value="{{ form.insurance_amount.value|default:'0' }}">
+          {% if form.insurance_amount.errors %}<div class="invalid-feedback d-block">{{ form.insurance_amount.errors }}</div>{% endif %}
+        </div>
+      </div>
+
+      <h6 class="mt-3 mb-2">Vehicles</h6>
+      <div class="mb-3 {% if form.vehicles.errors %}is-invalid{% endif %}">
+        {{ form.vehicles }}
+        {% if form.vehicles.errors %}<div class="invalid-feedback d-block">{{ form.vehicles.errors }}</div>{% endif %}
+      </div>
+
+      <h6 class="mt-3 mb-2">Contacts</h6>
+      <div class="mb-3 {% if form.contacts.errors %}is-invalid{% endif %}">
+        {{ form.contacts }}
+        {% if form.contacts.errors %}<div class="invalid-feedback d-block">{{ form.contacts.errors }}</div>{% endif %}
+      </div>
+
+      <button type="submit" class="btn btn-primary mt-3">{% if is_edit %}Save{% else %}Add deal{% endif %}</button>
+      <a href="{% url 'deals:deal_list' %}" class="btn btn-outline-secondary mt-3">Cancel</a>
+    </form>
+  </div>
+</div>
+<style>
+  .deal-form ul { list-style: none; padding-left: 0; }
+  .deal-form ul li { margin-bottom: 0.25rem; }
+  .deal-form ul li label { font-weight: normal; }
+</style>
+{% endblock %}

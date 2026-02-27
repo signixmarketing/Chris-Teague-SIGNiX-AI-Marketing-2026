@@ -2,3 +2,4 @@
 # Install in a venv: pip install -r requirements.txt
 Django>=5.0,<6
 django-jazzmin>=3.0
+Pillow>=10.0

@@ -46,7 +46,7 @@ No additional packages are required for the initial version (SQLite and the auth
 django-lease/
 ├── manage.py
 ├── requirements.txt
-├── PLAN.md
+├── PLAN-BASELINE.md
 ├── .gitignore
 ├── .vscode/                # Cursor/VS Code Run and Debug
 │   ├── launch.json        # Django runserver debug configuration
@@ -130,17 +130,17 @@ django-lease/
 ## 7. Authentication and Menu
 
 - **Root** (`/`): Redirect authenticated users to `/profile/`, others to `/accounts/login/`.
-- **Login**: Django’s `LoginView` at `/accounts/login/`; redirect after login to `/profile/`.
-- **Logout**: Django’s logout view; **must be POST** (a GET link causes 405). Use a form with `{% csrf_token %}` and a submit button styled as a nav link.
+- **Login**: Django's `LoginView` at `/accounts/login/`; redirect after login to `/profile/`.
+- **Logout**: Django's logout view; **must be POST** (a GET link causes 405). Use a form with `{% csrf_token %}` and a submit button styled as a nav link.
 - **Menu (app pages)**: Custom sidebar in `base.html` (same layout style as Admin): Profile, Admin, Log out. Login and logged_out use `base_plain.html` (no sidebar).
-- **Menu (Admin)**: Jazzmin `custom_links` in settings — **must be a dict** keyed by app label (e.g. `"main": [{"name": "Back to app", "url": "/profile/", "icon": "fas fa-arrow-left"}, ...]`), not a list. Adds “Back to app” and “Admin” in the Admin sidebar.
+- **Menu (Admin)**: Jazzmin `custom_links` in settings — **must be a dict** keyed by app label (e.g. `"main": [{"name": "Back to app", "url": "/profile/", "icon": "fas fa-arrow-left"}, ...]`), not a list. Adds "Back to app" and "Admin" in the Admin sidebar.
 - Use `@login_required` on profile (and future) views.
 
 ---
 
 ## 8. Profile Flow
 
-- **View** (`/profile/`): Display current user’s profile (first name, last name, full name, phone, email). Read-only page with an “Edit” button.
+- **View** (`/profile/`): Display current user's profile (first name, last name, full name, phone, email). Read-only page with an "Edit" button.
 - **Edit** (`/profile/edit/`): Form to update first name, last name, phone, email. Full name can be read-only (computed) or editable per model design. On save, redirect to profile view and show a success message.
 - **Permissions**: User can only view/edit their own profile (enforced in the view by using `request.user`).
 
@@ -149,9 +149,9 @@ django-lease/
 ## 9. Admin (Django Admin + Jazzmin)
 
 - **Admin site**: Django Admin enabled; Jazzmin used as the admin theme.
-- **Users**: Default Django “Users” and “Groups” from `django.contrib.auth`. Use a superuser (e.g. initial user with `is_superuser=True`) for add/edit/delete users.
+- **Users**: Default Django "Users" and "Groups" from `django.contrib.auth`. Use a superuser (e.g. initial user with `is_superuser=True`) for add/edit/delete users.
 - **LeaseOfficerProfile**: Not registered in admin in this plan (optional to add later).
-- **Sidebar**: Jazzmin `custom_links` (dict format) provides “Back to app” → `/profile/` and “Admin” → `/admin/`.
+- **Sidebar**: Jazzmin `custom_links` (dict format) provides "Back to app" → `/profile/` and "Admin" → `/admin/`.
 - **Person icon (top-right in Admin)**: The default dropdown often does nothing (navigates to `#`). Override `templates/admin/base.html` (copy from Jazzmin, then replace the user dropdown `<li>` with a single link: `<a class="nav-link btn" href="/profile/" title="Profile">` with the same icon) so the person icon goes directly to the app profile page.
 
 ---
@@ -166,13 +166,13 @@ django-lease/
 
 ## 11. Running and Debugging in Cursor
 
-To run and debug the application from Cursor’s Run/Debug UI (e.g. F5):
+To run and debug the application from Cursor's Run/Debug UI (e.g. F5):
 
-- **Launch configuration**: Add a `.vscode/launch.json` with a configuration that runs the Django development server (e.g. `python manage.py runserver` or the built-in “Django” debug type if available). This allows starting the app with breakpoints, the debug console, and stop/restart from the editor.
-- **Working directory**: Set the launch config’s `cwd` (or equivalent) to the project root (where `manage.py` lives) so Django finds settings and the app.
-- **Python interpreter**: Use the project’s virtual environment (e.g. `.venv`) for the debug session. This can be done by:
+- **Launch configuration**: Add a `.vscode/launch.json` with a configuration that runs the Django development server (e.g. `python manage.py runserver` or the built-in "Django" debug type if available). This allows starting the app with breakpoints, the debug console, and stop/restart from the editor.
+- **Working directory**: Set the launch config's `cwd` (or equivalent) to the project root (where `manage.py` lives) so Django finds settings and the app.
+- **Python interpreter**: Use the project's virtual environment (e.g. `.venv`) for the debug session. This can be done by:
   - Selecting the venv as the Python interpreter in Cursor (status bar or Command Palette), and/or
-  - Adding a `.vscode/settings.json` with `python.defaultInterpreterPath` pointing at the venv’s Python (e.g. `${workspaceFolder}/.venv/bin/python`), so Run/Debug uses that environment by default.
+  - Adding a `.vscode/settings.json` with `python.defaultInterpreterPath` pointing at the venv's Python (e.g. `${workspaceFolder}/.venv/bin/python`), so Run/Debug uses that environment by default.
 
 No other plan changes are required; the app runs as usual under `runserver` when started via the debugger.
 
@@ -199,15 +199,15 @@ These are the concrete steps that match the Admin look and fix common issues whe
 
 **Logout: POST and alignment**
 
-- Django’s logout view **only accepts POST**. A plain `<a href="{% url 'logout' %}">` causes **405 Method Not Allowed**. Use a **form** that POSTs to `{% url 'logout' %}` with `{% csrf_token %}` and a **submit button** styled to look like the other nav links (same padding, no border, e.g. `class="nav-link border-0 bg-transparent"` with `d-flex align-items-center` on the form so it aligns with Profile/Admin in the sidebar).
+- Django's logout view **only accepts POST**. A plain `<a href="{% url 'logout' %}">` causes **405 Method Not Allowed**. Use a **form** that POSTs to `{% url 'logout' %}` with `{% csrf_token %}` and a **submit button** styled to look like the other nav links (same padding, no border, e.g. `class="nav-link border-0 bg-transparent"` with `d-flex align-items-center` on the form so it aligns with Profile/Admin in the sidebar).
 
-**Admin: Jazzmin menu and “Back to app”**
+**Admin: Jazzmin menu and "Back to app"**
 
-- In `JAZZMIN_SETTINGS`, **`custom_links` must be a dict** keyed by app label, not a list. A list causes a 500 (e.g. `"custom_links": {"main": [{"name": "Back to app", "url": "/profile/", "icon": "fas fa-arrow-left"}, {"name": "Admin", "url": "/admin/", "icon": "fas fa-cog"}]}`). This adds a “Back to app” link (and Admin) in the Admin **left** sidebar so users can return to the app without the browser back button.
+- In `JAZZMIN_SETTINGS`, **`custom_links` must be a dict** keyed by app label, not a list. A list causes a 500 (e.g. `"custom_links": {"main": [{"name": "Back to app", "url": "/profile/", "icon": "fas fa-arrow-left"}, {"name": "Admin", "url": "/admin/", "icon": "fas fa-cog"}]}`). This adds a "Back to app" link (and Admin) in the Admin **left** sidebar so users can return to the app without the browser back button.
 
 **Admin: person icon (top-right)**
 
-- The default Jazzmin user dropdown (person icon) often **does nothing** (click goes to `#`). Fix it by **overriding** the admin base template: create **`templates/admin/base.html`** in the project (copy the full file from Jazzmin’s `templates/admin/base.html`), then find the `<li class="nav-item dropdown">` that contains the user icon and the dropdown menu. **Replace that whole `<li>...</li>`** with a single link: `<li class="nav-item"><a class="nav-link btn" href="/profile/" title="Profile"><i class="far fa-user" aria-hidden="true"></i></a></li>`. No dropdown; the icon goes straight to the app profile page.
+- The default Jazzmin user dropdown (person icon) often **does nothing** (click goes to `#`). Fix it by **overriding** the admin base template: create **`templates/admin/base.html`** in the project (copy the full file from Jazzmin's `templates/admin/base.html`), then find the `<li class="nav-item dropdown">` that contains the user icon and the dropdown menu. **Replace that whole `<li>...</li>`** with a single link: `<li class="nav-item"><a class="nav-link btn" href="/profile/" title="Profile"><i class="far fa-user" aria-hidden="true"></i></a></li>`. No dropdown; the icon goes straight to the app profile page.
 
 **Display name**
 
@@ -215,15 +215,15 @@ These are the concrete steps that match the Admin look and fix common issues whe
 
 **Common errors: 500 and 405**
 
-- **500 when opening Admin** (`/admin/`): Usually caused by **`custom_links`** being a **list** in `JAZZMIN_SETTINGS`. Jazzmin expects a **dict** keyed by app label (e.g. `"main": [list of links]`). Using a list leads to `AttributeError` (e.g. `.items()` on a list) and a 500. Fix: set `custom_links` to a dict as in the “Admin: Jazzmin menu” note above.
-- **405 when clicking Log out**: Django’s logout view does not allow GET. A normal link to the logout URL returns **405 Method Not Allowed**. Fix: use a **POST form** with `{% csrf_token %}` and a submit button (see “Logout: POST and alignment” above).
+- **500 when opening Admin** (`/admin/`): Usually caused by **`custom_links`** being a **list** in `JAZZMIN_SETTINGS`. Jazzmin expects a **dict** keyed by app label (e.g. `"main": [list of links]`). Using a list leads to `AttributeError` (e.g. `.items()` on a list) and a 500. Fix: set `custom_links` to a dict as in the "Admin: Jazzmin menu" note above.
+- **405 when clicking Log out**: Django's logout view does not allow GET. A normal link to the logout URL returns **405 Method Not Allowed**. Fix: use a **POST form** with `{% csrf_token %}` and a submit button (see "Logout: POST and alignment" above).
 
 ---
 
 ## 13. Implementation Order (Checklist)
 
 1. **Virtual environment (first step for integration/setup)**
-   - Create a virtual environment using Python’s built-in `venv` (e.g. `python -m venv .venv`).
+   - Create a virtual environment using Python's built-in `venv` (e.g. `python -m venv .venv`).
    - Activate it (e.g. `.venv/bin/activate` on Linux/macOS, `.venv\Scripts\activate` on Windows).
    - All subsequent steps (install, migrate, runserver) assume this venv is active so dependencies are isolated.
 
@@ -267,7 +267,7 @@ Implementation can be done in **two batches**. After each batch, run the verific
 **How to test after Batch 1:**
 
 1. **Venv:** Activate the venv. Run `which python` (Linux/macOS) or `where python` (Windows) and confirm the path is inside `.venv`.
-2. **Django:** With venv active, run `pip install -r requirements.txt`, then from the project root run `python manage.py check` — you should see “System check identified no issues (0).” Optionally start the server (F5 or `python manage.py runserver`) and confirm it starts without errors (a default or 404 page is fine until Batch 2).
+2. **Django:** With venv active, run `pip install -r requirements.txt`, then from the project root run `python manage.py check` — you should see "System check identified no issues (0)." Optionally start the server (F5 or `python manage.py runserver`) and confirm it starts without errors (a default or 404 page is fine until Batch 2).
 3. **Migrations:** Run `python manage.py migrate`. Confirm migrations for `users` (and auth/sessions) are applied without errors.
 4. **Initial user:** Run the setup command (e.g. `python manage.py setup_initial_user`). Then in the shell verify:
    - `python manage.py shell`
@@ -284,7 +284,7 @@ You will not have the login page or Profile menu until Batch 2; Batch 1 is compl
 2. **Install:** `pip install -r requirements.txt`
 3. **Migrations:** `python manage.py migrate`
 4. **Initial user:** `python manage.py setup_initial_user` (creates `karl` / `karl`, superuser).
-5. **Run:** `python manage.py runserver` or Cursor Run/Debug (F5) with “Django: runserver”. Open e.g. `http://127.0.0.1:8000/`, log in with **karl** / **karl**. Use **Profile** and **Admin** from the menu. App display name used on screen: **Vehicle Leasing**.
+5. **Run:** `python manage.py runserver` or Cursor Run/Debug (F5) with "Django: runserver". Open e.g. `http://127.0.0.1:8000/`, log in with **karl** / **karl**. Use **Profile** and **Admin** from the menu. App display name used on screen: **Vehicle Leasing**.
 
 ### Batch 2 — Auth and profile (steps 5–6)
 
@@ -294,8 +294,8 @@ You will not have the login page or Profile menu until Batch 2; Batch 1 is compl
 
 1. Start the server (F5 or `python manage.py runserver`). Open the app in the browser (e.g. `http://127.0.0.1:8000/`).
 2. You should be redirected to the login page. Log in with username `karl`, password `karl`.
-3. After login you should see the app with a menu. Open **Profile** — the profile view should show Karl’s name, email, and phone. Use **Edit** to change a field, save, and confirm the profile view shows the update.
-4. Use the menu to open **Admin** (or go to `/admin/`); confirm the Django admin loads (log in with karl/karl if prompted). Click “Back to app” in the sidebar to return; click the person icon in the top-right to go to Profile.
+3. After login you should see the app with a menu. Open **Profile** — the profile view should show Karl's name, email, and phone. Use **Edit** to change a field, save, and confirm the profile view shows the update.
+4. Use the menu to open **Admin** (or go to `/admin/`); confirm the Django admin loads (log in with karl/karl if prompted). Click "Back to app" in the sidebar to return; click the person icon in the top-right to go to Profile.
 5. **Logout:** Use Log out in the app menu (or in Admin); confirm no 405 (logout must be POST).
 
 ---
@@ -313,5 +313,5 @@ You will not have the login page or Profile menu until Batch 2; Batch 1 is compl
 
 ## 16. Review and Next Steps
 
-- This plan reflects what was implemented: steps 1–6, in two batches, with the implementation notes above (logout POST, Jazzmin custom_links dict, Admin person-icon override, sidebar layout, “Vehicle Leasing” display name, superuser for initial user).
+- This plan reflects what was implemented: steps 1–6, in two batches, with the implementation notes above (logout POST, Jazzmin custom_links dict, Admin person-icon override, sidebar layout, "Vehicle Leasing" display name, superuser for initial user).
 - Use **Section 13** as the implementation checklist and **Section 14** for batches and setup/run when creating similar applications from scratch.

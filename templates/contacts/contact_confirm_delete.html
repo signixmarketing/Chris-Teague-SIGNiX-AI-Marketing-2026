@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Delete contact — Vehicle Leasing{% endblock %}
+{% block content_header %}Delete contact{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <p class="mb-3">Are you sure you want to delete <strong>{{ contact }}</strong> ({{ contact.email }})?</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Delete</button>
+      <a href="{% url 'contacts:contact_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

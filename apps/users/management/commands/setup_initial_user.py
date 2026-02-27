@@ -14,7 +14,7 @@ from django.core.management.base import BaseCommand
 from apps.users.models import LeaseOfficerProfile
 
 
-# Initial user and profile data per PLAN.md Section 6.
+# Initial user and profile data per PLAN-BASELINE.md Section 6.
 INITIAL_USERNAME = "karl"
 INITIAL_PASSWORD = "karl"
 INITIAL_FIRST_NAME = "Karl"

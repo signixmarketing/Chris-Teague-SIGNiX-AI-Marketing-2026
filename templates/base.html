@@ -86,6 +86,26 @@
           </a>
         </li>
         <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'vehicles' %}active{% endif %}" href="{% url 'vehicles:vehicle_list' %}">
+            <i class="bi bi-truck"></i>Vehicles
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'contacts' %}active{% endif %}" href="{% url 'contacts:contact_list' %}">
+            <i class="bi bi-people"></i>Contacts
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'deals' %}active{% endif %}" href="{% url 'deals:deal_list' %}">
+            <i class="bi bi-file-earmark-text"></i>Deals
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.app_name == 'images' %}active{% endif %}" href="{% url 'images:image_list' %}">
+            <i class="bi bi-image"></i>Images
+          </a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link" href="{% url 'admin:index' %}">
             <i class="bi bi-gear"></i>Admin
           </a>
