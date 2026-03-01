@@ -9,6 +9,20 @@ This document captures design decisions and concepts for handling documents rela
 - Documents are associated with a Deal.
 - Design covers concepts, data model, user flows, and integration points.
 - No implementation here—PLAN files will describe implementation steps.
+- The Internal Data Schema and Deal Data Retrieval interface are in **DESIGN-DATA-INTERFACE.md**; this document references them where relevant.
+
+## Current Platform (Assumed)
+
+This design assumes the platform already has:
+
+- **Deals** — Deal model with lease officer, deal type (FK), vehicles and contacts (M2M), and deal properties (dates, payment, deposit, insurance, governing law). Deal Type "Lease - Single Signer" exists and is the default. The **deal detail page** (read-only summary) exists with Back, Edit, and Delete buttons; list links to detail via View (no Edit on list).
+- **Vehicles** — Vehicle model with SKU, year, JPIN; full CRUD.
+- **Contacts** — Contact model; full CRUD.
+- **Images** — Image model with name, file, stable URL; full CRUD.
+
+Plans 1–6 (PLAN-BASELINE through PLAN-ADD-DATA-INTERFACE) are implemented. This design extends the deal detail page with the Documents section and related features.
+
+**Related design:** The Internal Data Schema and Deal Data Retrieval interface are documented in **DESIGN-DATA-INTERFACE.md**. Dynamic document templates use the schema for mapping and `get_deal_data(deal)` for population. The Debug Data page (deal list with View JSON) is also defined there.
 
 ---
 
@@ -141,7 +155,7 @@ Dynamic templates are HTML files containing Django Template Language (DTL). They
 ### Required Features
 
 - **Upload** — Users upload dynamic templates (HTML files), similar to static template uploads.
-- **Mapping** — Parse DTL to extract template variables, introspect Deal/Vehicle/Contact models, provide a UI to map variables to data sources and transforms, and apply the mapping at render time. See [Template-to-Data Mapping](#template-to-data-mapping).
+- **Mapping** — Parse DTL to extract template variables, use the Internal Data Schema (see DESIGN-DATA-INTERFACE.md) for available paths, provide a UI to map variables to data sources and transforms, and apply the mapping at render time. See [Template-to-Data Mapping](#template-to-data-mapping).
 - **Signature and date fields** — Dynamic PDFs also need signature/date fields for SIGNiX. Because the PDF is generated from HTML (no pre-existing AcroForm fields), SIGNiX uses **text tagging**: anchor text in the document defines placement for field bounding boxes. See below.
 
 ### Signature and Date Fields via Text Tagging
@@ -246,14 +260,16 @@ Each item in `tagging_data` for `tagging_type: "text_tagging"`:
 
 Dynamic templates expect a context dict (e.g., `data`) whose structure may differ from the Deal/Vehicle/Contact models. A **mapping feature** specifies how template variables are populated from deal data. The mapping UI is integrated into the template upload/edit flow.
 
+The mapping feature **consumes the Internal Data Schema** (see DESIGN-DATA-INTERFACE.md). Available data paths come from the schema interface (`get_schema()` / `get_paths()`), not from ad-hoc model introspection. This keeps schema discovery in one place and ensures consistency across the mapping UI, context builder, and schema viewer page.
+
 #### Flow
 
 1. User uploads an HTML template.
 2. System parses DTL and extracts variable references (e.g., `data.payment_amount`, `data.jet_pack_list`, `item.sku`).
-3. System introspects Deal, Vehicle, Contact, and User/LeaseOfficerProfile models to build a tree of available data paths.
-4. User maps each template variable to a data source (model field or transform).
+3. System obtains available data paths from the schema interface (`get_paths()`).
+4. User maps each template variable to a data source (schema path or transform).
 5. Mapping is stored with the template (e.g., JSONField).
-6. At render time: build the context from the deal using the mapping, then render the template with that context.
+6. At render time: the context builder calls `get_deal_data(deal)` (see DESIGN-DATA-INTERFACE.md) to obtain deal data, applies the mapping and transforms to build the template context, then renders the template with that context.
 
 #### DTL Parsing
 
@@ -263,36 +279,37 @@ Dynamic templates expect a context dict (e.g., `data`) whose structure may diffe
 - Filters do not change the base variable: `{{ data.payment_amount|floatformat:2 }}` → `data.payment_amount`.
 - **Scope:** Single-level loops and flat variables. `{% include %}` and custom template tags are best-effort or out of scope for v1.
 
-#### Model Introspection
+#### Schema as Source of Paths
 
-- Use `Model._meta.get_fields()` and related APIs to build a data tree:
-  - `deal.payment_amount`, `deal.date_entered`, `deal.lease_start`, `deal.lease_officer`, `deal.vehicles`, `deal.contacts`, etc.
-  - Follow FKs and M2Ms to expose `Vehicle.sku`, `Vehicle.year`, `Vehicle.jpin`, `Contact.first_name`, etc.
+- The mapping UI and context builder use the **Internal Data Schema** (see DESIGN-DATA-INTERFACE.md), not ad-hoc model introspection.
+- **No circumvention:** The mapping UI obtains paths from `get_paths()` only. The context builder obtains deal data from `get_deal_data(deal)` only. Neither may traverse Django models or QuerySets directly.
+- The schema defines valid paths such as `deal.payment_amount`, `deal.date_entered`, `deal.lease_start_date`, `deal.lease_officer`, `deal.vehicles`, `deal.contacts`, `deal.vehicles.item.sku`, `deal.contacts.item.first_name`, etc.
+- The schema service (in `apps.schema`) builds this tree via introspection; document features consume it through `get_paths()` and `get_deal_data()`.
 
 #### Mapping Types
 
 | Type | Example | Implementation |
 |------|---------|----------------|
-| **Direct** | `data.payment_amount` → `deal.payment_amount` | Pass-through from model field. |
-| **Date part** | `data.entered_day` → day of `deal.date_entered` | Transform: extract day, month, or year from date. |
-| **Concatenate** | `data.lessee_name` → first contact's `first_name + " " + last_name` | Transform: join fields from a related object. |
-| **List** | `data.jet_pack_list` → `deal.vehicles`; `item.sku` → `Vehicle.sku` | Map list source and per-item field mapping. |
-| **List-derived** | `data.number_of_items_number` → count of `deal.vehicles` | Transform: count items in a related queryset. |
+| **Direct** | `data.payment_amount` → `deal.payment_amount` | Pass-through from path in `get_deal_data()` output. |
+| **Date part** | `data.entered_day` → day of `deal.date_entered` | Transform: extract day, month, or year from date value in `get_deal_data()` output. |
+| **Concatenate** | `data.lessee_name` → first contact's `first_name + " " + last_name` | Transform: join fields from an object in the `get_deal_data()` output (e.g. first element of `deal.contacts` list). |
+| **List** | `data.jet_pack_list` → `deal.vehicles`; `item.sku` → `Vehicle.sku` | Map list source and per-item fields from `get_deal_data()` output. |
+| **List-derived** | `data.number_of_items_number` → count of `deal.vehicles` | Transform: count items in the list from `get_deal_data()` output (e.g. `len(deal_data["deal"]["vehicles"])`). |
 | **Number-as-word** | `data.number_of_items_text` → "one", "two", etc. | Transform: integer to English word. |
 | **Plural suffix** | `data.number_of_items_inflection` → "" or "s" | Transform: "" if count is 1, "s" otherwise. |
 
 #### Transforms (Built-in)
 
-The mapping UI offers a fixed set of transforms. Each mapping entry specifies: template variable, data source (model path), and optional transform.
+The mapping UI offers a fixed set of transforms. Each mapping entry specifies: template variable, data source (schema path), and optional transform. Transforms operate on values from the `get_deal_data(deal)` output; the context builder applies them when building the template context.
 
 | Transform | Input | Output | Use case |
 |-----------|-------|--------|----------|
-| (none) | Model value | As-is | Direct fields |
+| (none) | Value from `get_deal_data()` output | As-is | Direct fields |
 | `date_day` | DateField | Day as int (1–31) | `data.entered_day` |
 | `date_month` | DateField | Month as int (1–12) or name | `data.entered_month` |
 | `date_year` | DateField | Year as int | `data.entered_year` |
 | `concat` | Multiple text fields | Joined string (e.g., first + last name) | `data.lessee_name` |
-| `count` | QuerySet/relation | Integer count | `data.number_of_items_number` |
+| `count` | List (from `get_deal_data` output) | Integer count | `data.number_of_items_number` |
 | `number_to_word` | Integer | "one", "two", etc. | `data.number_of_items_text` |
 | `plural_suffix` | Integer | "" or "s" | `data.number_of_items_inflection` |
 
@@ -341,7 +358,7 @@ A **Document Set** is attached to a Deal and contains the documents produced for
 
 ### Deal Type Association
 
-- **Deal Type** — A classification of the deal (e.g., lease, cash purchase, early lease termination, trade-in). The Deal model has an explicit `deal_type` field.
+- **Deal Type** — A classification of the deal (e.g., lease, cash purchase, early lease termination, trade-in). The Deal model has an explicit `deal_type` field. Deal Type is already implemented as part of PLAN-ADD-DEALS and is in place.
 - **Initial release:** There is exactly one Deal Type: **"Lease - Single Signer"**. All deals default to this type. No UI for the user to select deal type.
 - **Future:** When multiple Deal Types exist, the user will select the deal type (e.g., when creating or editing a Deal). Each Deal Type may use a different Document Set Template. Document Set Templates may also vary by number of co-signers or signer roles (e.g., guarantor vs. primary signer).
 
@@ -364,9 +381,10 @@ A **Document Set** is attached to a Deal and contains the documents produced for
 
 **UI pattern:** Use the same pattern as Deals, Vehicles, and Contacts—list, add, edit, delete views with sidebar links.
 
-**Setup order:**
+**Setup order:** Per PLAN-MASTER, plans 1–6 (Baseline, Vehicles, Contacts, Deals, Images, Data Interface) are implemented before document features. The **data interface** (apps.schema: `get_schema()`, `get_paths()`, `get_deal_data(deal)`) per DESIGN-DATA-INTERFACE.md and PLAN-DATA-INTERFACE is in place. For document features:
+
 1. Create **Static Document Templates** — Upload PDF, add field metadata (ref_id, description, tagging_data).
-2. Create **Dynamic Document Templates** — Upload HTML, configure mapping and text tagging.
+2. Create **Dynamic Document Templates** — Upload HTML, configure mapping (uses `get_paths()` from apps.schema) and text tagging; context builder uses `get_deal_data(deal)` from apps.schema.
 3. Create **Document Set Templates** — Associate with Deal Type, add templates in order.
 
 All templates listed in a Document Set Template are required. The admin configures templates; users work with deals and system-generated documents.
@@ -419,7 +437,7 @@ Documents are created when the Deal has **sufficient data**: all Deal fields hav
 1. Determines the Deal's Deal Type and looks up the associated Document Set Template
 2. Creates a Document Set for the Deal, linking it to that Document Set Template
 3. Iterates through the Document Set Template's ordered list of Document Templates:
-   - **Dynamic template:** Populate HTML/DTL with deal data; images are referenced via static references (see [Image references](#image-references-in-dynamic-templates)) → render to HTML → convert to PDF (pdfkit/wkhtmltopdf) → store the PDF in a new Document Instance Version
+   - **Dynamic template:** Obtain deal data via `get_deal_data(deal)` (DESIGN-DATA-INTERFACE.md); build template context from mapping and transforms; render HTML/DTL with deal context; images via static references (see [Image references](#image-references-in-dynamic-templates)) → render to HTML → convert to PDF (pdfkit/wkhtmltopdf) → store the PDF in a new Document Instance Version
    - **Static template:** Copy the static PDF from the template to a new Document Instance Version
 4. For each template, creates a Document Instance (with link to source template, template_type) and adds the first Document Instance Version with status "Draft"
 
@@ -446,7 +464,7 @@ The SIGNiX notification mechanism (how the app learns a transaction is complete)
 The goal is to automate as much as possible. Use language users will understand: **Documents** and **Versions** (rather than "Document Instance" and "Document Instance Version") in the UI.
 
 **Deal page layout:**
-- Documents section appears at the **bottom of the page**. (Layout may be refined during implementation—e.g., tabs or other restructuring.)
+- The deal detail page (read-only summary with Back, Edit, Delete) already exists. The Documents section will be added at the **bottom of this page**. (Layout may be refined during implementation—e.g., tabs or other restructuring.) Debug data viewing is on a separate "Debug Data" page (see DESIGN-DATA-INTERFACE.md), not on the deal detail page.
 
 **Deal page — before Document Set exists:**
 - **"Generate Documents"** button — Enabled when Deal has sufficient data (all Deal fields populated; at least one vehicle, one user/lease officer, one signer/contact). Creates Document Set, Document Instances, and first Document Instance Versions automatically.
@@ -508,7 +526,7 @@ For the first release, use **pdfkit** with **wkhtmltopdf** installed. This was u
 
 ### Deal Type (initial release)
 
-Deal Type is explicit on the Deal model. The initial release has one Deal Type: **"Lease - Single Signer"**. All deals default to this type; there is no UI for the user to select deal type. When multiple Deal Types are introduced in a later release, the user will select the deal type (e.g., when creating or editing a Deal).
+Deal Type is explicit on the Deal model and is implemented. The platform has one Deal Type: **"Lease - Single Signer"**. All deals default to this type; there is no UI for the user to select deal type. When multiple Deal Types are introduced in a later release, the user will select the deal type (e.g., when creating or editing a Deal).
 
 ### Document template reusability
 
@@ -532,7 +550,7 @@ Document Templates (Static and Dynamic) and Document Set Templates use the same 
 
 ### Configuration setup order
 
-Document Templates are created first, then Document Set Templates. Admin creates Static and Dynamic Document Templates, then Document Set Templates that reference them.
+Per PLAN-MASTER: plans 1–6 (including Data Interface) are implemented first; then document plans in PLAN-DOCS-MASTER order. The data interface (apps.schema: `get_schema()`, `get_paths()`, `get_deal_data(deal)`) per DESIGN-DATA-INTERFACE.md is implemented in PLAN-DATA-INTERFACE before Dynamic Document Templates. Admin creates Static and Dynamic Document Templates, then Document Set Templates that reference them. Deal Type is already implemented as part of Deals (PLAN-ADD-DEALS); no separate setup step.
 
 ### Document Set Template: all templates required
 
@@ -541,6 +559,10 @@ All templates listed in a Document Set Template are required. (Future releases m
 ### Document Instances and Versions: view-only
 
 Document Instances and Document Instance Versions are created by system automation (Generate Documents, Regenerate Documents, SIGNiX completion). Users view them; there is no Edit UI for Document Instances or Document Instance Versions.
+
+### Deal View / Edit split
+
+Deals use a **View / Edit split**: the primary entry point from the list is **View** (deal detail page), not Edit. From the deal detail page, the user can Edit or Delete. Flow: List → View (detail) → Edit or Delete from there. This is implemented in **PLAN-ADD-DEALS** (deal_detail view, list links to detail, Edit and Delete buttons on detail). PLAN-ADD-DOCUMENT-SETS extends the deal detail page with the Documents section.
 
 ### Document viewing UX
 
@@ -553,8 +575,12 @@ Document Instances and Document Instance Versions are created by system automati
 
 ### First contact / first vehicle (ordering)
 
-For mappings that use "first contact" or "first vehicle" (e.g., `data.lessee_name` from the first contact), use the order in which they were added to the Deal. A future release may provide a UI to change this order. For the initial release, this is not material—vehicle order is not critical, and the demo will have only one signer.
+For mappings that use "first contact" or "first vehicle" (e.g., `data.lessee_name` from the first contact), use the order defined by `get_deal_data()` (vehicles and contacts ordered by id per DESIGN-DATA-INTERFACE.md). The context builder resolves `deal.contacts[0]` as the first element of the `contacts` list in that output. A future release may provide a UI to change this order. For the initial release, this is not material—vehicle order is not critical, and the demo will have only one signer.
 
 ### Document Set creation: atomicity and error handling
 
 If Document Set creation fails at any step, roll back all Document Instance creation and Document Instance Versions. Include sufficient logging and error handling so that if an error occurs, the cause can be diagnosed and the fix determined.
+
+### Data interface: no circumvention
+
+Dynamic document mapping and population must use the data interface (DESIGN-DATA-INTERFACE.md) exclusively. The mapping UI obtains paths from `get_paths()` only. The context builder obtains deal data from `get_deal_data(deal)` only. Neither may traverse Django models or QuerySets directly. This ensures a single source of truth and keeps document features decoupled from model structure.

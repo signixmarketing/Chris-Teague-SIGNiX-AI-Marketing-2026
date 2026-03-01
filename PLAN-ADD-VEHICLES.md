@@ -79,7 +79,7 @@ One jet pack will be added as follows (per your specification):
 
 - **Sidebar** (`templates/base.html`): Add a **Vehicles** link after Profile and before Admin:
   - Text: "Vehicles", URL: `{% url 'vehicles:vehicle_list' %}`, icon: e.g. `bi bi-truck` or `bi bi-box-seam`. Mark active when `request.resolver_match.url_name` is in the vehicle URL names (e.g. `vehicle_list`, `vehicle_add`, `vehicle_edit`, `vehicle_delete_confirm`).
-- **Config**: In `config/urls.py`, include the vehicles app URLs (e.g. `path("", include("apps.vehicles.urls"))`). In `config/settings.py`, add `"apps.vehicles"` to `INSTALLED_APPS`.
+- **Config**: In `config/urls.py`, include the vehicles app URLs under the `vehicles/` prefix (e.g. `path("vehicles/", include("apps.vehicles.urls"))`). In `config/settings.py`, add `"apps.vehicles"` to `INSTALLED_APPS`.
 - **Jazzmin**: Optional: add a "Vehicles" custom link in the Admin sidebar (e.g. to `/vehicles/`) so from Admin users can jump to the app vehicles list. Follow existing `custom_links` dict format.
 
 ---
@@ -114,7 +114,7 @@ One jet pack will be added as follows (per your specification):
 
 6. **URLs**
    - In `apps/vehicles/urls.py`: `app_name = "vehicles"`; routes for list, add, edit, delete (e.g. `vehicles/`, `vehicles/add/`, `vehicles/<int:pk>/edit/`, `vehicles/<int:pk>/delete/`).
-   - In `config/urls.py`: include `apps.vehicles.urls` (order so it does not conflict with `users` or `accounts`).
+   - In `config/urls.py`: add `path("vehicles/", include("apps.vehicles.urls"))` so list/add/edit/delete resolve to `/vehicles/`, `/vehicles/add/`, etc. (order so it does not conflict with `users` or `accounts`).
 
 7. **Templates**
    - `templates/vehicles/vehicle_list.html` — extends `base.html`; table with SKU, Year, JPIN, Actions (Edit link, Delete link to confirmation page); "Add vehicle" button.

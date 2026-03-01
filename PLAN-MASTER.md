@@ -32,7 +32,7 @@ This document defines the order in which to implement all PLANs to build (or reb
 
 ## 4. PLAN-ADD-DEALS.md
 
-**Purpose:** Deals app—Deal model (lease_officer FK, vehicles M2M, contacts M2M; date_entered, lease_start/end, payment_amount, payment_period, security_deposit, insurance_amount, governing_law), CRUD with form for properties + multi-select vehicles/contacts. **Note:** Use `{{ form.<date_field>.value|date:'Y-m-d'|default:'' }}` for date inputs so they display on edit (Section 4.5).
+**Purpose:** Deals app—DealType model ("Lease - Single Signer" default), Deal model (lease_officer FK, deal_type FK, vehicles M2M, contacts M2M; date_entered, lease_start/end, payment_amount, payment_period, security_deposit, insurance_amount, governing_law), CRUD with **View/Edit split** (deal detail page; View primary from list; Edit and Delete on detail). Deal type is set automatically; not shown in forms. **Note:** Use `{{ form.<date_field>.value|date:'Y-m-d'|default:'' }}` for date inputs so they display on edit (Section 4.5).
 
 **Implement:** Batch 1 (apps.deals, model, migrations) then Batch 2 (forms, views, URLs, templates, sidebar, optional admin). See PLAN-ADD-DEALS.md Section 6 and Section 6a.
 
@@ -46,6 +46,14 @@ This document defines the order in which to implement all PLANs to build (or reb
 
 ---
 
+## 6. PLAN-DATA-INTERFACE.md
+
+**Purpose:** Data schema and deal data interface—apps.schema with `get_schema()`, `get_paths()`, `get_deal_data(deal)`. Schema viewer page, Debug Data page (deal list with View JSON modal). Foundation for dynamic document templates (mapping, context builder).
+
+**Implement:** Batch 1 (app, services.py, schema discovery and get_deal_data, URL routing), Batch 2 (schema viewer view, template, sidebar), Batch 3 (Debug Data list, JSON endpoint, modal with Copy). See PLAN-DATA-INTERFACE.md Section 7 and Section 7a.
+
+---
+
 ## Summary Table
 
 | Order | Plan                 | App         | Key deliverables                                                |
@@ -55,13 +63,14 @@ This document defines the order in which to implement all PLANs to build (or reb
 | 3     | PLAN-ADD-CONTACTS.md | apps.contacts | Contact CRUD, Max Danger Fun seed                             |
 | 4     | PLAN-ADD-DEALS.md    | apps.deals  | Deal CRUD, M2M vehicles/contacts, lease officer                 |
 | 5     | PLAN-ADD-IMAGES.md   | apps.images | Image upload, list with URL, edit with replacement              |
+| 6     | PLAN-DATA-INTERFACE.md | apps.schema | Schema viewer, Debug Data page, get_schema/get_paths/get_deal_data |
 
 ---
 
 ## Next Steps: Document Features
 
-Once plans 1–5 above are completed, proceed to **PLAN-DOCS-MASTER.md** for document-related features (Static Document Templates, Dynamic Document Templates, Document Set Templates, etc.). See PLAN-DOCS-MASTER.md for the implementation sequence.
+Once plans 1–6 above are completed, proceed to **PLAN-DOCS-MASTER.md** for document-related features (Static Document Templates, Dynamic Document Templates, Document Set Templates, etc.). See PLAN-DOCS-MASTER.md for the implementation sequence.
 
 ---
 
-*To recreate this app from scratch: implement plans 1–5 in order, following each plan's implementation order and verification steps. Then implement the plans in PLAN-DOCS-MASTER.md.*
+*To recreate this app from scratch: implement plans 1–6 in order, following each plan's implementation order and verification steps. Then implement the plans in PLAN-DOCS-MASTER.md.*

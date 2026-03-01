@@ -17,6 +17,7 @@
           <tr>
             <th>Date entered</th>
             <th>Lease officer</th>
+            <th>Deal type</th>
             <th>Lease start</th>
             <th>Lease end</th>
             <th>Payment</th>
@@ -28,21 +29,22 @@
         <tbody>
           {% for deal in deal_list %}
           <tr>
-            <td>{{ deal.date_entered }}</td>
+            <td><a href="{% url 'deals:deal_detail' deal.pk %}">{{ deal.date_entered }}</a></td>
             <td>{{ deal.lease_officer.get_username }}</td>
+            <td>{{ deal.deal_type.name|default:"—" }}</td>
             <td>{{ deal.lease_start_date }}</td>
             <td>{{ deal.lease_end_date }}</td>
             <td>{{ deal.payment_amount }} / {{ deal.payment_period }}</td>
             <td>{{ deal.vehicles.count }}</td>
             <td>{{ deal.contacts.count }}</td>
             <td class="text-end">
-              <a href="{% url 'deals:deal_edit' deal.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+              <a href="{% url 'deals:deal_detail' deal.pk %}" class="btn btn-sm btn-outline-primary">View</a>
               <a href="{% url 'deals:deal_delete_confirm' deal.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
             </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="8" class="text-center text-muted py-4">
+            <td colspan="9" class="text-center text-muted py-4">
               No deals yet. Add one to get started.
             </td>
           </tr>

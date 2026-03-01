@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Deal #{{ deal.id }} — Vehicle Leasing{% endblock %}
+{% block content_header %}Deal #{{ deal.id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <span class="text-muted">{{ deal.date_entered }} · {{ deal.lease_officer.get_username }}</span>
+  <div>
+    <a href="{% url 'deals:deal_list' %}" class="btn btn-outline-secondary">Back</a>
+    <a href="{% url 'deals:deal_edit' deal.pk %}" class="btn btn-primary">Edit</a>
+    <a href="{% url 'deals:deal_delete_confirm' deal.pk %}" class="btn btn-outline-danger">Delete</a>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="text-muted mb-3">Summary</h6>
+    <dl class="row mb-0">
+      <dt class="col-sm-3">Date entered</dt>
+      <dd class="col-sm-9">{{ deal.date_entered }}</dd>
+
+      <dt class="col-sm-3">Lease officer</dt>
+      <dd class="col-sm-9">{{ deal.lease_officer.get_username }}</dd>
+
+      <dt class="col-sm-3">Deal type</dt>
+      <dd class="col-sm-9">{{ deal.deal_type.name|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Lease start</dt>
+      <dd class="col-sm-9">{{ deal.lease_start_date }}</dd>
+
+      <dt class="col-sm-3">Lease end</dt>
+      <dd class="col-sm-9">{{ deal.lease_end_date }}</dd>
+
+      <dt class="col-sm-3">Payment</dt>
+      <dd class="col-sm-9">{{ deal.payment_amount }} / {{ deal.payment_period }}</dd>
+
+      <dt class="col-sm-3">Security deposit</dt>
+      <dd class="col-sm-9">{{ deal.security_deposit }}</dd>
+
+      <dt class="col-sm-3">Insurance amount</dt>
+      <dd class="col-sm-9">{{ deal.insurance_amount }}</dd>
+
+      <dt class="col-sm-3">Governing law</dt>
+      <dd class="col-sm-9">{{ deal.governing_law }}</dd>
+
+      <dt class="col-sm-3">Vehicles</dt>
+      <dd class="col-sm-9">
+        {% if deal.vehicles.all %}
+          {% for v in deal.vehicles.all %}{{ v.sku }}{% if not forloop.last %}, {% endif %}{% endfor %}
+        {% else %}
+          <span class="text-muted">None</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Contacts</dt>
+      <dd class="col-sm-9">
+        {% if deal.contacts.all %}
+          {% for c in deal.contacts.all %}{{ c.first_name }} {{ c.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+        {% else %}
+          <span class="text-muted">None</span>
+        {% endif %}
+      </dd>
+    </dl>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <h6 class="text-muted mb-2">Documents</h6>
+    <p class="text-muted small mb-0">Document generation will be available when Document Set Templates are configured.</p>
+  </div>
+</div>
+{% endblock %}

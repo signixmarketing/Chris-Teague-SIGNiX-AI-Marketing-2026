@@ -11,6 +11,7 @@ app_name = "deals"
 urlpatterns = [
     path("", views.deal_list, name="deal_list"),
     path("add/", views.deal_add, name="deal_add"),
+    path("<int:pk>/", views.deal_detail, name="deal_detail"),
     path("<int:pk>/edit/", views.deal_edit, name="deal_edit"),
     path("<int:pk>/delete/", views.deal_delete_confirm, name="deal_delete_confirm"),
 ]

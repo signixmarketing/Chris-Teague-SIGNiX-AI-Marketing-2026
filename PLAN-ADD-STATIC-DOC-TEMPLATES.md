@@ -4,6 +4,8 @@ This document outlines how to add **Static Document Templates** to the Django le
 
 **Design reference:** DESIGN-DOCS.md — Static Document Templates section.
 
+**Prerequisites:** PLAN-MASTER plans 1–6 are implemented (Baseline, Vehicles, Contacts, Deals, Images, Data Interface). MEDIA_ROOT/MEDIA_URL are configured from Images. Same UI patterns (list, add, edit, delete with confirmation) are in use.
+
 **Review this plan before implementation.** Implementation order is in **Section 7**; **Section 7a** defines batches and verification.
 
 ---
@@ -12,7 +14,7 @@ This document outlines how to add **Static Document Templates** to the Django le
 
 - **Model:** `StaticDocumentTemplate` with `ref_id`, `description`, `file` (PDF), and `tagging_data` (JSONField) for form field definitions.
 - **Data:** No seed data; the list starts empty. Users add templates via the UI.
-- **UI:** List, Add, Edit, Delete — same pattern as Images and Vehicles. Add: upload PDF, enter ref_id and description, configure form fields (tag_name, field_type, member_info_number; for signature: date_signed_field_name, date_signed_format). Edit: same, with optional PDF replacement.
+- **UI:** List, Add, Edit, Delete — same pattern as Deals, Vehicles, Contacts, and Images. Add: upload PDF, enter ref_id and description, configure form fields (tag_name, field_type, member_info_number; for signature: date_signed_field_name, date_signed_format). Edit: same, with optional PDF replacement.
 - **Access:** Authenticated users only (`@login_required`).
 
 ---
@@ -33,7 +35,7 @@ This document outlines how to add **Static Document Templates** to the Django le
     - `date_signed_field_name` (str, optional) — for signature fields: PDF field name for date
     - `date_signed_format` (str, optional) — for signature fields: e.g. `"MM/dd/yy"`
 
-**Conventions:** Docstrings, `__str__` (return `description` or `ref_id`), `verbose_name` / `verbose_name_plural` in `Meta`. MEDIA_ROOT/MEDIA_URL already configured (from Images); ensure PDFs are served (same media URL pattern).
+**Conventions:** Docstrings, `__str__` (return `description` or `ref_id`), `verbose_name` / `verbose_name_plural` in `Meta`. MEDIA_ROOT/MEDIA_URL are already configured (from Images); ensure PDFs are served via the same media URL pattern.
 
 ---
 

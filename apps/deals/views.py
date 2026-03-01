@@ -10,15 +10,27 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import DealForm
-from .models import Deal
+from .models import Deal, DealType
+
+
+@login_required
+def deal_detail(request, pk):
+    """Show read-only deal summary including deal type; Edit and Delete buttons."""
+    deal = get_object_or_404(
+        Deal.objects.select_related("lease_officer", "deal_type").prefetch_related(
+            "vehicles", "contacts"
+        ),
+        pk=pk,
+    )
+    return render(request, "deals/deal_detail.html", {"deal": deal})
 
 
 @login_required
 def deal_list(request):
     """List all deals (date entered, lease officer, dates, payment, vehicles/contacts count)."""
-    deals = Deal.objects.all().select_related("lease_officer").prefetch_related(
-        "vehicles", "contacts"
-    )
+    deals = Deal.objects.all().select_related(
+        "lease_officer", "deal_type"
+    ).prefetch_related("vehicles", "contacts")
     return render(request, "deals/deal_list.html", {"deal_list": deals})
 
 
@@ -30,6 +42,7 @@ def deal_add(request):
         if form.is_valid():
             deal = form.save(commit=False)
             deal.lease_officer = request.user
+            deal.deal_type = DealType.get_default()
             deal.save()
             form.save_m2m()
             messages.success(request, "Deal added.")

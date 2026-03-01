@@ -1,12 +1,17 @@
 """
 Django admin for deals.
 
-Deal is registered for backup management from the admin.
+Deal and DealType are registered for backup management from the admin.
 """
 
 from django.contrib import admin
 
-from .models import Deal
+from .models import Deal, DealType
+
+
+@admin.register(DealType)
+class DealTypeAdmin(admin.ModelAdmin):
+    list_display = ["name"]
 
 
 @admin.register(Deal)
@@ -15,6 +20,7 @@ class DealAdmin(admin.ModelAdmin):
         "id",
         "date_entered",
         "lease_officer",
+        "deal_type",
         "lease_start_date",
         "lease_end_date",
         "payment_amount",

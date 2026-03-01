@@ -2,7 +2,7 @@
 Forms for the deals app.
 
 DealForm: add/edit deal (properties + vehicles + contacts).
-Lease officer is set in the view (current user on create).
+Lease officer and deal_type are set in the view (current user and default type on create).
 """
 
 from django import forms

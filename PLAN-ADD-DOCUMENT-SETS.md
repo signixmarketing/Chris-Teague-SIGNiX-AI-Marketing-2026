@@ -2,9 +2,9 @@
 
 This document outlines how to add **Document Sets**, **Document Instances**, and **Document Instance Versions** to the Django lease application. A Document Set is attached to a Deal and contains the documents generated from templates (lease agreement, safety advisory, etc.). Users generate documents from the Deal page, view them, regenerate when data changes, and delete the document set when needed.
 
-**Design reference:** DESIGN-DOCS.md — Document Sets, Document Instances, Document Instance Versions, Creation Flow, Re-generation Flow, Status Flow, User Experience, and Decisions Log.
+**Design reference:** DESIGN-DOCS.md — Document Sets, Document Instances, Document Instance Versions, Creation Flow, Re-generation Flow, Status Flow, User Experience, and Decisions Log. DESIGN-DATA-INTERFACE.md — `get_deal_data(deal)` and no-circumvention requirement for the context builder.
 
-**Prerequisites:** PLAN-ADD-STATIC-DOC-TEMPLATES, PLAN-ADD-DYNAMIC-DOC-TEMPLATES, PLAN-ADD-DEAL-TYPE, and PLAN-ADD-DOC-SET-TEMPLATES must be implemented.
+**Prerequisites:** PLAN-ADD-STATIC-DOC-TEMPLATES, PLAN-ADD-DYNAMIC-DOC-TEMPLATES, PLAN-ADD-DOC-SET-TEMPLATES, and PLAN-ADD-DEALS must be implemented. PLAN-MASTER plans 1–6 are implemented, including PLAN-DATA-INTERFACE (apps.schema provides `get_deal_data(deal)` for the context builder). Deal Type is in place; the deal detail page (View/Edit split) exists with Back, Edit, and Delete—list links to detail via View.
 
 **Review this plan before implementation.** Implementation order is in **Section 7**; **Section 7a** defines batches and verification.
 
@@ -23,7 +23,7 @@ This document outlines how to add **Document Sets**, **Document Instances**, and
 
 - **App:** New app `apps.documents`.
 - **Persistence:** SQLite for metadata; PDF files under `MEDIA_ROOT/documents/`.
-- **Dependencies:** `apps.deals`, `apps.doctemplates`, `apps.vehicles`, `apps.contacts`, `apps.images`.
+- **Dependencies:** `apps.deals`, `apps.doctemplates`, `apps.schema`, `apps.vehicles`, `apps.contacts`, `apps.images`.
 - **Python package:** `pdfkit` (add to `requirements.txt`). Assumes `wkhtmltopdf` is installed on the system (not a Python package).
 
 ### DocumentSet
@@ -55,13 +55,13 @@ This document outlines how to add **Document Sets**, **Document Instances**, and
 
 ## 3. Deal Detail Page
 
-**Decision:** Add a dedicated Deal detail page and make "View" the primary entry point from the list. Edit and Delete become actions on the detail page.
+**Decision:** The View / Edit split is implemented in **PLAN-ADD-DEALS** and is in place. The deal detail page exists with "View" as the primary link from the list; Edit and Delete are on the detail page. This plan extends the deal detail page with the Documents section.
 
-The current deals app has list, add, edit, delete but no detail view. Add `deal_detail` view and template.
+PLAN-ADD-DEALS provides: `deal_detail` view and template at `/deals/<pk>/`, list links to detail (View primary, no Edit on list), Back and Edit and Delete buttons on detail. This plan adds the Documents section below the deal summary.
 
-- **URL:** `/deals/<pk>/` (name `deal_detail`).
-- **Content:** Display deal summary (read-only) and **Documents** section at bottom. Action buttons: Edit, Delete, Generate Documents (or Regenerate / Delete Document Set when set exists).
-- **Navigation:** Update deal list — make "View" the primary link (replace or add alongside Edit). Each row links to deal_detail. On the detail page, show Edit and Delete buttons. Users flow: List → View (detail) → Edit or Delete from there.
+- **URL:** `/deals/<pk>/` (name `deal_detail`) — already exists.
+- **Content:** Deal summary (read-only) including deal type, lease officer, dates, payment, vehicles, contacts; Back, Edit, Delete buttons. This plan adds: Generate Documents (or Regenerate / Delete Document Set when set exists) and the Documents table.
+- **Navigation:** No changes to list or detail navigation—already correct. Flow: List → View (detail) → Edit or Delete from there.
 
 ---
 
@@ -102,7 +102,7 @@ Wrap creation in `transaction.atomic()`. On any failure, roll back. Log errors w
 
 ## 6. Dynamic Template Rendering
 
-1. **Context builder:** `build_document_context(deal, mapping)` — produces dict matching template variable structure (e.g. `data.payment_amount` → nested `{"data": {"payment_amount": ...}}`). Resolve sources (deal.payment_amount, deal.vehicles, etc.); apply transforms (date_day, concat, count, etc.).
+1. **Context builder:** `build_document_context(deal, mapping)` — call `get_deal_data(deal)` from `apps.schema.services` to obtain the deal-centric structure; do not traverse Django models or QuerySets directly. Apply mapping and transforms to build the template context (e.g. `data.payment_amount` → nested `{"data": {"payment_amount": ...}}`). Resolve sources from the dict returned by `get_deal_data()`; apply transforms (date_day, concat, count, etc.). Per DESIGN-DATA-INTERFACE and DESIGN-DOCS no-circumvention requirement.
 2. **Render:** `Template(html_string).render(Context(context))`.
 3. **HTML-to-PDF:** Use `pdfkit` with `wkhtmltopdf`. wkhtmltopdf requires absolute URLs for images (e.g. `http://localhost:8000/media/...`).
 4. **Image URLs — decided:** Generation runs from a view (POST to generate); pass `request` to the generation service. Use `request.build_absolute_uri()` for the base URL when rendering—Django's `{% static %}` and media URLs in the template will resolve relative to the request's host. For the HTML string passed to pdfkit, ensure `RequestContext` or a custom context includes a base URL (e.g. `base_url = request.build_absolute_uri('/')`); templates can use it to build absolute image URLs. Alternatively, post-process the rendered HTML to convert relative `/media/` and `/static/` URLs to absolute using `request.build_absolute_uri()`. Add optional `SITE_URL` in settings as fallback for any future generation outside request context (e.g. management command).
@@ -139,10 +139,9 @@ Wrap creation in `transaction.atomic()`. On any failure, roll back. Log errors w
 3. **Migrations**
    - Run `makemigrations` and `migrate`.
 
-4. **Deal detail view**
-   - Add `deal_detail` view and template. Show deal summary; action buttons Edit, Delete; placeholder for Documents section.
-   - Update deal list: make "View" the primary link (link row or first column to deal_detail). Keep Edit and Delete as secondary links, or remove them from list (they become buttons on the detail page).
-   - Add `path("<int:pk>/", ...)` for deal_detail in deals URLs (before `<int:pk>/edit/` to avoid conflict).
+4. **Deal detail — Documents section**
+   - The deal detail page (View/Edit split) is implemented in PLAN-ADD-DEALS. This step adds the **Documents** section to the existing deal detail template. Replace the placeholder with the Documents UI (Generate button, Documents table, etc.).
+   - No changes to deal list or deal_detail view/URL — they already exist per PLAN-ADD-DEALS.
 
 Batch 1 complete when models exist and deal detail loads.
 
@@ -166,7 +165,7 @@ Batch 2 complete when Generate works for Static-only Document Set Templates.
    - Add `pdfkit` to `requirements.txt` (e.g. `pdfkit>=1.0`). Run `pip install pdfkit`. Assumes `wkhtmltopdf` is already installed on the system.
 
 9. **Context builder**
-   - `build_document_context(deal, mapping)` — resolve sources, apply transforms. Handle `deal.vehicles`, `deal.contacts`, `item_map` for list variables. See DESIGN-DOCS mapping types.
+   - `build_document_context(deal, mapping)` — call `get_deal_data(deal)` from `apps.schema.services` to obtain deal data; resolve sources from that dict, apply transforms. Handle `deal.vehicles`, `deal.contacts`, `item_map` for list variables. Do not traverse models directly. See DESIGN-DOCS mapping types and DESIGN-DATA-INTERFACE.
 
 10. **Dynamic render and HTML-to-PDF**
     - Read Dynamic template HTML; build context; render with `Template().render(Context())`; convert to PDF with pdfkit. Store PDF in `DocumentInstanceVersion.file`. Ensure image URLs are absolute for wkhtmltopdf.
@@ -281,7 +280,7 @@ Batch 4 complete when full UI works and PDFs view/download correctly.
 ## 11. Implementation Notes
 
 - **pdfkit:** Add `pdfkit` to `requirements.txt` (step 8). Assumes `wkhtmltopdf` is installed on the system. Use `pdfkit.from_string(html, False, options={'base': base_url})` with `base_url = request.build_absolute_uri('/')` so relative URLs in the HTML resolve. Add optional `SITE_URL` in settings for future use when generation runs without a request.
-- **Context builder:** Mapping keys use dot notation (e.g. `data.payment_amount`). Build nested dict: `{"data": {"payment_amount": value}}`. For list variables, build list of dicts from `deal.vehicles` with `item_map` field mapping. For "first contact" or "first vehicle" (e.g. `deal.contacts[0]`), use `deal.contacts.order_by('id').first()` and `deal.vehicles.order_by('id').first()`.
+- **Context builder:** Call `get_deal_data(deal)` from `apps.schema.services` to obtain deal data—do not traverse models directly. Work from the returned dict; mapping keys use dot notation (e.g. `data.payment_amount`). Build nested context: `{"data": {"payment_amount": value}}`. For list variables, use the `vehicles` and `contacts` lists from `get_deal_data()` output (already ordered by id). For "first contact" or "first vehicle", use index 0 of the list: `deal_data["deal"]["contacts"][0]`, `deal_data["deal"]["vehicles"][0]`.
 - **Transforms (v1):** `number_to_word`: support 0–99; return "zero"–"ninety-nine"; outside range fallback to str(n). `plural_suffix`: "" if count==1 else "s". `concat`: join with single space by default; no configurable delimiter in v1. Other transforms per DESIGN-DOCS (date_day, date_month, date_year, count).
 - **Atomicity:** Use `with transaction.atomic():` around entire Generate/Regenerate flow. On exception, rollback and re-raise or return error to user.
 - **Logging:** Log each step (template lookup, context build, render, PDF conversion, file save) with deal id, template ref_id. On error, log exception with context.
@@ -292,10 +291,10 @@ Batch 4 complete when full UI works and PDFs view/download correctly.
 
 | # | Topic | Notes |
 |---|-------|-------|
-| 1 | **Deal detail vs Edit** | **Decided:** Add dedicated deal_detail view. Make "View" the primary link from the list; Edit and Delete are buttons on the detail page. See Section 3. |
+| 1 | **Deal detail vs Edit** | **Decided and implemented in PLAN-ADD-DEALS:** deal_detail view, View primary from list, Edit and Delete on detail. This plan extends the detail page with Documents. See Section 3. |
 | 2 | **Image URLs for wkhtmltopdf** | **Decided:** Pass `request` to generation; use `request.build_absolute_uri('/')` as base for pdfkit. Add optional `SITE_URL` in settings as fallback. See Section 6 and Implementation Notes. |
 | 3 | **Transform implementations** | **Decided:** `number_to_word` 0–99, fallback to str outside range; `plural_suffix` "" if count==1 else "s"; `concat` join with single space. See Implementation Notes. |
-| 4 | **First contact / first vehicle** | **Decided:** Use `deal.contacts.order_by('id').first()` and `deal.vehicles.order_by('id').first()` for stable ordering. See Implementation Notes. |
+| 4 | **First contact / first vehicle** | **Decided:** Resolve from `get_deal_data(deal)` output: `deal_data["deal"]["contacts"][0]`, `deal_data["deal"]["vehicles"][0]`. Vehicles and contacts are ordered by id in `get_deal_data()` per DESIGN-DATA-INTERFACE. See Implementation Notes. |
 | 5 | **Document Set Template missing** | **Decided:** If Deal's Deal Type has no Document Set Template, disable Generate and show "No document set template configured for this deal type." See Section 4 and Batch 2. |
 
 ---

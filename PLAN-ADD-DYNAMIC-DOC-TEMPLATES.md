@@ -2,9 +2,9 @@
 
 This document outlines how to add **Dynamic Document Templates** to the Django lease application. Dynamic templates are HTML files with Django Template Language (DTL) that produce populated documents when combined with deal data. Users upload HTML, configure text tagging (signature/date fields for SIGNiX), and configure the mapping of template variables to deal data.
 
-**Design reference:** DESIGN-DOCS.md — Dynamic Document Templates and Template-to-Data Mapping sections.
+**Design reference:** DESIGN-DOCS.md — Dynamic Document Templates and Template-to-Data Mapping sections. DESIGN-DATA-INTERFACE.md — schema, `get_paths()`, `get_deal_data(deal)`, and no-circumvention requirement.
 
-**Prerequisites:** PLAN-ADD-STATIC-DOC-TEMPLATES.md must be implemented (apps.doctemplates exists).
+**Prerequisites:** PLAN-ADD-STATIC-DOC-TEMPLATES.md must be implemented (apps.doctemplates exists). PLAN-MASTER plans 1–6 are implemented, including **PLAN-DATA-INTERFACE.md** (apps.schema provides `get_schema()`, `get_paths()`, `get_deal_data(deal)`). The mapping UI uses `get_paths()` and the context builder uses `get_deal_data(deal)`—no ad-hoc model introspection.
 
 **Review this plan before implementation.** Implementation order is in **Section 7**; **Section 7a** defines batches and verification.
 
@@ -171,8 +171,8 @@ Batch 3 complete when parsing works, parse endpoint returns JSON, and edit page 
 
 ### Batch 4 — Mapping UI (steps 13–16)
 
-13. **Model introspection**
-    - Create `get_deal_data_paths()` (or similar) that returns available paths from Deal, Vehicle, Contact, User/LeaseOfficerProfile. Return a flat list or tree of paths like `deal.payment_amount`, `deal.vehicles`, `deal.contacts`, etc.
+13. **Data paths for mapping UI**
+    - Use `apps.schema.services.get_paths()` for available data paths. Import from `apps.schema.services`; do not implement separate model introspection. Paths include `deal.payment_amount`, `deal.date_entered`, `deal.lease_start_date`, `deal.lease_officer`, `deal.vehicles`, `deal.contacts`, `deal.vehicles.item.sku`, etc. Per DESIGN-DATA-INTERFACE and no-circumvention requirement.
 
 14. **Mapping form**
     - Layout: **Table** — one row per variable, columns: Variable (read-only), Source (dropdown), Transform (dropdown). For list variables with `item.*` (e.g. `data.jet_pack_list` + `item.sku`, `item.year`), support `item_map`: one row per parsed `item.*` variable, each maps to a Vehicle field dropdown. Store as JSON per DESIGN-DOCS schema.
@@ -247,7 +247,7 @@ Batch 4 complete when mapping can be configured on both add and edit, and "Ident
 
 1. **Edit page:** With template that has file and parsed variables, configure mapping for at least one variable (e.g. data.payment_amount → deal.payment_amount). Save.
 2. **Shell:** Reload template; `instance.mapping` contains the saved mapping.
-3. **Introspection:** Verify dropdown or list of data paths includes deal fields (e.g. deal.payment_amount, deal.vehicles).
+3. **Data paths:** Verify dropdown or list of data paths (from `get_paths()`) includes deal fields (e.g. deal.payment_amount, deal.vehicles).
 4. **Transform:** Map a date field with date_day transform; save and verify mapping JSON structure.
 5. **Add page — Identify Fields:** On Add, select an HTML file, click "Identify Fields" (fetch, no page reload); parsed variables appear; configure mapping (all required); submit. Template is created with mapping saved.
 6. **ref_id uniqueness:** Create a Static template with ref_id "X". Attempt to create a Dynamic template with ref_id "X"; expect validation error. (And vice versa.)
@@ -283,7 +283,7 @@ Batch 4 complete when mapping can be configured on both add and edit, and "Ident
 - **ref_id uniqueness:** Enforce uniqueness across both Static and Dynamic templates. In `DynamicDocumentTemplateForm.clean_ref_id` (and in `StaticDocumentTemplateForm.clean_ref_id` in the Static plan), check that the ref_id does not exist in the other template model.
 - **Mapping UI layout:** Table — one row per variable; columns: Variable, Source, Transform. For list variables, one row per parsed `item.*` variable; each maps to a Vehicle field dropdown (item_map).
 - **List variable item_map:** Supported in v1. Simple UI: one row per parsed `item.*` variable; user selects which Vehicle field each maps to.
-- **Deal model dependency:** Introspection requires Deal, Vehicle, Contact models. Ensure apps.deals, apps.vehicles, apps.contacts are in INSTALLED_APPS.
+- **Data interface dependency:** Use `apps.schema.services.get_paths()` for mapping source options. Do not introspect models directly. PLAN-DATA-INTERFACE ensures apps.schema is in INSTALLED_APPS and provides paths conforming to the schema (e.g. `deal.lease_start_date`).
 
 ---
 
