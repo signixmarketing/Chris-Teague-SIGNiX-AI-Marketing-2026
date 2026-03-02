@@ -42,7 +42,9 @@ INSTALLED_APPS = [
     "apps.vehicles",
     "apps.contacts",
     "apps.deals",
+    "apps.schema",
     "apps.images",
+    "apps.doctemplates",
 ]
 
 MIDDLEWARE = [

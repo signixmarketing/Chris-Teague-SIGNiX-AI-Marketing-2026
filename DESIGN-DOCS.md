@@ -130,8 +130,13 @@ User-friendly flow:
 Considerations:
 - `tag_name` must match the actual PDF field name; users enter it manually (see Decisions Log — auto-detection is a future enhancement).
 - `field_type` as a dropdown: `signature`, `date`, `text`, etc.
-- Conditional UI: show `date_signed_field_name` and `date_signed_format` only when `field_type` is `signature`.
+- **date_signed fields:** Either (a) conditional UI — show `date_signed_field_name` and `date_signed_format` only when `field_type` is `signature`, or (b) always show both fields and require them in validation only when `field_type` is `signature` (simpler, no JavaScript). PLAN-ADD-STATIC-DOC-TEMPLATES uses (b).
 - `member_info_number`: see Decisions Log — Signer 1 = deal user, Signer 2 = first contact; show as "User (lease officer)" / "Contact" in UI.
+
+### Static Template CRUD Behavior
+
+- **Edit:** File is optional; leave blank to keep the current PDF. The view must preserve the existing file when no new file is uploaded.
+- **Delete:** Removes the record and the file from storage (no orphaned files).
 
 ---
 
@@ -260,43 +265,50 @@ Each item in `tagging_data` for `tagging_type: "text_tagging"`:
 
 Dynamic templates expect a context dict (e.g., `data`) whose structure may differ from the Deal/Vehicle/Contact models. A **mapping feature** specifies how template variables are populated from deal data. The mapping UI is integrated into the template upload/edit flow.
 
-The mapping feature **consumes the Internal Data Schema** (see DESIGN-DATA-INTERFACE.md). Available data paths come from the schema interface (`get_schema()` / `get_paths()`), not from ad-hoc model introspection. This keeps schema discovery in one place and ensures consistency across the mapping UI, context builder, and schema viewer page.
+The mapping feature **consumes the Internal Data Schema** (see DESIGN-DATA-INTERFACE.md). Available data paths come from the schema interface (`get_paths_grouped_for_mapping()` for the Source dropdown; `get_schema()` / `get_paths()` for discovery), not from ad-hoc model introspection. This keeps schema discovery in one place and ensures consistency across the mapping UI, context builder, and schema viewer page.
 
 #### Flow
 
 1. User uploads an HTML template.
-2. System parses DTL and extracts variable references (e.g., `data.payment_amount`, `data.jet_pack_list`, `item.sku`).
-3. System obtains available data paths from the schema interface (`get_paths()`).
-4. User maps each template variable to a data source (schema path or transform).
-5. Mapping is stored with the template (e.g., JSONField).
-6. At render time: the context builder calls `get_deal_data(deal)` (see DESIGN-DATA-INTERFACE.md) to obtain deal data, applies the mapping and transforms to build the template context, then renders the template with that context.
+2. System parses DTL and extracts variable references (e.g., `data.payment_amount`, `data.jet_pack_list`, `item.sku`, `lease_image_url`), with metadata for variable types (list, list item, image, scalar).
+3. System obtains available data paths from the schema interface (`get_paths_grouped_for_mapping()`) and appends an Images optgroup (from the Image model) for image variables.
+4. User maps each template variable to a data source: schema path (with optional transform) for deal data, or Image selection for image variables.
+5. Mapping is stored with the template (e.g., JSONField), including `var_type` for each entry.
+6. At render time: the context builder calls `get_deal_data(deal)` to obtain deal data, resolves image sources (`image:<uuid>`) via the Image model, applies transforms, and builds the template context.
 
 #### DTL Parsing
 
 - Walk Django's parsed `Template` node tree to collect:
   - Variable nodes: `{{ data.payment_amount }}`, `{{ item.sku }}`
   - Loop iterables and loop variables: `{% for item in data.jet_pack_list %}` → `data.jet_pack_list`, `item`
+- **Inferred data-source roots:** From dotted variable prefixes (e.g. `data.payment_amount`), infer root names (e.g. `data`) and add them as mappable variables. Users map these to Data Source options (e.g. `deal`). Excludes loop-variable names (e.g. `item`).
+- **List variables:** Variables found as loop iterables (`ForNode` sequence) are tagged and annotated with a "list" badge.
+- **List-item variables:** Variables referenced inside a for loop that start with the loop variable (e.g. `item.sku` inside `{% for item in data.jet_pack_list %}`) are tagged and annotated with a "list item" badge.
+- **Image variables:** Variables whose names end with `_image_url`, `_image`, `_logo_url`, or `_logo` (case-insensitive) are tagged as image variables and annotated with an "image" badge. These are mapped to Images from the Images app, not to deal data paths.
 - Filters do not change the base variable: `{{ data.payment_amount|floatformat:2 }}` → `data.payment_amount`.
 - **Scope:** Single-level loops and flat variables. `{% include %}` and custom template tags are best-effort or out of scope for v1.
 
 #### Schema as Source of Paths
 
 - The mapping UI and context builder use the **Internal Data Schema** (see DESIGN-DATA-INTERFACE.md), not ad-hoc model introspection.
-- **No circumvention:** The mapping UI obtains paths from `get_paths()` only. The context builder obtains deal data from `get_deal_data(deal)` only. Neither may traverse Django models or QuerySets directly.
-- The schema defines valid paths such as `deal.payment_amount`, `deal.date_entered`, `deal.lease_start_date`, `deal.lease_officer`, `deal.vehicles`, `deal.contacts`, `deal.vehicles.item.sku`, `deal.contacts.item.first_name`, etc.
-- The schema service (in `apps.schema`) builds this tree via introspection; document features consume it through `get_paths()` and `get_deal_data()`.
+- **No circumvention:** The mapping UI obtains deal-data paths from `get_paths_grouped_for_mapping()` (which groups paths for the Source dropdown). The context builder obtains deal data from `get_deal_data(deal)` only. Neither may traverse Django models or QuerySets directly for deal data. (Image resolution uses the Image model as a separate, named source.)
+- The Source dropdown groups options into optgroups: **Data Source** (root paths like `deal`—extensible for future sources), **List sources** (`deal.vehicles`, `deal.contacts` with descriptive labels), **Scalar / item paths** (e.g. `deal.payment_amount`, `deal.vehicles.item.sku`), and **Images** (each Image from the Images app, identified by `image:<uuid>`, with display name). Image variables are mapped to the Images optgroup; deal-data variables to the schema optgroups.
+- DTL parsing detects variable types (including image variables by naming convention) and records `list_item_to_list` (which list each list item belongs to). The mapping section displays a **Template structure** summary: Primary data source, Lists (each with its items), Scalar properties, Image variables. The mapping table annotates variables by type (data source, list, list item, image, scalar); for list items, shows the parent list (e.g. `item.sku (data.jet_pack_list)`).
+- The schema service (in `apps.schema`) builds this structure via introspection; document features consume it through `get_paths_grouped_for_mapping()` and `get_deal_data()`.
 
 #### Mapping Types
 
 | Type | Example | Implementation |
 |------|---------|----------------|
 | **Direct** | `data.payment_amount` → `deal.payment_amount` | Pass-through from path in `get_deal_data()` output. |
+| **Direct (derived)** | `data.lessee_name` → `deal.contacts.item.full_name` | Pass-through; `full_name` is pre-computed in `get_deal_data()` (first + middle + last, space-separated). For flat variables, context builder uses first contact. |
 | **Date part** | `data.entered_day` → day of `deal.date_entered` | Transform: extract day, month, or year from date value in `get_deal_data()` output. |
-| **Concatenate** | `data.lessee_name` → first contact's `first_name + " " + last_name` | Transform: join fields from an object in the `get_deal_data()` output (e.g. first element of `deal.contacts` list). |
-| **List** | `data.jet_pack_list` → `deal.vehicles`; `item.sku` → `Vehicle.sku` | Map list source and per-item fields from `get_deal_data()` output. |
-| **List-derived** | `data.number_of_items_number` → count of `deal.vehicles` | Transform: count items in the list from `get_deal_data()` output (e.g. `len(deal_data["deal"]["vehicles"])`). |
-| **Number-as-word** | `data.number_of_items_text` → "one", "two", etc. | Transform: integer to English word. |
-| **Plural suffix** | `data.number_of_items_inflection` → "" or "s" | Transform: "" if count is 1, "s" otherwise. |
+| **Date formatted** | `data.lease_start_day_month` → "September 1" | Transform: `date_month_day` formats date as month name + day (e.g. `deal.lease_start_date` → "September 1"). |
+| **Concatenate** | Other multi-field joins | Transform: join fields from an object when no pre-computed path exists. |
+| **List** | `data.jet_pack_list` → `deal.vehicles` | Map list source; pass-through when template item field names match schema (e.g. `item.sku` → `sku`). `item_map` optional—only for renaming or field selection. |
+| **Direct (derived)** | `data.number_of_items_number` → `deal.vehicles_count` | Pass-through; count pre-computed in `get_deal_data()`. |
+| **Count + transform** | `data.number_of_items_text` → `deal.vehicles_count` + `number_to_word` | Transform formats count as "one", "two", etc. Same for `plural_suffix` ("" or "s"). Pattern applies to `deal.contacts_count` as well. |
+| **Image** | `lease_image_url` → `image:<uuid>` | Map to an Image from the Images app. Source format `image:<uuid>`; context builder resolves via `Image.objects.get(uuid=...)` and uses the file URL. No transform. |
 
 #### Transforms (Built-in)
 
@@ -305,43 +317,52 @@ The mapping UI offers a fixed set of transforms. Each mapping entry specifies: t
 | Transform | Input | Output | Use case |
 |-----------|-------|--------|----------|
 | (none) | Value from `get_deal_data()` output | As-is | Direct fields |
-| `date_day` | DateField | Day as int (1–31) | `data.entered_day` |
-| `date_month` | DateField | Month as int (1–12) or name | `data.entered_month` |
-| `date_year` | DateField | Year as int | `data.entered_year` |
-| `concat` | Multiple text fields | Joined string (e.g., first + last name) | `data.lessee_name` |
-| `count` | List (from `get_deal_data` output) | Integer count | `data.number_of_items_number` |
-| `number_to_word` | Integer | "one", "two", etc. | `data.number_of_items_text` |
-| `plural_suffix` | Integer | "" or "s" | `data.number_of_items_inflection` |
+| `date_day` | Date (ISO string) | Day as int (1–31) | `data.entered_day` |
+| `date_month` | Date (ISO string) | Month as int (1–12) | `data.entered_month` |
+| `date_year` | Date (ISO string) | Year as int | `data.entered_year` |
+| `date_month_day` | Date (ISO string) | "September 1" (month name + day) | `data.lease_start_day_month`, `data.lease_end_day_month` |
+| `concat` | Multiple text fields | Joined string | When no pre-computed path (e.g. `deal.contacts.item.full_name`) exists |
+| `count` | List | Integer count | When source is list and count needed (alternative to pre-computed `deal.vehicles_count`) |
+| `number_to_word` | Integer | "one", "two", etc. | Format count for display (e.g. source `deal.vehicles_count`) |
+| `plural_suffix` | Integer | "" or "s" | Format count for plural inflection (e.g. source `deal.vehicles_count`) |
 
-Additional date-part transforms (e.g., `date_month_name`, `date_day_month` for "January 15") can be added as needed.
+Additional date-part transforms can be added as needed.
 
 #### Reference Template Structure (Demo)
 
 The design targets templates like the Zoom Jet Pack Lease Agreement: a single top-level object (e.g., `data`) with flat properties and one list.
 
-- **Flat:** `data.entered_day`, `data.entered_month`, `data.entered_year`, `data.lessee_name`, `data.payment_amount`, `data.lease_start_day_month`, etc.
-- **List:** `data.jet_pack_list` with `{% for item in data.jet_pack_list %}`; each `item` has `sku`, `year`, `jpin` (mapping to Vehicle).
-- **Computed from list:** `data.number_of_items_number`, `data.number_of_items_text`, `data.number_of_items_inflection`.
+- **Flat:** `data.entered_day`, `data.entered_month`, `data.entered_year`, `data.lease_start_day_month`, `data.lease_end_day_month`, `data.lessee_name`, `data.payment_amount`, `data.number_of_items_number`, `data.number_of_items_text`, `data.number_of_items_inflection`, etc. (mapped to deal paths; count display uses `deal.vehicles_count` or `deal.contacts_count` with transforms `number_to_word` or `plural_suffix`).
+- **List:** `data.jet_pack_list` with `{% for item in data.jet_pack_list %}`; source `deal.vehicles`. When template uses `item.sku`, `item.year`, `item.jpin` (matching schema field names), pass-through; `item_map` only for renaming.
+- **Image variables:** e.g. `lease_image_url`, `logo_url`; source `image:<uuid>`, resolved to the Image file URL at render time.
 
-Static assets (e.g., `{% static '...' %}`) are handled separately; the mapping feature focuses on deal data.
+Static assets (e.g., `{% static '...' %}`) are handled separately; the mapping feature focuses on deal data and Images.
 
 #### Mapping Storage
 
-- Store as a JSON config, e.g.:
+- Store as a JSON config. Each entry includes `source`, optional `transform`, and `var_type` (`data_source`, `list`, `list_item`, `image`, `scalar`) for context builder and future use. Example:
   ```json
   {
-    "data.payment_amount": { "source": "deal.payment_amount" },
-    "data.entered_day": { "source": "deal.date_entered", "transform": "date_day" },
-    "data.lessee_name": { "source": "deal.contacts[0]", "transform": "concat", "fields": ["first_name", "last_name"] },
-    "data.jet_pack_list": { "source": "deal.vehicles", "item_map": { "sku": "sku", "year": "year", "jpin": "jpin" } },
-    "data.number_of_items_number": { "source": "deal.vehicles", "transform": "count" }
+    "data": { "source": "deal", "var_type": "data_source" },
+    "data.payment_amount": { "source": "deal.payment_amount", "var_type": "scalar" },
+    "data.entered_day": { "source": "deal.date_entered", "transform": "date_day", "var_type": "scalar" },
+    "data.lease_start_day_month": { "source": "deal.lease_start_date", "transform": "date_month_day", "var_type": "scalar" },
+    "data.lease_end_day_month": { "source": "deal.lease_end_date", "transform": "date_month_day", "var_type": "scalar" },
+    "data.lessee_name": { "source": "deal.contacts.item.full_name", "var_type": "scalar" },
+    "data.jet_pack_list": { "source": "deal.vehicles", "var_type": "list" },
+    "data.number_of_items_number": { "source": "deal.vehicles_count", "var_type": "scalar" },
+    "data.number_of_items_text": { "source": "deal.vehicles_count", "transform": "number_to_word", "var_type": "scalar" },
+    "data.number_of_items_inflection": { "source": "deal.vehicles_count", "transform": "plural_suffix", "var_type": "scalar" },
+    "item.sku": { "source": "deal.vehicles.item.sku", "var_type": "list_item" },
+    "lease_image_url": { "source": "image:50f77aee-ae17-469b-b869-6178012ecbf9", "var_type": "image" }
   }
   ```
+- **List mapping:** When template uses `item.sku`, `item.year`, etc. and schema has `deal.vehicles.item.sku`, etc., field names match—omit `item_map`. Include `item_map` only when renaming (e.g. template `item.vehicle_sku` → schema `sku`) or selecting a subset of fields.
 - Exact schema can be refined during implementation.
 
 #### Implementation Scope (v1)
 
-- **Supported:** Flat variables, single-level `{% for item in list %}` loops, direct mappings, and the transforms listed above.
+- **Supported:** Flat variables, single-level `{% for item in list %}` loops, image variables (by naming convention), direct mappings, and the transforms listed above.
 - **Out of scope for v1:** Nested loops, `{% include %}`, custom template tags, computed expressions beyond the transform set.
 
 ---
@@ -384,7 +405,7 @@ A **Document Set** is attached to a Deal and contains the documents produced for
 **Setup order:** Per PLAN-MASTER, plans 1–6 (Baseline, Vehicles, Contacts, Deals, Images, Data Interface) are implemented before document features. The **data interface** (apps.schema: `get_schema()`, `get_paths()`, `get_deal_data(deal)`) per DESIGN-DATA-INTERFACE.md and PLAN-DATA-INTERFACE is in place. For document features:
 
 1. Create **Static Document Templates** — Upload PDF, add field metadata (ref_id, description, tagging_data).
-2. Create **Dynamic Document Templates** — Upload HTML, configure mapping (uses `get_paths()` from apps.schema) and text tagging; context builder uses `get_deal_data(deal)` from apps.schema.
+2. Create **Dynamic Document Templates** — Upload HTML, configure mapping (uses `get_paths_grouped_for_mapping()` from apps.schema for the Source dropdown) and text tagging; context builder uses `get_deal_data(deal)` from apps.schema.
 3. Create **Document Set Templates** — Associate with Deal Type, add templates in order.
 
 All templates listed in a Document Set Template are required. The admin configures templates; users work with deals and system-generated documents.
@@ -518,7 +539,7 @@ PDF field auto-detection (reading form field names from the uploaded PDF) is a d
 
 ### Image references in dynamic templates
 
-Images are referenced in dynamic templates using **static references**—e.g., the URL/path from the Images app (see PLAN-ADD-IMAGES.md). Each image has a stable, HTTP-accessible URL (e.g., `/media/images/…`) that can be used in the template. Images should be available to pdfkit/wkhtmltopdf via this public link; if not, the solution will be addressed during implementation.
+Templates may include image placeholders (e.g. `{{ lease_image_url }}`, `{{ logo_url }}`). DTL parsing detects **image variables** by naming convention (`_image_url`, `_image`, `_logo_url`, `_logo`). The mapping UI offers an **Images** optgroup in the Source dropdown, populated from the Image model (PLAN-ADD-IMAGES). Users map each image variable to an Image; the stored source format is `image:<uuid>`. At render time, the context builder resolves the UUID to the Image's file and supplies the HTTP-accessible URL. Each image has a stable URL (e.g. `/media/images/…`) for pdfkit/wkhtmltopdf.
 
 ### HTML-to-PDF generation
 
@@ -583,4 +604,4 @@ If Document Set creation fails at any step, roll back all Document Instance crea
 
 ### Data interface: no circumvention
 
-Dynamic document mapping and population must use the data interface (DESIGN-DATA-INTERFACE.md) exclusively. The mapping UI obtains paths from `get_paths()` only. The context builder obtains deal data from `get_deal_data(deal)` only. Neither may traverse Django models or QuerySets directly. This ensures a single source of truth and keeps document features decoupled from model structure.
+Dynamic document mapping and population must use the data interface (DESIGN-DATA-INTERFACE.md) exclusively. The mapping UI obtains paths from `get_paths_grouped_for_mapping()` only. The context builder obtains deal data from `get_deal_data(deal)` only. Neither may traverse Django models or QuerySets directly. This ensures a single source of truth and keeps document features decoupled from model structure.

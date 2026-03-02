@@ -1,10 +1,10 @@
 # Plan: Add Dynamic Document Templates
 
-This document outlines how to add **Dynamic Document Templates** to the Django lease application. Dynamic templates are HTML files with Django Template Language (DTL) that produce populated documents when combined with deal data. Users upload HTML, configure text tagging (signature/date fields for SIGNiX), and configure the mapping of template variables to deal data.
+This document outlines how to add **Dynamic Document Templates** to the Django lease application. Dynamic templates are HTML files with Django Template Language (DTL) that produce populated documents when combined with deal data and Images. Users upload HTML, configure text tagging (signature/date fields for SIGNiX), and configure the mapping of template variables to deal data or Images.
 
-**Design reference:** DESIGN-DOCS.md — Dynamic Document Templates and Template-to-Data Mapping sections. DESIGN-DATA-INTERFACE.md — schema, `get_paths()`, `get_deal_data(deal)`, and no-circumvention requirement.
+**Design reference:** DESIGN-DOCS.md — Dynamic Document Templates and Template-to-Data Mapping sections. DESIGN-DATA-INTERFACE.md — schema, `get_paths_grouped_for_mapping()`, `get_deal_data(deal)`, and no-circumvention requirement.
 
-**Prerequisites:** PLAN-ADD-STATIC-DOC-TEMPLATES.md must be implemented (apps.doctemplates exists). PLAN-MASTER plans 1–6 are implemented, including **PLAN-DATA-INTERFACE.md** (apps.schema provides `get_schema()`, `get_paths()`, `get_deal_data(deal)`). The mapping UI uses `get_paths()` and the context builder uses `get_deal_data(deal)`—no ad-hoc model introspection.
+**Prerequisites:** PLAN-ADD-STATIC-DOC-TEMPLATES.md must be implemented (apps.doctemplates exists). PLAN-MASTER plans 1–6 are implemented, including **PLAN-ADD-IMAGES** (Image model for image mapping) and **PLAN-DATA-INTERFACE** (apps.schema: `get_paths_grouped_for_mapping()`, `get_deal_data(deal)`). The mapping UI uses schema paths plus an Images optgroup; the context builder uses `get_deal_data(deal)` for deal data and resolves `image:<uuid>` via the Image model.
 
 **Review this plan before implementation.** Implementation order is in **Section 7**; **Section 7a** defines batches and verification.
 
@@ -12,7 +12,7 @@ This document outlines how to add **Dynamic Document Templates** to the Django l
 
 ## 1. Goals and Scope
 
-- **Model:** `DynamicDocumentTemplate` with `ref_id`, `description`, `file` (HTML), `tagging_data` (text tagging for SIGNiX), and `mapping` (template variables → deal data).
+- **Model:** `DynamicDocumentTemplate` with `ref_id`, `description`, `file` (HTML), `tagging_data` (text tagging for SIGNiX), and `mapping` (template variables → deal data or Images).
 - **Data:** No seed data; list starts empty.
 - **UI:** List, Add, Edit, Delete — same pattern as Static templates. Add: upload HTML, ref_id, description, text tagging config. Edit: same, plus **mapping** configuration (requires file to be present so DTL can be parsed).
 - **Access:** Authenticated users only (`@login_required`).
@@ -79,13 +79,24 @@ Structure per DESIGN-DOCS (refinable in implementation):
 
 ```json
 {
-  "data.payment_amount": {"source": "deal.payment_amount"},
-  "data.entered_day": {"source": "deal.date_entered", "transform": "date_day"},
-  "data.jet_pack_list": {"source": "deal.vehicles", "item_map": {"sku": "sku", "year": "year", "jpin": "jpin"}}
+  "data": {"source": "deal", "var_type": "data_source"},
+  "data.payment_amount": {"source": "deal.payment_amount", "var_type": "scalar"},
+  "lease_image_url": {"source": "image:50f77aee-ae17-469b-b869-6178012ecbf9", "var_type": "image"},
+  "data.entered_day": {"source": "deal.date_entered", "transform": "date_day", "var_type": "scalar"},
+  "data.lease_start_day_month": {"source": "deal.lease_start_date", "transform": "date_month_day", "var_type": "scalar"},
+  "data.lease_end_day_month": {"source": "deal.lease_end_date", "transform": "date_month_day", "var_type": "scalar"},
+  "data.lessee_name": {"source": "deal.contacts.item.full_name", "var_type": "scalar"},
+  "data.jet_pack_list": {"source": "deal.vehicles", "var_type": "list"},
+  "data.number_of_items_number": {"source": "deal.vehicles_count", "var_type": "scalar"},
+  "data.number_of_items_text": {"source": "deal.vehicles_count", "transform": "number_to_word", "var_type": "scalar"},
+  "data.number_of_items_inflection": {"source": "deal.vehicles_count", "transform": "plural_suffix", "var_type": "scalar"},
+  "item.sku": {"source": "deal.vehicles.item.sku", "var_type": "list_item"}
 }
 ```
 
-Transforms: `date_day`, `date_month`, `date_year`, `concat`, `count`, `number_to_word`, `plural_suffix`. See DESIGN-DOCS for full list and schema.
+Each mapping entry includes `var_type` (`data_source`, `list`, `list_item`, `image`, `scalar`) for context builder and future use. Parsing infers roots (e.g. `data`) from dotted variable prefixes; list-item variables are those referenced inside a `{% for %}` loop; image variables are detected by naming convention (`_image_url`, `_image`, `_logo_url`, `_logo`); scalars are the remainder.
+
+Transforms: `date_day`, `date_month`, `date_year`, `date_month_day`, `concat`, `count`, `number_to_word`, `plural_suffix`. See DESIGN-DOCS for full list and schema.
 
 ---
 
@@ -130,6 +141,8 @@ Transforms: `date_day`, `date_month`, `date_year`, `concat`, `count`, `number_to
    - In `apps/doctemplates/urls.py`, add `path("dynamic/", ...)` with a minimal list view placeholder.
    - Ensure `path("dynamic/add/", ...)`, `path("dynamic/<int:pk>/edit/", ...)`, `path("dynamic/<int:pk>/delete/", ...)` are stubbed or return 404 until Batch 2.
 
+**Critical:** Run `makemigrations doctemplates` and `migrate`—otherwise `OperationalError: no such table` when the list view is implemented in Batch 2.
+
 Batch 1 complete when the model exists, migrations apply, and `/document-templates/dynamic/` loads.
 
 ### Batch 2 — CRUD and text tagging (steps 3–8)
@@ -139,13 +152,15 @@ Batch 1 complete when the model exists, migrations apply, and `/document-templat
 
 4. **Text tagging formset**
    - `DynamicTaggingFieldForm` with: tag_name, field_type (signature, date_signed), is_required, anchor_text, x_offset, y_offset, width, height, member_info_number (for signature), date_signed_field_name (for signature), date_signed_format (for signature).
-   - Formset; conversion helpers `tagging_data_to_formset_initial` / `formset_cleaned_to_tagging_data`.
+   - Formset with **prefix** (e.g. `"dynamic_tagging"`) to avoid collision with metadata form fields.
+   - Conversion helpers: `dynamic_tagging_data_to_formset_initial` / `dynamic_formset_cleaned_to_tagging_data`.
 
 5. **Views**
    - List, add, edit, delete (add/edit include metadata + text tagging formset).
+   - Edit: if no new file uploaded, preserve existing file (set `instance.file = template_obj.file` before save).
 
 6. **Templates**
-   - List, form (add/edit), confirm delete. Form includes metadata fields and formset for tagging.
+   - List, form (add/edit), confirm delete. Form includes metadata fields, formset for tagging, and mapping section placeholder (Batch 3 adds parsed variables; Batch 4 adds mapping form).
 
 7. **Sidebar**
    - Add "Dynamic Templates" link → `doctemplates:dynamic_doctemplate_list`, active when on dynamic templates. Insert after Static Templates, before Images. Order: Static Templates, Dynamic Templates, Images.
@@ -158,27 +173,41 @@ Batch 2 complete when full CRUD works with metadata and text tagging.
 ### Batch 3 — DTL parsing (steps 10–11)
 
 10. **DTL parsing utility**
-   - Create `apps/doctemplates/utils.py` (or similar) with `parse_dtl_variables(html_string)` that returns a list of variable paths (e.g. `["data.payment_amount", "data.jet_pack_list", "item.sku"]`). Walk Django's `Template(html_string).nodelist` to collect variable references and loop iterables. Handle single-level `{% for item in list %}`.
+   - Create `apps/doctemplates/utils.py` with `parse_dtl_variables(html_string)` that returns variable paths. Provide `parse_dtl_variables_with_metadata(html_string)` returning `(variables, list_variables, list_item_variables, data_source_variables, list_item_to_list, image_variables)`:
+     - `variables`: all paths plus inferred data-source roots (e.g. `data`) prepended
+     - `list_variables`: paths found as `ForNode` sequence (e.g. `data.jet_pack_list`)
+     - `list_item_variables`: paths like `item.sku` found inside a for loop referencing the loop var
+     - `data_source_variables`: inferred root names (e.g. `data`) from dotted variable prefixes, excluding loop var names
+     - `list_item_to_list`: dict mapping list_item_var → list_var (e.g. `{"item.sku": "data.jet_pack_list"}`) so the UI can show which list each item belongs to
+     - `image_variables`: frozenset of variable names matching `_image_url`, `_image`, `_logo_url`, or `_logo` (case-insensitive) for image variable detection
+   - Walk `Template(html_string).nodelist`: for `VariableNode`, collect path; for `ForNode`, add `sequence.var`, track loop vars, recurse into `nodelist_loop` recording list_item_to_list; for other nodes, recurse `child_nodelists`. Filters stripped. After collection, detect image variables by suffix.
+   - Provide `get_image_sources_for_mapping()` returning `[(f"image:{img.uuid}", img.name), ...]` from Image model for the Images optgroup.
+   - Raises `TemplateSyntaxError` on invalid DTL. Returns empty list/frozensets/dict if html_string is empty/None.
    - Unit test or shell verification.
 
 11. **Expose parsed variables on edit**
-    - In the edit view, when template has a file: read file content, call parser, pass `parsed_variables` to template context. Display "Template expects: ..." in the mapping section (even if mapping UI is minimal in Batch 3).
+    - In the edit view, when template has a file: read file content, call `parse_dtl_variables_with_metadata`, pass `parsed_variables`, metadata (including `image_variables`), and `template_structure` (structured summary) to template context. On file read error or empty content, pass empty collections.
+    - Mapping section displays **Template structure** when `parsed_variables` is non-empty: Primary data source, Lists (each with its items), Scalar properties, Image variables. Then the mapping table with variables annotated by type (data source, list, list item, image, scalar); for list items, show the parent list name (e.g. `item.sku (data.jet_pack_list)`). Exclude image variables from scalar properties. Fallbacks: if parse returned empty but file exists, show "Could not parse template variables"; if no file, "Upload a template file"; on add, "After adding, use Edit to see parsed variables."
+    - Add view always passes `parsed_variables=[]` (Batch 4 adds "Identify Fields" for add).
 
 12. **Parse endpoint (for "Identify Fields" on add)**
-    - Add view `dynamic_doctemplate_parse` (e.g. POST `/document-templates/dynamic/parse/`) that accepts a file in the request, reads content, calls `parse_dtl_variables`, returns `JsonResponse({"variables": [...]})`. `@login_required`.
+    - Add view `dynamic_doctemplate_parse` at POST `/document-templates/dynamic/parse/`. Accepts file, calls `parse_dtl_variables_with_metadata`, returns `JsonResponse` with `variables`, `list_variables`, `list_item_variables`, `data_source_variables`, `list_item_to_list` (dict mapping list item to list), and `image_variables` (list of image variable names). JavaScript builds the structured Template structure summary (including Image variables) and mapping table with type badges (data source, list, list item, image, scalar). `@login_required`.
+    - URL: `path("dynamic/parse/", views.dynamic_doctemplate_parse)` — place before `dynamic/<int:pk>/` routes so "parse" is not matched as pk.
+    - Error responses: 405 if not POST; 400 if no file; 400 with `{"error": "Template syntax error: ..."}` on `TemplateSyntaxError`.
 
-Batch 3 complete when parsing works, parse endpoint returns JSON, and edit page shows parsed variables.
+Batch 3 complete when parsing works, parse endpoint returns JSON, and edit page shows "Template expects: ..." with parsed variables in the mapping section. Add page shows mapping section with "After adding the template, use Edit to see parsed variables."
 
 ### Batch 4 — Mapping UI (steps 13–16)
 
 13. **Data paths for mapping UI**
-    - Use `apps.schema.services.get_paths()` for available data paths. Import from `apps.schema.services`; do not implement separate model introspection. Paths include `deal.payment_amount`, `deal.date_entered`, `deal.lease_start_date`, `deal.lease_officer`, `deal.vehicles`, `deal.contacts`, `deal.vehicles.item.sku`, etc. Per DESIGN-DATA-INTERFACE and no-circumvention requirement.
+    - Use `apps.schema.services.get_paths_grouped_for_mapping()` for the Source dropdown, then append an **Images** optgroup from `get_image_sources_for_mapping()` (doctemplates utils), which returns `[(f"image:{img.uuid}", img.name), ...]` from the Image model. The combined list yields optgroups: **Data Source** (root paths like `deal`), **List sources**, **Scalar / item paths**, and **Images**. Import schema paths from `apps.schema.services`; do not introspect models for deal paths. Per DESIGN-DATA-INTERFACE and no-circumvention requirement.
 
 14. **Mapping form**
-    - Layout: **Table** — one row per variable, columns: Variable (read-only), Source (dropdown), Transform (dropdown). For list variables with `item.*` (e.g. `data.jet_pack_list` + `item.sku`, `item.year`), support `item_map`: one row per parsed `item.*` variable, each maps to a Vehicle field dropdown. Store as JSON per DESIGN-DOCS schema.
+    - Above the table: **Template structure** summary — Primary data source, Lists (each with items), Scalar properties, Image variables. Then the mapping table.
+    - Table layout: one row per variable; columns Variable (read-only, with type badge), Source, Transform. For list items, the Variable column shows the parent list (e.g. `item.sku (data.jet_pack_list)`). Badges: "data source", "list", "list item", "image", "scalar" (scalars may have no badge). Image variables map to the Images optgroup; transform is typically not used for images. Store as JSON per DESIGN-DOCS schema.
 
 15. **Save mapping**
-    - On add/edit POST, parse mapping form data, validate. **All parsed variables must be mapped.** Save to `instance.mapping`.
+    - On add/edit POST, parse mapping form data, validate. **All parsed variables must be mapped.** Augment each entry with `var_type` (data_source, list, list_item, image, scalar) from parsing metadata via `augment_mapping_with_var_type()` before saving. Save to `instance.mapping`.
 
 16. **Mapping section on add and edit**
     - On edit: show parsed variables and mapping form (table layout). If no file, hide mapping section or show "Upload a template file to configure mapping."
@@ -227,27 +256,32 @@ Batch 4 complete when mapping can be configured on both add and edit, and "Ident
 
 1. **Shell:**
    ```python
-   from apps.doctemplates.utils import parse_dtl_variables
+   from apps.doctemplates.utils import parse_dtl_variables, parse_dtl_variables_with_metadata
 
    html = "<html>{{ data.payment_amount }}</html>"
    vars = parse_dtl_variables(html)
    assert "data.payment_amount" in vars
 
    html2 = "{% for item in data.jet_pack_list %}{{ item.sku }}{% endfor %}"
-   vars2 = parse_dtl_variables(html2)
+   vars2, list2, list_item2, data_src2, item_to_list2, image_vars2 = parse_dtl_variables_with_metadata(html2)
+   assert "data" in vars2  # inferred root
    assert "data.jet_pack_list" in vars2
    assert "item.sku" in vars2
+   assert "data.jet_pack_list" in list2
+   assert "item.sku" in list_item2
+   assert "data" in data_src2
+   assert item_to_list2.get("item.sku") == "data.jet_pack_list"
    ```
-2. **Edit page:** Edit a template with an HTML file; mapping section shows "Template expects: ..." with parsed variables.
-3. **Parse endpoint:** POST a file to the parse endpoint (e.g. with curl or browser dev tools); response is JSON with `{"variables": [...]}`.
+2. **Edit page:** Edit a template with an HTML file; mapping section shows Template structure (Primary data source, Lists with items, Scalar properties) and mapping table with badges; list items show parent list (e.g. `item.sku (data.jet_pack_list)`).
+3. **Parse endpoint:** POST a file; response is JSON with `variables`, `list_variables`, `list_item_variables`, `data_source_variables`, `list_item_to_list`, `image_variables`.
 
 ### Batch 4 — Mapping UI
 
 **How to test after Batch 4:**
 
-1. **Edit page:** With template that has file and parsed variables, configure mapping for at least one variable (e.g. data.payment_amount → deal.payment_amount). Save.
-2. **Shell:** Reload template; `instance.mapping` contains the saved mapping.
-3. **Data paths:** Verify dropdown or list of data paths (from `get_paths()`) includes deal fields (e.g. deal.payment_amount, deal.vehicles).
+1. **Edit page:** With template that has file and parsed variables, configure mapping (including data source root e.g. `data` → `deal` when applicable). Save.
+2. **Shell:** Reload template; `instance.mapping` contains entries with `source`, optional `transform`, and `var_type` (data_source, list, list_item, image, scalar).
+3. **Data paths:** Verify Source dropdown uses grouped paths (Data Source: deal; List sources: deal.vehicles, deal.contacts; Scalar / item paths: deal.payment_amount, etc.) and an Images optgroup when images exist.
 4. **Transform:** Map a date field with date_day transform; save and verify mapping JSON structure.
 5. **Add page — Identify Fields:** On Add, select an HTML file, click "Identify Fields" (fetch, no page reload); parsed variables appear; configure mapping (all required); submit. Template is created with mapping saved.
 6. **ref_id uniqueness:** Create a Static template with ref_id "X". Attempt to create a Dynamic template with ref_id "X"; expect validation error. (And vice versa.)
@@ -264,6 +298,7 @@ Batch 4 complete when mapping can be configured on both add and edit, and "Ident
 | Add    | `/document-templates/dynamic/add/` |
 | Edit   | `/document-templates/dynamic/<id>/edit/` |
 | Delete | GET confirm, POST delete at `/document-templates/dynamic/<id>/delete/` |
+| Parse  | POST `/document-templates/dynamic/parse/` — accepts file, returns `variables`, `list_variables`, `list_item_variables`, `data_source_variables`, `list_item_to_list`, `image_variables` |
 | Nav    | Sidebar: "Dynamic Templates" → list |
 | Storage| `MEDIA_ROOT/document_templates/dynamic/` |
 
@@ -280,10 +315,13 @@ Batch 4 complete when mapping can be configured on both add and edit, and "Ident
 
 ## 10. Implementation Notes
 
-- **ref_id uniqueness:** Enforce uniqueness across both Static and Dynamic templates. In `DynamicDocumentTemplateForm.clean_ref_id` (and in `StaticDocumentTemplateForm.clean_ref_id` in the Static plan), check that the ref_id does not exist in the other template model.
-- **Mapping UI layout:** Table — one row per variable; columns: Variable, Source, Transform. For list variables, one row per parsed `item.*` variable; each maps to a Vehicle field dropdown (item_map).
-- **List variable item_map:** Supported in v1. Simple UI: one row per parsed `item.*` variable; user selects which Vehicle field each maps to.
-- **Data interface dependency:** Use `apps.schema.services.get_paths()` for mapping source options. Do not introspect models directly. PLAN-DATA-INTERFACE ensures apps.schema is in INSTALLED_APPS and provides paths conforming to the schema (e.g. `deal.lease_start_date`).
+- **ref_id uniqueness:** Enforce uniqueness across both Static and Dynamic templates. Both `DynamicDocumentTemplateForm.clean_ref_id` and `StaticDocumentTemplateForm.clean_ref_id` (PLAN-ADD-STATIC-DOC-TEMPLATES) must check both models. Use shared helpers (e.g. `_ref_id_exists_in_static`, `_ref_id_exists_in_dynamic`) to avoid duplication.
+- **Mapping UI layout:** Above table, show Template structure (Primary data source, Lists with items, Scalar properties, Image variables). Table: one row per variable; Variable column shows name and for list items the parent list (e.g. `item.sku (data.jet_pack_list)`); type badges (data source, list, list item, image, scalar). Use `augment_mapping_with_var_type()` with `image_variables` before save. Use `_build_template_structure_summary()` and `_build_mapping_rows()` with `image_variables`; combine `get_paths_grouped_for_mapping()` with `get_image_sources_for_mapping()` for the Source dropdown optgroups.
+- **Data interface dependency:** Use `apps.schema.services.get_paths_grouped_for_mapping()` for the Source dropdown. This provides paths in optgroups (Data Source, List sources, Scalar / item paths) for clearer mapping UI. Do not introspect models directly. PLAN-DATA-INTERFACE ensures apps.schema is in INSTALLED_APPS and provides paths conforming to the schema (e.g. `deal.lease_start_date`).
+
+- **Migrations:** Batch 1 requires `makemigrations doctemplates` and `migrate`. Without migrations, the list view will raise `OperationalError: no such table`.
+
+- **HTML file validation:** Accept `.html`, `.htm` or content-type `text/html`, `application/xhtml+xml`.
 
 ---
 

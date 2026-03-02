@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Dynamic Document Templates — Vehicle Leasing{% endblock %}
+{% block content_header %}Dynamic Document Templates{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <span class="text-muted">HTML templates with DTL for populated documents</span>
+  <a href="{% url 'doctemplates:dynamic_doctemplate_add' %}" class="btn btn-primary">Add dynamic template</a>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Ref ID</th>
+            <th>Description</th>
+            <th>File</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in template_list %}
+          <tr>
+            <td><code>{{ t.ref_id }}</code></td>
+            <td>{{ t.description }}</td>
+            <td>
+              {% if t.file %}
+              <a href="{{ t.file.url }}" target="_blank" rel="noopener">{{ t.file.name|default:"HTML" }}</a>
+              {% else %}
+              <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'doctemplates:dynamic_doctemplate_edit' t.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+              <a href="{% url 'doctemplates:dynamic_doctemplate_delete_confirm' t.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="text-center text-muted py-4">
+              No dynamic templates yet. Add one to get started.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

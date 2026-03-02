@@ -58,7 +58,9 @@ The hierarchy:
   - **lease_officer** (FK → User, with `lease_officer_profile` for display name, phone, email)
   - **deal_type** (FK → DealType; `name`)
   - **vehicles** (M2M → list of Vehicle: `sku`, `year`, `jpin`)
-  - **contacts** (M2M → list of Contact: `first_name`, `middle_name`, `last_name`, `email`, `phone_number`)
+  - **vehicles_count** (derived: integer count of vehicles; use transform `number_to_word` or `plural_suffix` for "one"/"two" or ""/"s")
+  - **contacts** (M2M → list of Contact: `first_name`, `middle_name`, `last_name`, `full_name` (computed: first + middle + last, space-separated), `email`, `phone_number`)
+  - **contacts_count** (derived: integer count of contacts; use transform `number_to_word` or `plural_suffix` for display variants)
 
 ### Schema Structure (JSON-Serializable)
 
@@ -108,7 +110,7 @@ The schema is a tree of nodes. Each node describes a path, its type, and (for co
 }
 ```
 
-For list variables in templates (`{% for item in data.jet_pack_list %}`), the mapping specifies `deal.vehicles` as the source and `item` as the loop variable; the schema exposes `deal.vehicles.item.sku`, etc., as the per-item paths.
+For list variables in templates (`{% for item in data.jet_pack_list %}`), the mapping specifies `deal.vehicles` as the source. When template item field names (e.g. `item.sku`) match schema field names (`sku`), the list is used as-is; `item_map` is optional and only needed when renaming or selecting fields.
 
 **Root schema response** (example shape):
 
@@ -132,7 +134,8 @@ The schema is provided by a dedicated module or service in a new app **`apps.sch
 | Operation | Input | Output | Future API |
 |-----------|-------|--------|------------|
 | `get_schema()` | — | Full schema (tree or flat nodes); JSON-serializable | `GET /api/schema` |
-| `get_paths()` | — | Flat list of mappable path strings (e.g. `deal.payment_amount`, `deal.vehicles.item.sku`) | Derivable from `get_schema()` or `GET /api/schema/paths` |
+| `get_paths()` | — | Flat list of mappable path strings (leaf paths, list paths, and root `deal`) | Derivable from `get_schema()` or `GET /api/schema/paths` |
+| `get_paths_grouped_for_mapping()` | — | Deal paths grouped for mapping UI: Data Source (e.g. `deal`), List sources (e.g. `deal.vehicles`, `deal.contacts`), Scalar / item paths. Returns `[(group_label, [(path, display_label), ...]), ...]`. The mapping UI (per DESIGN-DOCS) appends an Images optgroup from the Image model for image variables. | — |
 
 **Data retrieval** for a specific deal is handled by the **Deal Data Retrieval** interface (Section 2). The context builder calls `get_deal_data(deal)` to obtain the full deal-centric structure, then applies the mapping and transforms. The schema defines valid paths; the retrieval interface returns values for those paths.
 
@@ -144,8 +147,9 @@ A dedicated page in the app displays the internal data structure. It calls `get_
 
 - **Discovery:** Use `Model._meta.get_fields()` and related APIs to build the schema from Deal, Vehicle, Contact, User, LeaseOfficerProfile. Follow FKs and M2Ms; limit depth to avoid infinite recursion (e.g. stop at one level of relation from Deal).
 - **Deal as root:** All paths start with `deal.`. The root node `deal` represents the Deal instance.
-- **List items:** For `deal.vehicles` and `deal.contacts`, the schema exposes per-item paths using the conventional loop variable `item` (e.g. `deal.vehicles.item.sku`). The mapping config uses `item_map` to map template variables like `item.sku` to these paths.
-- **User / LeaseOfficerProfile:** `deal.lease_officer` points to User; `lease_officer_profile` (reverse OneToOne) provides `first_name`, `last_name`, `phone_number`, `email`, `full_name`. Expose these as `deal.lease_officer.lease_officer_profile.*`.
+- **List items:** For `deal.vehicles` and `deal.contacts`, the schema exposes per-item paths (e.g. `deal.vehicles.item.sku`, `deal.contacts.item.full_name`). When template loop variable names match schema field names (e.g. `item.sku` → `sku`), the list can be used as-is; `item_map` is optional and only needed for renaming or field selection. For contacts, `full_name` is a derived field computed in `get_deal_data()`; it is not introspected from the Contact model.
+- **Derived scalars (vehicles_count, contacts_count):** Integer counts computed in `get_deal_data()` from the respective list lengths. Formatting (number-to-word, plural suffix) is the mapping layer's responsibility via transforms.
+- **User / LeaseOfficerProfile:** `deal.lease_officer` points to User; `lease_officer_profile` (reverse OneToOne) provides `first_name`, `last_name`, `phone_number`, `email`, `full_name`. Expose these as `deal.lease_officer.lease_officer_profile.*`. The profile may not exist; handle `DoesNotExist` or use `getattr(user, 'lease_officer_profile', None)`.
 
 ---
 
@@ -165,7 +169,7 @@ The interface is **internal** today. It is designed to be **API-ready**: input a
 
 | Operation | Input | Output | Future API |
 |-----------|-------|--------|------------|
-| `get_deal_data(deal)` | `Deal` instance (or `deal_id`; implementation fetches) | Nested dict conforming to schema; JSON-serializable | `GET /api/deals/<id>/data` |
+| `get_deal_data(deal)` | `Deal` instance only; the view fetches the deal before calling | Nested dict conforming to schema; JSON-serializable | `GET /api/deals/<id>/data` |
 
 ### Output Structure
 
@@ -200,8 +204,10 @@ The output is a nested dict with `deal` at the root. The structure mirrors the s
     "vehicles": [
       { "sku": "Skyward Personal Jetpack P-2024", "year": "2024", "jpin": "4CH8P4K7E3X6Z9R2V" }
     ],
+    "vehicles_count": 1,
+    "contacts_count": 1,
     "contacts": [
-      { "first_name": "Max", "middle_name": "", "last_name": "Danger", "email": "...", "phone_number": "..." }
+      { "first_name": "Max", "middle_name": "", "last_name": "Danger", "full_name": "Max Danger", "email": "...", "phone_number": "..." }
     ]
   }
 }
@@ -210,7 +216,8 @@ The output is a nested dict with `deal` at the root. The structure mirrors the s
 - **Scalars:** Direct values; dates as `"YYYY-MM-DD"`; decimals as numbers.
 - **lease_officer:** Expanded object with `username` and `lease_officer_profile` (first_name, last_name, phone_number, email, full_name).
 - **deal_type:** Expanded object with `name`.
-- **vehicles, contacts:** Lists of objects; each object has the fields from the schema (`deal.vehicles.item.*`, `deal.contacts.item.*`). Order: `deal.vehicles.order_by('id')` and `deal.contacts.order_by('id')` (Django M2M has no intrinsic order; id order is stable and sufficient for v1).
+- **vehicles, contacts:** Lists of objects; each object has the fields from the schema (`deal.vehicles.item.*`, `deal.contacts.item.*`). For contacts, `full_name` is computed from `first_name`, `middle_name`, and `last_name` (space-separated, empty parts omitted). Order: `deal.vehicles.order_by('id')` and `deal.contacts.order_by('id')` (Django M2M has no intrinsic order; id order is stable and sufficient for v1).
+- **vehicles_count, contacts_count:** Derived scalars (integer count of the respective list). Formatting (e.g. "one", ""/"s") is handled by transforms (`number_to_word`, `plural_suffix`) in the mapping layer, not in the data interface.
 
 ### Relationship to Context Builder
 
@@ -226,7 +233,7 @@ The context builder **must not** traverse Django models or QuerySets directly; i
 - **Single source:** `get_deal_data()` is the canonical way to retrieve deal data for document population. All consumers use it; no ad-hoc ORM traversal elsewhere.
 - **Schema conformance:** The output structure must match the schema. When the schema is updated (e.g. new fields), `get_deal_data()` must be updated to include them. Both schema and retrieval derive from the same models, so changes flow through both.
 - **Null handling:** If `lease_officer` or `lease_officer_profile` is missing, return `null` (explicit null). Same for empty `vehicles` or `contacts` (empty list `[]`).
-- **API readiness:** The function can accept `deal_id: int` and fetch the deal internally, so a future view would call `get_deal_data(deal_id=request.resolver_match.kwargs['pk'])` and return `JsonResponse(result)`.
+- **API readiness:** The function accepts a `Deal` instance; the view fetches the deal before calling. A future API view would fetch the deal (e.g. `get_object_or_404(Deal, pk=pk)`) and pass it to `get_deal_data(deal)`.
 - **Debug Data page:** A separate "Debug Data" menu item (sidebar) leads to a page that lists all deals in a table. Each row shows key deal info (e.g. date entered, lease officer) and has a "View JSON" button that opens a modal displaying `get_deal_data(deal)` as formatted JSON. The modal includes a **Copy** button (clipboard) and can be easily closed. Keeps debug functionality separate from the main deal workflow. Placement: e.g. after Document Templates or near Admin, or in a "Developer" section if one exists. `@login_required`.
 
 ---
@@ -245,6 +252,14 @@ The Deal Data Retrieval interface (`get_deal_data(deal)`) returns the full data 
 
 Schema discovery, `get_schema()`, `get_paths()`, and `get_deal_data()` live in a new app **`apps.schema`**. Keeps concerns separate from Deals, Document Templates, etc.
 
+### Schema structure: tree representation
+
+The chosen representation for `get_schema()` is the **tree structure**: `{ "root": "deal", "description": "...", "version": "1", "nodes": [ ... ] }` with nested `children`. The schema viewer renders this as a collapsible tree.
+
+### get_deal_data input: Deal instance only
+
+`get_deal_data(deal)` accepts a `Deal` instance only. The view fetches the deal before calling; the function does not accept `deal_id`. This keeps fetching at the view layer and the function focused on transformation.
+
 ### Debug Data page
 
 A separate **"Debug Data"** menu item (sidebar) leads to a page that lists all deals in a table. Each row shows key deal info (e.g. date entered, lease officer) and has a **"View JSON"** button. Clicking it opens a **modal** that fetches and displays `get_deal_data(deal)` as formatted JSON. The modal includes a **Copy** button (clipboard) and can be easily closed. This keeps debug functionality out of the main user workflow (deal list, deal detail, edit, documents). Same data the context builder uses; useful for debugging and verifying what data is available for document generation. `@login_required`. Placement: e.g. after Document Templates or near Admin, or in a "Developer" section if one exists.
@@ -255,7 +270,7 @@ For `get_deal_data()` output, vehicles and contacts are ordered by `id` (`order_
 
 ### Single source of truth; no circumvention
 
-This interface is the canonical source for schema and deal data. Document features (mapping UI, context builder) must use `get_paths()` and `get_deal_data()` only. DESIGN-DOCS.md mandates that they must not traverse Django models or QuerySets directly.
+This interface is the canonical source for schema and deal data. Document features must use `get_paths_grouped_for_mapping()` for deal paths in the Source dropdown and `get_deal_data()` for deal data. They must not traverse Django models or QuerySets for deal paths. Image variables are mapped via a separate Images optgroup (from the Image model) per DESIGN-DOCS.md.
 
 ---
 

@@ -25,7 +25,8 @@ This document outlines how to add the **Internal Data Schema** and **Deal Data R
 - **Implementation:** Create `apps.schema.services` with functions `get_schema()` and `get_paths()`.
 - **Discovery:** Use `Model._meta.get_fields()` to introspect Deal, Vehicle, Contact, User, LeaseOfficerProfile. Follow FKs and M2Ms; limit depth (one level of relation from Deal). Deal is root; paths start with `deal.`.
 - **Output:** Schema is a tree: `{ "root": "deal", "description": "...", "version": "1", "nodes": [...] }`. Each node: `path`, `type` (string, date, decimal, integer, object, list), optional `model`, optional `description` (from field `verbose_name`), optional `children`, optional `item_path` for lists.
-- **get_paths():** Derive from schema—return flat list of path strings (e.g. `deal.payment_amount`, `deal.vehicles.item.sku`).
+- **get_paths():** Derive from schema—return flat list of mappable path strings including leaf paths, list paths (`deal.vehicles`, `deal.contacts`), and root `deal`. Include `deal.payment_amount`, `deal.vehicles.item.sku`, `deal.vehicles_count`, `deal.contacts.item.full_name`, `deal.contacts_count`, etc. Derived paths (`full_name`, `vehicles_count`, `contacts_count`) are explicit schema entries, not from model introspection.
+- **get_paths_grouped_for_mapping():** Return paths grouped for the mapping UI Source dropdown: Data Source (`deal`), List sources (with descriptive labels), Scalar / item paths. Enables future expansion (e.g. additional root data sources).
 - **Node types:** Map Django field types to schema types (DateField→date, DecimalField→decimal, CharField/TextField→string, ForeignKey/M2M→object/list).
 
 ---
@@ -34,7 +35,7 @@ This document outlines how to add the **Internal Data Schema** and **Deal Data R
 
 - **Implementation:** Add `get_deal_data(deal)` to `apps.schema.services`.
 - **Input:** `Deal` instance only. The view fetches the deal before calling; the function does not accept `deal_id`.
-- **Output:** Nested dict with `deal` at root. Structure: scalars (dates as `"YYYY-MM-DD"`, decimals as numbers), `lease_officer` (username + `lease_officer_profile`: first_name, last_name, phone_number, email, full_name), `deal_type` (name), `vehicles` (list of {sku, year, jpin}), `contacts` (list of {first_name, middle_name, last_name, email, phone_number}).
+- **Output:** Nested dict with `deal` at root. Structure: scalars (dates as `"YYYY-MM-DD"`, decimals as numbers), `lease_officer` (username + `lease_officer_profile`: first_name, last_name, phone_number, email, full_name), `deal_type` (name), `vehicles` (list of {sku, year, jpin}), `vehicles_count`, `contacts` (list of {first_name, middle_name, last_name, full_name, email, phone_number}), `contacts_count`. Contact `full_name` is computed from first + middle + last (space-separated). `vehicles_count` and `contacts_count` are integer counts derived from list lengths; use transforms (`number_to_word`, `plural_suffix`) in mapping for display variants.
 - **Ordering:** `deal.vehicles.order_by('id')`, `deal.contacts.order_by('id')`.
 - **Null handling:** If `lease_officer` or `lease_officer_profile` missing, use `null` (explicit null). Empty vehicles/contacts → `[]`.
 
@@ -45,7 +46,7 @@ This document outlines how to add the **Internal Data Schema** and **Deal Data R
 ### 4.1 Schema viewer page
 
 - **URL:** `/schema/` (name `schema_view`).
-- **Content:** Call `get_schema()`, render the tree as a nested, collapsible UL (path, type, model, description).
+- **Content:** Call `get_schema()`, render the tree as a nested, collapsible structure (path, type, model, description).
 - **Header:** "Data schema".
 - **Layout:** Extends `base.html`. Sidebar link "Data schema" → `/schema/`.
 
@@ -53,7 +54,7 @@ This document outlines how to add the **Internal Data Schema** and **Deal Data R
 
 - **URL:** `/schema/debug/` (name `debug_data_list`).
 - **Content:** Table of all deals (columns: Date entered, Lease officer, Deal type, Lease start, Lease end, Payment, Actions). Each row has "View JSON" button.
-- **View JSON:** Click opens a modal. Modal fetches JSON from `/schema/deal/<pk>/data/`; displays formatted JSON; has "Copy" button that copies to clipboard and shows "Copied!" feedback; modal can be closed (X or outside click).
+- **View JSON:** Click opens a modal. Set each button's `data-json-url` via `{% url 'schema:deal_data_json' deal.pk %}` so the correct URL is passed to JavaScript. Modal fetches that URL, displays formatted JSON in `<pre>`; has "Copy" button that copies to clipboard and shows "Copied!" feedback (hide after ~2 s); modal can be closed (X or outside click).
 - **Empty state:** "No deals yet." if no deals.
 - **Layout:** Extends `base.html`. Sidebar link "Debug Data" → `/schema/debug/`.
 
@@ -67,7 +68,7 @@ This document outlines how to add the **Internal Data Schema** and **Deal Data R
 ## 5. Navigation and Integration
 
 - **Sidebar:** Add "Data schema" and "Debug Data" links (e.g. after Images, before Admin). Use URL-level active state: `request.resolver_match.url_name == 'schema_view'` for Data schema, `url_name == 'debug_data_list'` for Debug Data (only the current page shows active).
-- **Config:** `path("schema/", include("apps.schema.urls"))`. Add `"apps.schema"` to `INSTALLED_APPS` (after `apps.deals` so Deal is available).
+- **Config:** Add `"apps.schema"` to `INSTALLED_APPS` (insert immediately after `apps.deals`). In `config/urls.py`, add `path("schema/", include("apps.schema.urls"))` after the deals path and before the images path.
 - **Jazzmin:** Out of scope for this phase; skip custom links.
 
 ---
@@ -75,9 +76,9 @@ This document outlines how to add the **Internal Data Schema** and **Deal Data R
 ## 6. Implementation Notes
 
 - **Field names:** Use `deal.lease_start_date`, `deal.lease_end_date` (not `lease_start`). Match the actual Deal model.
-- **LeaseOfficerProfile:** Access via `user.lease_officer_profile`; may not exist. Include `full_name` from the profile property.
+- **LeaseOfficerProfile:** Access via `user.lease_officer_profile`; may not exist (handle `DoesNotExist` or use `getattr(user, 'lease_officer_profile', None)`). Include `full_name` from the profile property.
 - **Decimal serialization:** Use `float()` or ensure JSON encoder handles Decimal (Django's `JsonResponse` handles it).
-- **Copy button:** Use `navigator.clipboard.writeText()` with the JSON string. Show "Copied!" feedback (e.g. brief text change) after successful copy.
+- **Copy button:** Use `navigator.clipboard.writeText()` with the JSON string. Show "Copied!" feedback after successful copy; hide it after ~2 seconds to return to neutral state.
 
 ---
 
@@ -100,8 +101,8 @@ This document outlines how to add the **Internal Data Schema** and **Deal Data R
    - Ensure output is JSON-serializable (dates as strings, decimals as numbers).
 
 4. **URL routing**
-   - In `config/urls.py`: `path("schema/", include("apps.schema.urls"))`.
-   - In `apps/schema/urls.py`: `app_name = "schema"`; stub routes for schema viewer and debug page (or minimal placeholder views) so `/schema/` does not 404.
+   - In `config/urls.py`: add `path("schema/", include("apps.schema.urls"))` after deals, before images.
+   - In `apps/schema/urls.py`: `app_name = "schema"`; create minimal placeholder views that return a simple `HttpResponse` for schema viewer and debug page so `/schema/` and `/schema/debug/` do not 404. These will be replaced in Batches 2 and 3.
 
 Batch 1 complete when `get_schema()`, `get_paths()`, and `get_deal_data(deal)` work and can be tested in shell; `/schema/` loads.
 
@@ -111,7 +112,7 @@ Batch 1 complete when `get_schema()`, `get_paths()`, and `get_deal_data(deal)` w
    - View `schema_view`: call `get_schema()`, pass to template. `@login_required`.
 
 6. **Schema viewer template**
-   - `templates/schema/schema_view.html` — extends `base.html`; render schema as nested, collapsible UL (path, type, model, description).
+   - `templates/schema/schema_view.html` — extends `base.html`; render schema as nested, collapsible structure (path, type, model, description). Use a recursive template include (e.g. `_schema_node.html`) so nested nodes render correctly. Ensure unique HTML IDs for each collapsible section (e.g. slugify the node path) for Bootstrap collapse.
 
 7. **URL and sidebar**
    - URL: `""` → schema_view (at `/schema/`).
@@ -129,7 +130,7 @@ Batch 2 complete when Schema viewer page displays the schema.
    - View `debug_data_list`: list all deals `order_by('-date_entered')`; pass to template. `@login_required`.
 
 10. **Debug Data template**
-    - `templates/schema/debug_data_list.html` — table (Date entered, Lease officer, Deal type, Lease start, Lease end, Payment, Actions). Actions: "View JSON" button per row. Include Bootstrap modal; modal body shows `<pre>` with JSON; "Copy" button that copies and shows "Copied!" feedback; fetch JSON from `/schema/deal/<pk>/data/` when "View JSON" clicked. Use JavaScript for fetch and Copy.
+    - `templates/schema/debug_data_list.html` — table (Date entered, Lease officer, Deal type, Lease start, Lease end, Payment, Actions). Actions: "View JSON" button per row with `data-json-url="{% url 'schema:deal_data_json' deal.pk %}"`. Include Bootstrap modal; modal body shows `<pre>` with JSON; "Copy" button that copies and shows "Copied!" feedback (hide after ~2 s). JavaScript: on "View JSON" click, fetch `data-json-url`, display formatted JSON in modal.
 
 11. **URLs**
     - `debug/` → debug_data_list
@@ -237,7 +238,6 @@ Batch 3 complete when all of the above pass.
 - Context builder or mapping UI (PLAN-ADD-DYNAMIC-DOC-TEMPLATES).
 - Document generation (PLAN-ADD-DOCUMENT-SETS).
 - Pagination on Debug Data deal list.
-- Computed or derived schema paths beyond model introspection.
 
 ---
 

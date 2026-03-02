@@ -165,7 +165,7 @@ Batch 2 complete when Generate works for Static-only Document Set Templates.
    - Add `pdfkit` to `requirements.txt` (e.g. `pdfkit>=1.0`). Run `pip install pdfkit`. Assumes `wkhtmltopdf` is already installed on the system.
 
 9. **Context builder**
-   - `build_document_context(deal, mapping)` — call `get_deal_data(deal)` from `apps.schema.services` to obtain deal data; resolve sources from that dict, apply transforms. Handle `deal.vehicles`, `deal.contacts`, `item_map` for list variables. Do not traverse models directly. See DESIGN-DOCS mapping types and DESIGN-DATA-INTERFACE.
+   - `build_document_context(deal, mapping)` — call `get_deal_data(deal)` from `apps.schema.services` to obtain deal data; resolve sources from that dict, apply transforms via `apply_transform()`. For list variables, pass list through; `item_map` optional when names match. Do not traverse models directly. See DESIGN-DOCS mapping types and DESIGN-DATA-INTERFACE.
 
 10. **Dynamic render and HTML-to-PDF**
     - Read Dynamic template HTML; build context; render with `Template().render(Context())`; convert to PDF with pdfkit. Store PDF in `DocumentInstanceVersion.file`. Ensure image URLs are absolute for wkhtmltopdf.
@@ -280,8 +280,8 @@ Batch 4 complete when full UI works and PDFs view/download correctly.
 ## 11. Implementation Notes
 
 - **pdfkit:** Add `pdfkit` to `requirements.txt` (step 8). Assumes `wkhtmltopdf` is installed on the system. Use `pdfkit.from_string(html, False, options={'base': base_url})` with `base_url = request.build_absolute_uri('/')` so relative URLs in the HTML resolve. Add optional `SITE_URL` in settings for future use when generation runs without a request.
-- **Context builder:** Call `get_deal_data(deal)` from `apps.schema.services` to obtain deal data—do not traverse models directly. Work from the returned dict; mapping keys use dot notation (e.g. `data.payment_amount`). Build nested context: `{"data": {"payment_amount": value}}`. For list variables, use the `vehicles` and `contacts` lists from `get_deal_data()` output (already ordered by id). For "first contact" or "first vehicle", use index 0 of the list: `deal_data["deal"]["contacts"][0]`, `deal_data["deal"]["vehicles"][0]`.
-- **Transforms (v1):** `number_to_word`: support 0–99; return "zero"–"ninety-nine"; outside range fallback to str(n). `plural_suffix`: "" if count==1 else "s". `concat`: join with single space by default; no configurable delimiter in v1. Other transforms per DESIGN-DOCS (date_day, date_month, date_year, count).
+- **Context builder:** Call `get_deal_data(deal)` from `apps.schema.services` to obtain deal data—do not traverse models directly. Work from the returned dict; mapping keys use dot notation (e.g. `data.payment_amount`). Build nested context: `{"data": {"payment_amount": value}}`. For list variables (e.g. `data.jet_pack_list` → `deal.vehicles`), pass list through; when template item field names match schema, no `item_map` needed. For "first contact" or "first vehicle", use index 0: `deal_data["deal"]["contacts"][0]`, `deal_data["deal"]["vehicles"][0]`.
+- **Transforms (v1):** Use `apps.doctemplates.utils.apply_transform(value, transform_name)` for date transforms and others. Implemented: `date_day`, `date_month`, `date_year`, `date_month_day` (outputs "September 1" from ISO date), `number_to_word` (0–99), `plural_suffix` ("" if count==1 else "s"), `concat` (join with single space), `count`. Other transforms per DESIGN-DOCS.
 - **Atomicity:** Use `with transaction.atomic():` around entire Generate/Regenerate flow. On exception, rollback and re-raise or return error to user.
 - **Logging:** Log each step (template lookup, context build, render, PDF conversion, file save) with deal id, template ref_id. On error, log exception with context.
 
@@ -293,7 +293,7 @@ Batch 4 complete when full UI works and PDFs view/download correctly.
 |---|-------|-------|
 | 1 | **Deal detail vs Edit** | **Decided and implemented in PLAN-ADD-DEALS:** deal_detail view, View primary from list, Edit and Delete on detail. This plan extends the detail page with Documents. See Section 3. |
 | 2 | **Image URLs for wkhtmltopdf** | **Decided:** Pass `request` to generation; use `request.build_absolute_uri('/')` as base for pdfkit. Add optional `SITE_URL` in settings as fallback. See Section 6 and Implementation Notes. |
-| 3 | **Transform implementations** | **Decided:** `number_to_word` 0–99, fallback to str outside range; `plural_suffix` "" if count==1 else "s"; `concat` join with single space. See Implementation Notes. |
+| 3 | **Transform implementations** | **Decided:** Use `apps.doctemplates.utils.apply_transform()`. Date transforms (date_day, date_month, date_year, date_month_day) handle ISO strings; `date_month_day` outputs "September 1". `number_to_word` 0–99; `plural_suffix` "" if count==1 else "s"; `concat` join with single space. See Implementation Notes. |
 | 4 | **First contact / first vehicle** | **Decided:** Resolve from `get_deal_data(deal)` output: `deal_data["deal"]["contacts"][0]`, `deal_data["deal"]["vehicles"][0]`. Vehicles and contacts are ordered by id in `get_deal_data()` per DESIGN-DATA-INTERFACE. See Implementation Notes. |
 | 5 | **Document Set Template missing** | **Decided:** If Deal's Deal Type has no Document Set Template, disable Generate and show "No document set template configured for this deal type." See Section 4 and Batch 2. |
 

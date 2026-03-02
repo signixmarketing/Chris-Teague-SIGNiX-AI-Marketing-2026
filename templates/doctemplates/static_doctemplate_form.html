@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Edit static template{% else %}Add static template{% endif %} — Vehicle Leasing{% endblock %}
+{% block content_header %}{% if is_edit %}Edit static template{% else %}Add static template{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data" id="static-template-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger w-100 mb-3" role="alert">
+        {% for error in form.non_field_errors %}<span class="d-block">{{ error }}</span>{% endfor %}
+      </div>
+      {% endif %}
+      {% if formset.non_form_errors %}
+      <div class="alert alert-danger w-100 mb-3" role="alert">
+        {% for error in formset.non_form_errors %}<span class="d-block">{{ error }}</span>{% endfor %}
+      </div>
+      {% endif %}
+
+      <h6 class="mb-2">Metadata</h6>
+      <div class="row g-2 mb-3">
+        <div class="col-md-6">
+          <label for="id_ref_id" class="form-label">Ref ID</label>
+          <input type="text" name="ref_id" id="id_ref_id" class="form-control {% if form.ref_id.errors %}is-invalid{% endif %}" value="{{ form.ref_id.value|default:'' }}" maxlength="100" required>
+          {% if form.ref_id.errors %}<div class="invalid-feedback d-block">{{ form.ref_id.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-6">
+          <label for="id_description" class="form-label">Description</label>
+          <input type="text" name="description" id="id_description" class="form-control {% if form.description.errors %}is-invalid{% endif %}" value="{{ form.description.value|default:'' }}" maxlength="200" required>
+          {% if form.description.errors %}<div class="invalid-feedback d-block">{{ form.description.errors }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label for="id_file" class="form-label">PDF file {% if is_edit and template_obj.file %}<span class="text-muted">(optional — leave blank to keep current)</span>{% endif %}</label>
+        {% if is_edit and template_obj.file %}
+        <p class="text-muted small mb-1">Current: <a href="{{ template_obj.file.url }}" target="_blank" rel="noopener">{{ template_obj.file.name }}</a></p>
+        {% endif %}
+        <input type="file" name="file" id="id_file" class="form-control {% if form.file.errors %}is-invalid{% endif %}" accept=".pdf,application/pdf" {% if not is_edit %}required{% endif %}>
+        {% if form.file.errors %}<div class="invalid-feedback d-block">{{ form.file.errors }}</div>{% endif %}
+      </div>
+
+      <h6 class="mb-2">Form field configuration</h6>
+      <p class="text-muted small mb-2">Define PDF form fields for signatures, dates, or text. Leave a row fully empty to ignore it.</p>
+
+      {{ formset.management_form }}
+      <div id="tagging-formset">
+        {% for f in formset %}
+        <div class="tagging-row card mb-2">
+          <div class="card-body py-2">
+            <div class="row g-2 align-items-start">
+              <div class="col-md-3">
+                <label class="form-label small">Tag name</label>
+                <input type="text" name="{{ f.tag_name.html_name }}" class="form-control form-control-sm {% if f.tag_name.errors %}is-invalid{% endif %}" value="{{ f.tag_name.value|default:'' }}" maxlength="100" placeholder="PDF field name">
+                {% if f.tag_name.errors %}<div class="invalid-feedback d-block">{{ f.tag_name.errors }}</div>{% endif %}
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small">Field type</label>
+                <select name="{{ f.field_type.html_name }}" class="form-select form-select-sm {% if f.field_type.errors %}is-invalid{% endif %}">
+                  {% for val, label in f.field_type.field.choices %}
+                  <option value="{{ val }}" {% if f.field_type.value == val %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                {% if f.field_type.errors %}<div class="invalid-feedback d-block">{{ f.field_type.errors }}</div>{% endif %}
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small">Signer</label>
+                <select name="{{ f.member_info_number.html_name }}" class="form-select form-select-sm {% if f.member_info_number.errors %}is-invalid{% endif %}">
+                  {% for val, label in f.member_info_number.field.choices %}
+                  <option value="{{ val }}" {% if f.member_info_number.value|stringformat:"s" == val|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                {% if f.member_info_number.errors %}<div class="invalid-feedback d-block">{{ f.member_info_number.errors }}</div>{% endif %}
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small">Date signed field</label>
+                <input type="text" name="{{ f.date_signed_field_name.html_name }}" class="form-control form-control-sm {% if f.date_signed_field_name.errors %}is-invalid{% endif %}" value="{{ f.date_signed_field_name.value|default:'' }}" maxlength="100" placeholder="For signature type">
+                {% if f.date_signed_field_name.errors %}<div class="invalid-feedback d-block">{{ f.date_signed_field_name.errors }}</div>{% endif %}
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small">Date format</label>
+                <input type="text" name="{{ f.date_signed_format.html_name }}" class="form-control form-control-sm {% if f.date_signed_format.errors %}is-invalid{% endif %}" value="{{ f.date_signed_format.value|default:'' }}" maxlength="20" placeholder="e.g. MM/dd/yy">
+                {% if f.date_signed_format.errors %}<div class="invalid-feedback d-block">{{ f.date_signed_format.errors }}</div>{% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="add-tagging-row">Add another field</button>
+
+      <div class="mt-3">
+        <button type="submit" class="btn btn-primary">{% if is_edit %}Save{% else %}Add template{% endif %}</button>
+        <a href="{% url 'doctemplates:static_doctemplate_list' %}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function() {
+  const formset = document.getElementById('tagging-formset');
+  const addBtn = document.getElementById('add-tagging-row');
+  const management = document.querySelector('input[name="{{ formset.prefix }}-TOTAL_FORMS"]');
+  if (!formset || !addBtn || !management) return;
+
+  addBtn.addEventListener('click', function() {
+    const rows = formset.querySelectorAll('.tagging-row');
+    const lastRow = rows[rows.length - 1];
+    if (!lastRow) return;
+    const clone = lastRow.cloneNode(true);
+    const nextIdx = parseInt(management.value, 10);
+    clone.querySelectorAll('input, select').forEach(function(el) {
+      if (el.name) {
+        el.name = el.name.replace(/\d+/, nextIdx);
+        el.id = (el.id || '').replace(/\d+/, nextIdx);
+        if (el.type !== 'hidden') el.value = '';
+      }
+    });
+    formset.appendChild(clone);
+    management.value = nextIdx + 1;
+  });
+})();
+</script>
+{% endblock %}

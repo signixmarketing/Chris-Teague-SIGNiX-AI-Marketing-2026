@@ -101,8 +101,28 @@
           </a>
         </li>
         <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name|default:''|slice:':7' == 'static_' %}active{% endif %}" href="{% url 'doctemplates:static_doctemplate_list' %}">
+            <i class="bi bi-file-pdf"></i>Static Templates
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name|default:''|slice:':8' == 'dynamic_' %}active{% endif %}" href="{% url 'doctemplates:dynamic_doctemplate_list' %}">
+            <i class="bi bi-file-code"></i>Dynamic Templates
+          </a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link {% if request.resolver_match.app_name == 'images' %}active{% endif %}" href="{% url 'images:image_list' %}">
             <i class="bi bi-image"></i>Images
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name == 'schema_view' %}active{% endif %}" href="{% url 'schema:schema_view' %}">
+            <i class="bi bi-diagram-3"></i>Data schema
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name == 'debug_data_list' %}active{% endif %}" href="{% url 'schema:debug_data_list' %}">
+            <i class="bi bi-bug"></i>Debug Data
           </a>
         </li>
         <li class="nav-item">

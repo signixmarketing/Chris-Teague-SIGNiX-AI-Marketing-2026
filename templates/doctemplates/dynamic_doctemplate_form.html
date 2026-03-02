@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Edit dynamic template{% else %}Add dynamic template{% endif %} — Vehicle Leasing{% endblock %}
+{% block content_header %}{% if is_edit %}Edit dynamic template{% else %}Add dynamic template{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data" id="dynamic-template-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger w-100 mb-3" role="alert">
+        {% for error in form.non_field_errors %}<span class="d-block">{{ error }}</span>{% endfor %}
+      </div>
+      {% endif %}
+      {% if formset.non_form_errors %}
+      <div class="alert alert-danger w-100 mb-3" role="alert">
+        {% for error in formset.non_form_errors %}<span class="d-block">{{ error }}</span>{% endfor %}
+      </div>
+      {% endif %}
+
+      <h6 class="mb-2">Metadata</h6>
+      <div class="row g-2 mb-3">
+        <div class="col-md-6">
+          <label for="id_ref_id" class="form-label">Ref ID</label>
+          <input type="text" name="ref_id" id="id_ref_id" class="form-control {% if form.ref_id.errors %}is-invalid{% endif %}" value="{{ form.ref_id.value|default:'' }}" maxlength="100" required>
+          {% if form.ref_id.errors %}<div class="invalid-feedback d-block">{{ form.ref_id.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-6">
+          <label for="id_description" class="form-label">Description</label>
+          <input type="text" name="description" id="id_description" class="form-control {% if form.description.errors %}is-invalid{% endif %}" value="{{ form.description.value|default:'' }}" maxlength="200" required>
+          {% if form.description.errors %}<div class="invalid-feedback d-block">{{ form.description.errors }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label for="id_file" class="form-label">HTML file {% if is_edit and template_obj.file %}<span class="text-muted">(optional — leave blank to keep current)</span>{% endif %}</label>
+        {% if is_edit and template_obj.file %}
+        <p class="text-muted small mb-1">Current: <a href="{{ template_obj.file.url }}" target="_blank" rel="noopener">{{ template_obj.file.name }}</a></p>
+        {% endif %}
+        <input type="file" name="file" id="id_file" class="form-control {% if form.file.errors %}is-invalid{% endif %}" accept=".html,.htm,text/html" {% if not is_edit %}required{% endif %}>
+        {% if form.file.errors %}<div class="invalid-feedback d-block">{{ form.file.errors }}</div>{% endif %}
+      </div>
+
+      <h6 class="mb-2">Text tagging (signature and date fields)</h6>
+      <p class="text-muted small mb-2">Define SIGNiX text-tagging fields: anchor text and bounding box. For signature: also signer and date_signed field. Leave a row fully empty to ignore it.</p>
+
+      {{ formset.management_form }}
+      <div id="dynamic-tagging-formset">
+        {% for f in formset %}
+        <div class="tagging-row card mb-2">
+          <div class="card-body py-2">
+            <div class="row g-2 align-items-start">
+              <div class="col-md-2">
+                <label class="form-label small">Tag name</label>
+                <input type="text" name="{{ f.tag_name.html_name }}" class="form-control form-control-sm" value="{{ f.tag_name.value|default:'' }}" maxlength="100" placeholder="e.g. LesseeDate">
+                {% if f.tag_name.errors %}<div class="invalid-feedback d-block">{{ f.tag_name.errors }}</div>{% endif %}
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small">Field type</label>
+                <select name="{{ f.field_type.html_name }}" class="form-select form-select-sm">
+                  {% for val, label in f.field_type.field.choices %}
+                  <option value="{{ val }}" {% if f.field_type.value == val %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-1">
+                <label class="form-label small">Required</label>
+                <select name="{{ f.is_required.html_name }}" class="form-select form-select-sm">
+                  {% for val, label in f.is_required.field.choices %}
+                  <option value="{{ val }}" {% if f.is_required.value == val %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small">Anchor text</label>
+                <input type="text" name="{{ f.anchor_text.html_name }}" class="form-control form-control-sm" value="{{ f.anchor_text.value|default:'' }}" maxlength="200" placeholder="e.g. Date:">
+                {% if f.anchor_text.errors %}<div class="invalid-feedback d-block">{{ f.anchor_text.errors }}</div>{% endif %}
+              </div>
+              <div class="col-md-1">
+                <label class="form-label small">X</label>
+                <input type="number" name="{{ f.x_offset.html_name }}" class="form-control form-control-sm" value="{{ f.x_offset.value|default:0 }}" min="0">
+              </div>
+              <div class="col-md-1">
+                <label class="form-label small">Y</label>
+                <input type="number" name="{{ f.y_offset.html_name }}" class="form-control form-control-sm" value="{{ f.y_offset.value|default:0 }}" min="0">
+              </div>
+              <div class="col-md-1">
+                <label class="form-label small">W</label>
+                <input type="number" name="{{ f.width.html_name }}" class="form-control form-control-sm" value="{{ f.width.value|default:90 }}" min="1">
+              </div>
+              <div class="col-md-1">
+                <label class="form-label small">H</label>
+                <input type="number" name="{{ f.height.html_name }}" class="form-control form-control-sm" value="{{ f.height.value|default:12 }}" min="1">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small">Signer</label>
+                <select name="{{ f.member_info_number.html_name }}" class="form-select form-select-sm">
+                  {% for val, label in f.member_info_number.field.choices %}
+                  <option value="{{ val }}" {% if f.member_info_number.value|stringformat:"s" == val|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small">Date signed field</label>
+                <input type="text" name="{{ f.date_signed_field_name.html_name }}" class="form-control form-control-sm" value="{{ f.date_signed_field_name.value|default:'' }}" maxlength="100" placeholder="For signature">
+                {% if f.date_signed_field_name.errors %}<div class="invalid-feedback d-block">{{ f.date_signed_field_name.errors }}</div>{% endif %}
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small">Date format</label>
+                <input type="text" name="{{ f.date_signed_format.html_name }}" class="form-control form-control-sm" value="{{ f.date_signed_format.value|default:'' }}" maxlength="20" placeholder="e.g. MM/dd/yy">
+                {% if f.date_signed_format.errors %}<div class="invalid-feedback d-block">{{ f.date_signed_format.errors }}</div>{% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="add-tagging-row">Add another field</button>
+
+      <h6 class="mb-2">Template variables (mapping)</h6>
+      <div id="mapping-section-dynamic">
+      {% if not is_edit and not parsed_variables %}
+      <p class="text-muted small mb-2">Select an HTML file and click <strong>Identify Fields</strong> to parse template variables.</p>
+      <button type="button" class="btn btn-outline-secondary btn-sm mb-2" id="identify-fields-btn" disabled>Identify Fields</button>
+      <span class="text-muted small ms-2" id="identify-fields-status"></span>
+      {% endif %}
+      {% if parsed_variables %}
+      <div class="text-muted small mb-2">
+        <p class="mb-1"><strong>Template structure:</strong></p>
+        {% if template_structure.primary_data_source %}
+        <p class="mb-1">Primary data source: <code>{{ template_structure.primary_data_source|join:", " }}</code></p>
+        {% endif %}
+        {% if template_structure.lists %}
+        <p class="mb-1">Lists:
+          {% for lst in template_structure.lists %}
+          <code>{{ lst.name }}</code>{% if lst.items %} (items: {{ lst.items|join:", " }}){% endif %}{% if not forloop.last %}; {% endif %}
+          {% endfor %}
+        </p>
+        {% endif %}
+        {% if template_structure.scalar_properties %}
+        <p class="mb-1">Scalar properties: <code>{{ template_structure.scalar_properties|join:", " }}</code></p>
+        {% endif %}
+        {% if template_structure.image_variables %}
+        <p class="mb-1">Image variables: <code>{{ template_structure.image_variables|join:", " }}</code></p>
+        {% endif %}
+      </div>
+      <p class="text-muted small mb-2">Map each variable to a data source. All variables must be mapped.</p>
+      <div class="table-responsive mb-3">
+        <table class="table table-sm">
+          <thead class="table-light">
+            <tr><th>Variable</th><th>Source</th><th>Transform</th></tr>
+          </thead>
+          <tbody>
+            {% for row in mapping_rows %}
+            <tr>
+              <td><code>{{ row.var }}{% if row.list_item_of %} ({{ row.list_item_of }}){% endif %}</code>{% if row.var_type == "data_source" %} <span class="badge bg-secondary ms-1">data source</span>{% elif row.var_type == "list" %} <span class="badge bg-info text-dark ms-1">list</span>{% elif row.var_type == "list_item" %} <span class="badge bg-primary ms-1">list item</span>{% elif row.var_type == "image" %} <span class="badge bg-success ms-1">image</span>{% endif %}</td>
+              <td>
+                <select name="mapping_{{ row.form_key }}_source" class="form-select form-select-sm" required>
+                  <option value="">---------</option>
+                  {% for group_label, options in data_paths_grouped %}
+                  <optgroup label="{{ group_label }}">
+                    {% for path, display in options %}
+                    <option value="{{ path }}" {% if row.source == path %}selected{% endif %}>{{ display }}</option>
+                    {% endfor %}
+                  </optgroup>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                <select name="mapping_{{ row.form_key }}_transform" class="form-select form-select-sm">
+                  {% for val, label in transform_choices %}
+                  <option value="{{ val }}" {% if row.transform == val %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% elif is_edit and template_obj.file %}
+      <p class="text-muted small mb-3">Could not parse template variables. Check that the file contains valid Django template syntax.</p>
+      {% elif is_edit %}
+      <p class="text-muted small mb-3">Upload a template file to see parsed variables and configure mapping.</p>
+      {% endif %}
+      </div>
+
+      <div class="mt-3">
+        <button type="submit" class="btn btn-primary">{% if is_edit %}Save{% else %}Add template{% endif %}</button>
+        <a href="{% url 'doctemplates:dynamic_doctemplate_list' %}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if not is_edit %}
+{{ data_paths_grouped|json_script:"data-paths-grouped-json" }}
+{{ transform_choices|json_script:"transform-choices-json" }}
+{% endif %}
+
+<script>
+(function() {
+  const formset = document.getElementById('dynamic-tagging-formset');
+  const addBtn = document.getElementById('add-tagging-row');
+  const management = formset ? document.querySelector('input[name="{{ formset.prefix }}-TOTAL_FORMS"]') : null;
+  if (formset && addBtn && management) {
+    addBtn.addEventListener('click', function() {
+      const rows = formset.querySelectorAll('.tagging-row');
+      const lastRow = rows[rows.length - 1];
+      if (!lastRow) return;
+      const clone = lastRow.cloneNode(true);
+      const nextIdx = parseInt(management.value, 10);
+      clone.querySelectorAll('input, select').forEach(function(el) {
+        if (el.name) {
+          el.name = el.name.replace(/\d+/, nextIdx);
+          el.id = (el.id || '').replace(/\d+/, nextIdx);
+          if (el.type !== 'hidden') el.value = '';
+        }
+      });
+      formset.appendChild(clone);
+      management.value = nextIdx + 1;
+    });
+  }
+
+  const identifyBtn = document.getElementById('identify-fields-btn');
+  const fileInput = document.getElementById('id_file');
+  const identifyStatus = document.getElementById('identify-fields-status');
+  if (identifyBtn && fileInput && identifyStatus) {
+    fileInput.addEventListener('change', function() {
+      identifyBtn.disabled = !this.files || this.files.length === 0;
+    });
+    identifyBtn.addEventListener('click', function() {
+      if (!fileInput.files || fileInput.files.length === 0) return;
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+      identifyStatus.textContent = 'Parsing...';
+      identifyBtn.disabled = true;
+      fetch('{% url "doctemplates:dynamic_doctemplate_parse" %}', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error) {
+          identifyStatus.textContent = 'Error: ' + data.error;
+          identifyBtn.disabled = false;
+          return;
+        }
+        const variables = data.variables || [];
+        const listVariables = data.list_variables || [];
+        const listItemVariables = data.list_item_variables || [];
+        const dataSourceVariables = data.data_source_variables || [];
+        const listItemToList = data.list_item_to_list || {};
+        const imageVariables = data.image_variables || [];
+        const listSet = new Set(listVariables);
+        const listItemSet = new Set(listItemVariables);
+        const dataSourceSet = new Set(dataSourceVariables);
+        const imageSet = new Set(imageVariables);
+        const scalarVars = variables.filter(function(v) {
+          return !dataSourceSet.has(v) && !listSet.has(v) && !listItemSet.has(v) && !imageSet.has(v);
+        });
+        identifyStatus.textContent = 'Found ' + variables.length + ' variable(s)';
+        if (variables.length === 0) return;
+        const dataPathsGroupedEl = document.getElementById('data-paths-grouped-json');
+        const transformEl = document.getElementById('transform-choices-json');
+        const dataPathsGrouped = dataPathsGroupedEl ? JSON.parse(dataPathsGroupedEl.textContent) : [];
+        const transformChoices = transformEl ? JSON.parse(transformEl.textContent) : [];
+        const formKey = function(v) { return v.replace(/\./g, '__'); };
+        const escapeHtml = function(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+        const container = document.getElementById('mapping-section-dynamic');
+        if (!container) return;
+        let structureHtml = '<div class="text-muted small mb-2"><p class="mb-1"><strong>Template structure:</strong></p>';
+        if (dataSourceVariables.length) {
+          structureHtml += '<p class="mb-1">Primary data source: <code>' + escapeHtml(dataSourceVariables.join(', ')) + '</code></p>';
+        }
+        if (listVariables.length) {
+          const listParts = listVariables.sort().map(function(lst) {
+            const items = Object.keys(listItemToList).filter(function(k) { return listItemToList[k] === lst; }).sort();
+            return '<code>' + escapeHtml(lst) + '</code>' + (items.length ? ' (items: ' + escapeHtml(items.join(', ')) + ')' : '');
+          });
+          structureHtml += '<p class="mb-1">Lists: ' + listParts.join('; ') + '</p>';
+        }
+        if (scalarVars.length) {
+          structureHtml += '<p class="mb-1">Scalar properties: <code>' + escapeHtml(scalarVars.join(', ')) + '</code></p>';
+        }
+        if (imageVariables.length) {
+          structureHtml += '<p class="mb-1">Image variables: <code>' + escapeHtml(imageVariables.join(', ')) + '</code></p>';
+        }
+        structureHtml += '</div>';
+        container.innerHTML = structureHtml +
+          '<p class="text-muted small mb-2">Map each variable to a data source. All variables must be mapped.</p>' +
+          '<div class="table-responsive mb-3"><table class="table table-sm"><thead class="table-light">' +
+          '<tr><th>Variable</th><th>Source</th><th>Transform</th></tr></thead><tbody></tbody></table></div>';
+        const tbody = container.querySelector('tbody');
+        variables.forEach(function(varName) {
+          const key = formKey(varName);
+          const listOf = listItemToList[varName];
+          const varDisplay = escapeHtml(varName) + (listOf ? ' (' + escapeHtml(listOf) + ')' : '');
+          let badge = '';
+          if (dataSourceSet.has(varName)) {
+            badge = ' <span class="badge bg-secondary ms-1">data source</span>';
+          } else if (listSet.has(varName)) {
+            badge = ' <span class="badge bg-info text-dark ms-1">list</span>';
+          } else if (listItemSet.has(varName)) {
+            badge = ' <span class="badge bg-primary ms-1">list item</span>';
+          } else if (imageSet.has(varName)) {
+            badge = ' <span class="badge bg-success ms-1">image</span>';
+          }
+          let sourceOpts = '<option value="">---------</option>';
+          dataPathsGrouped.forEach(function(group) {
+            const groupLabel = (group[0] || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+            const options = group[1] || [];
+            sourceOpts += '<optgroup label="' + groupLabel + '">';
+            options.forEach(function(opt) {
+              const path = (opt[0] || '').replace(/"/g, '&quot;');
+              const display = (opt[1] || opt[0] || '').replace(/</g, '&lt;');
+              sourceOpts += '<option value="' + path + '">' + display + '</option>';
+            });
+            sourceOpts += '</optgroup>';
+          });
+          let transformOpts = '';
+          transformChoices.forEach(function(t) {
+            transformOpts += '<option value="' + (t[0] || '').replace(/"/g, '&quot;') + '">' + (t[1] || '').replace(/</g, '&lt;') + '</option>';
+          });
+          tbody.innerHTML += '<tr><td><code>' + varDisplay + '</code>' + badge + '</td>' +
+            '<td><select name="mapping_' + key + '_source" class="form-select form-select-sm" required>' + sourceOpts + '</select></td>' +
+            '<td><select name="mapping_' + key + '_transform" class="form-select form-select-sm">' + transformOpts + '</select></td></tr>';
+        });
+        identifyBtn.style.display = 'none';
+      })
+      .catch(function(err) {
+        identifyStatus.textContent = 'Request failed';
+        identifyBtn.disabled = false;
+      });
+    });
+  }
+})();
+</script>
+{% endblock %}

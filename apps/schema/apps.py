@@ -1,0 +1,7 @@
+from django.apps import AppConfig
+
+
+class SchemaConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.schema"
+    verbose_name = "Data Schema"

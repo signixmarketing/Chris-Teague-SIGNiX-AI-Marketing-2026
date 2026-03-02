@@ -15,12 +15,12 @@ This document defines the order in which to implement the document-related featu
 | **ref_id** | Unique across both Static and Dynamic templates (enforce in form `clean_ref_id`) |
 | **Static formset** | `extra=3`; three default empty rows |
 | **Static conditional fields** | Always show date_signed_field_name/date_signed_format; require in form `clean()` when `field_type == "signature"` (no JS show/hide) |
-| **Dynamic mapping UI** | Table layout — one row per variable (Variable, Source, Transform) |
+| **Dynamic mapping UI** | Template structure summary (Primary data source, Lists with items, Scalar properties, Image variables) above mapping table. Table: one row per variable; list items show parent list (e.g. `item.sku (data.jet_pack_list)`); type badges (data source, list, list item, image, scalar); Source optgroups (schema paths + Images from Image model); Transform. Mapping stores `var_type` per entry; image variables use source `image:<uuid>`. |
 | **Dynamic item_map** | Supported in v1; one row per parsed `item.*` variable; map each to Vehicle field dropdown |
 | **Dynamic variable mapping** | All parsed variables must be mapped (validation on add and edit) |
 | **Identify Fields** | Fetch/AJAX; no page reload (file input preserved) |
 | **Sidebar order** | Static Templates → Dynamic Templates → Images |
-| **Data interface** | Dynamic templates use `apps.schema.services.get_paths()` and `get_deal_data(deal)`; context builder uses `get_deal_data()` only—no model traversal (DESIGN-DATA-INTERFACE) |
+| **Data interface** | Dynamic templates use `apps.schema.services.get_paths_grouped_for_mapping()` for deal paths and append Images optgroup from Image model; context builder uses `get_deal_data()` for deal data and resolves `image:<uuid>` via Image model—no model traversal for deal paths (DESIGN-DATA-INTERFACE) |
 
 ---
 
@@ -41,7 +41,7 @@ This document defines the order in which to implement the document-related featu
 
 ## 2. PLAN-ADD-DYNAMIC-DOC-TEMPLATES.md
 
-**Purpose:** Dynamic document templates—HTML files with DTL. Upload HTML, configure text tagging (signature/date fields for SIGNiX) and mapping (template variables → deal data via `get_paths()`). DTL parsing, mapping UI uses apps.schema.
+**Purpose:** Dynamic document templates—HTML files with DTL. Upload HTML, configure text tagging (signature/date fields for SIGNiX) and mapping (template variables → deal data or Images). DTL parsing with list and image variable detection; mapping UI with Source optgroups (schema paths + Images) and type badges; apps.schema for deal paths.
 
 **Implement:** Batch 1 (model, migrations), Batch 2 (CRUD + text tagging), Batch 3 (DTL parsing), Batch 4 (mapping UI). See PLAN-ADD-DYNAMIC-DOC-TEMPLATES.md Section 7 and Section 7a.
 

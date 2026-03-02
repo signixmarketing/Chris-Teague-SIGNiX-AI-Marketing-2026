@@ -132,6 +132,8 @@ The `tagging_data` structure (per DESIGN-DOCS):
    - In `apps/doctemplates/urls.py`: `app_name = "doctemplates"`; include `path("static/", ...)` with a minimal list view (e.g., `lambda: HttpResponse("Static templates")` or a simple template) so `/document-templates/static/` does not 404. Full list view will be replaced in Batch 3.
    - In `config/urls.py`: `path("document-templates/", include("apps.doctemplates.urls"))`.
 
+**Critical:** Run `python manage.py makemigrations doctemplates` and `python manage.py migrate` — without this, the table does not exist and Batch 3 list view will raise `OperationalError: no such table: doctemplates_staticdocumenttemplate`. Verify with `python manage.py showmigrations doctemplates` (should show `0001_initial [X]`).
+
 Batch 1 complete when the app is installed, the model exists, migrations apply, and `/document-templates/static/` loads without error. No full CRUD UI yet.
 
 ### Batch 2 — Forms (steps 4–5)
@@ -143,15 +145,16 @@ Batch 1 complete when the app is installed, the model exists, migrations apply, 
    - `TaggingFieldForm` with: tag_name, field_type (ChoiceField: signature, date, text), member_info_number (ChoiceField: 1, 2 with labels "User (lease officer)", "Contact"), date_signed_field_name (optional), date_signed_format (optional).
    - Clean: when field_type is `signature`, require date_signed_field_name and date_signed_format.
    - `TaggingFieldFormSet = formset_factory(TaggingFieldForm, extra=3, min_num=0)` — three default empty rows; allow zero filled fields (empty list).
+   - Use a distinct **formset prefix** (e.g. `prefix="tagging"`) when instantiating the formset — required because the form and formset share the same page; avoids field name collisions. Pass this prefix in both GET and POST.
    - Helper: `tagging_data_to_formset_data(tagging_data)` and `formset_data_to_tagging_data(cleaned_data)` to convert between JSON and formset.
 
 ### Batch 3 — Views and templates (steps 6–9)
 
 6. **Views**
-   - `static_doctemplate_list` — List all `StaticDocumentTemplate`; pass to template.
-   - `static_doctemplate_add` — GET: form + formset (empty or 1 empty row); POST: validate both; save model with file and tagging_data from formset; redirect to list.
-   - `static_doctemplate_edit` — GET: form with instance, formset from `instance.tagging_data`; POST: update; if new file, replace.
-   - `static_doctemplate_delete_confirm` — GET: confirmation page; POST: delete (and remove file from disk if desired).
+   - `static_doctemplate_list` — List all `StaticDocumentTemplate`; pass to template. **Prerequisite:** Migrations must be applied (see Batch 1); otherwise "no such table" OperationalError.
+   - `static_doctemplate_add` — GET: form + formset (use same prefix); POST: validate both; save model with file and tagging_data from formset; redirect to list.
+   - `static_doctemplate_edit` — GET: form with instance, formset from `instance.tagging_data` (same prefix); POST: update. **Critical:** If no new file is uploaded (`not request.FILES.get("file")`), set `instance.file = existing_template.file` before save; otherwise the existing file is overwritten with empty. If new file provided, replace. Update tagging_data from formset.
+   - `static_doctemplate_delete_confirm` — GET: confirmation page; POST: delete record and **remove file from disk** (e.g. `os.remove(file.path)` before `instance.delete()`).
    - All views: `@login_required`.
 
 7. **URLs**
@@ -164,7 +167,7 @@ Batch 1 complete when the app is installed, the model exists, migrations apply, 
 
 8. **Templates**
    - `templates/doctemplates/static_doctemplate_list.html` — table (Ref ID, Description, File, Actions), Add button, empty state.
-   - `templates/doctemplates/static_doctemplate_form.html` — used for add and edit. Form for ref_id, description, file. Formset for tagging fields (extra=3). Use `{{ formset.management_form }}`. Each formset form: tag_name, field_type, member_info_number, date_signed_field_name, date_signed_format — always show all fields; formset clean requires date_signed_* when field_type is signature. Include "Add another field" via formset extra or a small JS snippet to clone a row.
+   - `templates/doctemplates/static_doctemplate_form.html` — used for add and edit. Form for ref_id, description, file. Formset for tagging fields (extra=3). Use `{{ formset.management_form }}`; formset must use the same prefix as in the view. Each formset form: tag_name, field_type, member_info_number, date_signed_field_name, date_signed_format — always show all fields; formset clean requires date_signed_* when field_type is signature. Include "Add another field" via formset extra or a small JS snippet: clone the last row, update each input's `name` so the index becomes the next available (e.g. `tagging-0-tag_name` → `tagging-3-tag_name`), and increment the management form's `TOTAL_FORMS`.
    - `templates/doctemplates/static_doctemplate_confirm_delete.html` — confirmation message, POST form (Cancel → list, Delete → submit).
 
 9. **Sidebar**
@@ -242,33 +245,36 @@ Batch 1 complete when the above pass.
    assert not form.is_valid()
    assert "file" in form.errors
    ```
-4. **Shell — formset from tagging_data, then convert back:**
+4. **Shell — formset from tagging_data, then convert back:** Use the same prefix as in the view (e.g. `"tagging"`).
    ```python
    from apps.doctemplates.forms import TaggingFieldFormSet, formset_data_to_tagging_data
 
    tagging_data = [{"tag_name": "Sig1", "field_type": "signature", "member_info_number": 2,
                     "date_signed_field_name": "Date1", "date_signed_format": "MM/dd/yy"}]
-   formset_data = {"form-TOTAL_FORMS": "1", "form-INITIAL_FORMS": "0", "form-MIN_NUM_FORMS": "0", "form-MAX_NUM_FORMS": "1000",
-                   "form-0-tag_name": "Sig1", "form-0-field_type": "signature", "form-0-member_info_number": "2",
-                   "form-0-date_signed_field_name": "Date1", "form-0-date_signed_format": "MM/dd/yy"}
-   formset = TaggingFieldFormSet(formset_data)
+   prefix = "tagging"
+   formset_data = {f"{prefix}-TOTAL_FORMS": "1", f"{prefix}-INITIAL_FORMS": "0", f"{prefix}-MIN_NUM_FORMS": "0", f"{prefix}-MAX_NUM_FORMS": "1000",
+                   f"{prefix}-0-tag_name": "Sig1", f"{prefix}-0-field_type": "signature", f"{prefix}-0-member_info_number": "2",
+                   f"{prefix}-0-date_signed_field_name": "Date1", f"{prefix}-0-date_signed_format": "MM/dd/yy"}
+   formset = TaggingFieldFormSet(formset_data, prefix=prefix)
    assert formset.is_valid(), formset.errors
    result = formset_data_to_tagging_data(formset.cleaned_data)
    assert result[0]["tag_name"] == "Sig1"
    ```
-5. **Shell — formset with signature but missing date_signed_field_name:**
+5. **Shell — formset with signature but missing date_signed_field_name:** Same prefix.
    ```python
-   invalid_data = {"form-TOTAL_FORMS": "1", "form-INITIAL_FORMS": "0", "form-MIN_NUM_FORMS": "0", "form-MAX_NUM_FORMS": "1000",
-                   "form-0-tag_name": "Sig1", "form-0-field_type": "signature", "form-0-member_info_number": "2",
-                   "form-0-date_signed_field_name": "", "form-0-date_signed_format": "MM/dd/yy"}
-   formset = TaggingFieldFormSet(invalid_data)
+   prefix = "tagging"
+   invalid_data = {f"{prefix}-TOTAL_FORMS": "1", f"{prefix}-INITIAL_FORMS": "0", f"{prefix}-MIN_NUM_FORMS": "0", f"{prefix}-MAX_NUM_FORMS": "1000",
+                   f"{prefix}-0-tag_name": "Sig1", f"{prefix}-0-field_type": "signature", f"{prefix}-0-member_info_number": "2",
+                   f"{prefix}-0-date_signed_field_name": "", f"{prefix}-0-date_signed_format": "MM/dd/yy"}
+   formset = TaggingFieldFormSet(invalid_data, prefix=prefix)
    assert not formset.is_valid()
    ```
-   (Adjust formset prefix and field names if your formset uses different names.)
 
 Batch 2 complete when all of the above pass.
 
 ### Batch 3 — Views and templates (steps 6–11)
+
+**Prerequisite:** Ensure Batch 1 migrations are applied (`showmigrations doctemplates` shows `0001_initial [X]`). Otherwise the list view will raise `OperationalError: no such table`.
 
 **Includes:** List, add, edit, delete views; templates; sidebar; optional admin.
 
