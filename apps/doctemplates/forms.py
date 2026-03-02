@@ -3,12 +3,19 @@ Forms for document templates.
 
 Static: StaticDocumentTemplateForm, TaggingFieldFormSet.
 Dynamic: DynamicDocumentTemplateForm, DynamicTaggingFieldFormSet.
+Document Set: DocumentSetTemplateForm, DocumentSetTemplateItemFormSet,
+  get_document_template_choices, items_to_formset_initial, formset_to_items.
 """
 
 from django import forms
 from django.forms import formset_factory
 
-from .models import StaticDocumentTemplate, DynamicDocumentTemplate
+from .models import (
+    DocumentSetTemplate,
+    DocumentSetTemplateItem,
+    StaticDocumentTemplate,
+    DynamicDocumentTemplate,
+)
 
 
 def _ref_id_exists_in_static(ref_id, exclude_pk=None):
@@ -324,3 +331,169 @@ def dynamic_formset_cleaned_to_tagging_data(cleaned_data_list):
             ).strip()
         result.append(item)
     return result
+
+
+# --- Document Set Template forms ---
+
+
+def get_document_template_choices():
+    """
+    Return combined choices for Static and Dynamic templates for doc set item dropdown.
+
+    Value format: "static-<pk>" or "dynamic-<pk>". Label: "{ref_id} (Static)" or
+    "{ref_id} (Dynamic)". Ordered by ref_id for consistency.
+    """
+    static = [
+        (f"static-{t.pk}", f"{t.ref_id} (Static)")
+        for t in StaticDocumentTemplate.objects.all().order_by("ref_id")
+    ]
+    dynamic = [
+        (f"dynamic-{t.pk}", f"{t.ref_id} (Dynamic)")
+        for t in DynamicDocumentTemplate.objects.all().order_by("ref_id")
+    ]
+    return static + dynamic
+
+
+def items_to_formset_initial(items):
+    """
+    Convert DocumentSetTemplateItem queryset/list to formset initial data.
+
+    Returns list of dicts with key "template_choice" (value "static-<pk>" or
+    "dynamic-<pk>"). Items should be ordered by order field.
+    """
+    from django.contrib.contenttypes.models import ContentType
+
+    if not items:
+        return []
+    static_ct = ContentType.objects.get_for_model(StaticDocumentTemplate)
+    dynamic_ct = ContentType.objects.get_for_model(DynamicDocumentTemplate)
+    initial = []
+    for item in items:
+        if item.content_type_id == static_ct.id:
+            value = f"static-{item.object_id}"
+        elif item.content_type_id == dynamic_ct.id:
+            value = f"dynamic-{item.object_id}"
+        else:
+            continue
+        initial.append({"template_choice": value})
+    return initial
+
+
+def formset_to_items(cleaned_data_list, document_set_template):
+    """
+    Convert formset cleaned_data to unsaved DocumentSetTemplateItem instances.
+
+    Skips empty rows (blank template_choice). Order is 1-based from position.
+    Caller should delete existing items and bulk_create or save each.
+    """
+    from django.contrib.contenttypes.models import ContentType
+
+    static_ct = ContentType.objects.get_for_model(StaticDocumentTemplate)
+    dynamic_ct = ContentType.objects.get_for_model(DynamicDocumentTemplate)
+    result = []
+    for order, row in enumerate(cleaned_data_list, start=1):
+        raw = (row.get("template_choice") or "").strip()
+        if not raw:
+            continue
+        if raw.startswith("static-"):
+            try:
+                pk = int(raw.replace("static-", "", 1))
+                result.append(
+                    DocumentSetTemplateItem(
+                        document_set_template=document_set_template,
+                        order=order,
+                        content_type=static_ct,
+                        object_id=pk,
+                    )
+                )
+            except ValueError:
+                continue
+        elif raw.startswith("dynamic-"):
+            try:
+                pk = int(raw.replace("dynamic-", "", 1))
+                result.append(
+                    DocumentSetTemplateItem(
+                        document_set_template=document_set_template,
+                        order=order,
+                        content_type=dynamic_ct,
+                        object_id=pk,
+                    )
+                )
+            except ValueError:
+                continue
+    return result
+
+
+def _deal_types_without_doc_set_template():
+    """Deal types that do not yet have a Document Set Template."""
+    from apps.deals.models import DealType
+
+    used_ids = DocumentSetTemplate.objects.values_list("deal_type_id", flat=True)
+    return DealType.objects.exclude(id__in=used_ids)
+
+
+class DocumentSetTemplateForm(forms.ModelForm):
+    """Form for document set template: deal_type and name."""
+
+    class Meta:
+        model = DocumentSetTemplate
+        fields = ["deal_type", "name"]
+
+    def __init__(self, *args, **kwargs):
+        self.for_add = kwargs.pop("for_add", None)
+        super().__init__(*args, **kwargs)
+        if self.for_add is None:
+            self.for_add = not (self.instance and self.instance.pk)
+        if self.for_add:
+            self.fields["deal_type"].queryset = _deal_types_without_doc_set_template()
+        else:
+            self.fields["deal_type"].disabled = True
+        self.fields["name"].required = False
+
+    def save(self, commit=True):
+        if not self.for_add and self.instance and self.instance.pk:
+            # Edit: do not overwrite deal_type (disabled field is not in cleaned_data)
+            self.instance.name = self.cleaned_data.get("name", "")
+            if commit:
+                self.instance.save()
+            return self.instance
+        return super().save(commit=commit)
+
+
+class DocumentSetTemplateItemForm(forms.Form):
+    """Single row: template choice (Static or Dynamic)."""
+
+    template_choice = forms.ChoiceField(
+        choices=[],
+        required=False,
+        label="Template",
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["template_choice"].choices = [("", "---------")] + get_document_template_choices()
+
+
+class BaseDocumentSetTemplateItemFormSet(forms.BaseFormSet):
+    """Validate at least one item and no duplicate template choices."""
+
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+        choices = []
+        for form in self.forms:
+            val = form.cleaned_data.get("template_choice") if form.cleaned_data else None
+            if val:
+                choices.append(val)
+        if len(choices) != len(set(choices)):
+            raise forms.ValidationError("Duplicate templates are not allowed.")
+
+
+DocumentSetTemplateItemFormSet = formset_factory(
+    DocumentSetTemplateItemForm,
+    formset=BaseDocumentSetTemplateItemFormSet,
+    extra=2,
+    min_num=1,
+    validate_min=True,
+)

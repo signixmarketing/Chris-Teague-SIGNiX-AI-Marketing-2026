@@ -75,7 +75,7 @@ A Deal has **sufficient data** for document generation when:
 
 Helper: `deal_has_sufficient_data(deal)` returns bool.
 
-**Document Set Template check:** `can_generate` requires (1) sufficient data and (2) a Document Set Template exists for the deal's Deal Type. If no template exists, disable Generate and show: "No document set template configured for this deal type."
+**Document Set Template check:** `can_generate` requires (1) sufficient data and (2) a Document Set Template exists for the deal's Deal Type. Document Set Templates are configured per Deal Type (one template per type, per PLAN-ADD-DOC-SET-TEMPLATES). Look up the template by deal type, e.g. `DocumentSetTemplate.objects.filter(deal_type=deal.deal_type).first()`. If none exists, disable Generate and show: "No document set template configured for this deal type."
 
 ---
 
@@ -83,10 +83,10 @@ Helper: `deal_has_sufficient_data(deal)` returns bool.
 
 ### Generate Documents (initial)
 
-1. Validate deal has sufficient data; validate Document Set Template exists for deal's Deal Type.
+1. Validate deal has sufficient data; validate Document Set Template exists for deal's Deal Type (lookup by `deal.deal_type` as above).
 2. Create `DocumentSet` (deal, document_set_template).
-3. For each `DocumentSetTemplateItem` (in order):
-   - Get template (Static or Dynamic via `item.template`).
+3. For each item in the template's ordered list (e.g. `document_set_template.items.all()`, which is ordered by `order` per apps.doctemplates):
+   - Get the template (Static or Dynamic) from the item (e.g. `item.template` GenericForeignKey).
    - **Static:** Copy PDF file from template to new `DocumentInstanceVersion`; create `DocumentInstance`; add version with status "Draft".
    - **Dynamic:** Build context from deal + mapping; render HTML with DTL; convert to PDF (pdfkit/wkhtmltopdf); store in new `DocumentInstanceVersion`; create `DocumentInstance`; add version with status "Draft".
 

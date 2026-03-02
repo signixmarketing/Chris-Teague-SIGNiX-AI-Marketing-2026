@@ -9,7 +9,7 @@ import os
 
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import (
@@ -21,8 +21,17 @@ from .forms import (
     DynamicTaggingFieldFormSet,
     dynamic_formset_cleaned_to_tagging_data,
     dynamic_tagging_data_to_formset_initial,
+    DocumentSetTemplateForm,
+    DocumentSetTemplateItemFormSet,
+    formset_to_items,
+    items_to_formset_initial,
 )
-from .models import StaticDocumentTemplate, DynamicDocumentTemplate
+from .models import (
+    DocumentSetTemplate,
+    DocumentSetTemplateItem,
+    StaticDocumentTemplate,
+    DynamicDocumentTemplate,
+)
 from .utils import (
     augment_mapping_with_var_type,
     get_image_sources_for_mapping,
@@ -517,8 +526,21 @@ def dynamic_doctemplate_parse(request):
 @login_required
 def dynamic_doctemplate_delete_confirm(request, pk):
     """GET: show confirmation. POST: delete template and file."""
+    from django.contrib.contenttypes.models import ContentType
+
     template_obj = get_object_or_404(DynamicDocumentTemplate, pk=pk)
     if request.method == "POST":
+        ct = ContentType.objects.get_for_model(DynamicDocumentTemplate)
+        if _template_in_use_by_doc_set(ct, template_obj.pk):
+            messages.error(
+                request,
+                "This template cannot be deleted because it is used in a Document Set Template.",
+            )
+            return render(
+                request,
+                "doctemplates/dynamic_doctemplate_confirm_delete.html",
+                {"template_obj": template_obj},
+            )
         _remove_file_from_disk(template_obj.file)
         template_obj.delete()
         messages.success(request, "Dynamic template deleted.")
@@ -528,6 +550,199 @@ def dynamic_doctemplate_delete_confirm(request, pk):
         "doctemplates/dynamic_doctemplate_confirm_delete.html",
         {"template_obj": template_obj},
     )
+
+
+# --- Document Set Template views ---
+
+DOCSET_FORMSET_PREFIX = "items"
+
+
+def _can_add_doc_set_template():
+    """True if at least one Deal Type has no Document Set Template."""
+    from .forms import _deal_types_without_doc_set_template
+    return _deal_types_without_doc_set_template().exists()
+
+
+def _template_choices_exist():
+    """True if at least one Static or Dynamic template exists."""
+    return StaticDocumentTemplate.objects.exists() or DynamicDocumentTemplate.objects.exists()
+
+
+def _template_in_use_by_doc_set(content_type, object_id):
+    """True if this template is referenced by any DocumentSetTemplateItem."""
+    return DocumentSetTemplateItem.objects.filter(
+        content_type=content_type, object_id=object_id
+    ).exists()
+
+
+@login_required
+def docsettemplate_list(request):
+    """List all document set templates."""
+    template_list = DocumentSetTemplate.objects.prefetch_related("items").all()
+    can_add = _can_add_doc_set_template()
+    return render(
+        request,
+        "doctemplates/docsettemplate_list.html",
+        {"template_list": template_list, "can_add": can_add},
+    )
+
+
+@login_required
+def docsettemplate_add(request):
+    """Add a new document set template."""
+    if not _template_choices_exist():
+        messages.error(
+            request,
+            "Create at least one Static or Dynamic template first.",
+        )
+        return redirect("doctemplates:docsettemplate_list")
+    if not _can_add_doc_set_template():
+        messages.error(
+            request,
+            "Every deal type already has a document set template.",
+        )
+        return redirect("doctemplates:docsettemplate_list")
+
+    if request.method == "POST":
+        form = DocumentSetTemplateForm(request.POST, for_add=True)
+        formset = DocumentSetTemplateItemFormSet(
+            request.POST, prefix=DOCSET_FORMSET_PREFIX
+        )
+        if form.is_valid() and formset.is_valid():
+            instance = form.save()
+            for item in formset_to_items(formset.cleaned_data, instance):
+                item.save()
+            messages.success(request, "Document set template added.")
+            return redirect("doctemplates:docsettemplate_list")
+    else:
+        form = DocumentSetTemplateForm(for_add=True)
+        formset = DocumentSetTemplateItemFormSet(prefix=DOCSET_FORMSET_PREFIX)
+
+    form_rows = [(f, None) for f in formset.forms]
+    return render(
+        request,
+        "doctemplates/docsettemplate_form.html",
+        {
+            "form": form,
+            "formset": formset,
+            "form_rows": form_rows,
+            "document_set_template": None,
+            "is_edit": False,
+        },
+    )
+
+
+@login_required
+def docsettemplate_edit(request, pk):
+    """Edit an existing document set template."""
+    dst = get_object_or_404(
+        DocumentSetTemplate.objects.prefetch_related("items"), pk=pk
+    )
+    items = list(dst.items.all())
+    item_ids = [item.pk for item in items]
+
+    if request.method == "POST":
+        form = DocumentSetTemplateForm(
+            request.POST, instance=dst, for_add=False
+        )
+        formset = DocumentSetTemplateItemFormSet(
+            request.POST,
+            initial=items_to_formset_initial(items),
+            prefix=DOCSET_FORMSET_PREFIX,
+        )
+        if form.is_valid() and formset.is_valid():
+            form.save()
+            dst.items.all().delete()
+            for item in formset_to_items(formset.cleaned_data, dst):
+                item.save()
+            messages.success(request, "Document set template updated.")
+            return redirect("doctemplates:docsettemplate_list")
+    else:
+        form = DocumentSetTemplateForm(instance=dst, for_add=False)
+        formset = DocumentSetTemplateItemFormSet(
+            initial=items_to_formset_initial(items),
+            prefix=DOCSET_FORMSET_PREFIX,
+        )
+
+    form_rows = [
+        (f, item_ids[i] if i < len(item_ids) else None)
+        for i, f in enumerate(formset.forms)
+    ]
+    return render(
+        request,
+        "doctemplates/docsettemplate_form.html",
+        {
+            "form": form,
+            "formset": formset,
+            "form_rows": form_rows,
+            "document_set_template": dst,
+            "is_edit": True,
+        },
+    )
+
+
+@login_required
+def docsettemplate_delete_confirm(request, pk):
+    """GET: show confirmation. POST: delete document set template and items."""
+    dst = get_object_or_404(DocumentSetTemplate, pk=pk)
+    if request.method == "POST":
+        dst.delete()
+        messages.success(request, "Document set template deleted.")
+        return redirect("doctemplates:docsettemplate_list")
+    return render(
+        request,
+        "doctemplates/docsettemplate_confirm_delete.html",
+        {"document_set_template": dst},
+    )
+
+
+def _docset_item_move(dst, item_id, direction):
+    """Move item up (-1) or down (+1). Swap order with sibling; renumber 1-based."""
+    item = get_object_or_404(
+        DocumentSetTemplateItem,
+        document_set_template=dst,
+        pk=item_id,
+    )
+    current_order = item.order
+    if direction == -1:
+        sibling = dst.items.filter(order=current_order - 1).first()
+    else:
+        sibling = dst.items.filter(order=current_order + 1).first()
+    if not sibling:
+        return
+    old_sibling_order = sibling.order
+    # Swap using temp to avoid unique constraint
+    item.order = 0
+    item.save(update_fields=["order"])
+    sibling.order = current_order
+    sibling.save(update_fields=["order"])
+    item.order = old_sibling_order
+    item.save(update_fields=["order"])
+    # Renumber to 1, 2, 3, ...
+    for i, it in enumerate(dst.items.order_by("order"), start=1):
+        if it.order != i:
+            it.order = i
+            it.save(update_fields=["order"])
+
+
+@login_required
+def docsettemplate_item_move_up(request, pk, item_id):
+    """POST only: move item up, redirect to edit."""
+    if request.method != "POST":
+        raise Http404
+    dst = get_object_or_404(DocumentSetTemplate, pk=pk)
+    _docset_item_move(dst, item_id, -1)
+    return redirect("doctemplates:docsettemplate_edit", pk=pk)
+
+
+@login_required
+def docsettemplate_item_move_down(request, pk, item_id):
+    """POST only: move item down, redirect to edit."""
+    if request.method != "POST":
+        raise Http404
+    dst = get_object_or_404(DocumentSetTemplate, pk=pk)
+    _docset_item_move(dst, item_id, +1)
+    return redirect("doctemplates:docsettemplate_edit", pk=pk)
 
 
 # --- Static template views ---
@@ -599,8 +814,21 @@ def static_doctemplate_edit(request, pk):
 @login_required
 def static_doctemplate_delete_confirm(request, pk):
     """GET: show confirmation. POST: delete template and file."""
+    from django.contrib.contenttypes.models import ContentType
+
     template_obj = get_object_or_404(StaticDocumentTemplate, pk=pk)
     if request.method == "POST":
+        ct = ContentType.objects.get_for_model(StaticDocumentTemplate)
+        if _template_in_use_by_doc_set(ct, template_obj.pk):
+            messages.error(
+                request,
+                "This template cannot be deleted because it is used in a Document Set Template.",
+            )
+            return render(
+                request,
+                "doctemplates/static_doctemplate_confirm_delete.html",
+                {"template_obj": template_obj},
+            )
         if template_obj.file:
             path = getattr(template_obj.file, "path", None)
             if path and os.path.isfile(path):

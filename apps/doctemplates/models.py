@@ -3,8 +3,12 @@ Document template models.
 
 - StaticDocumentTemplate: reusable PDFs with form fields (e.g., safety advisory).
 - DynamicDocumentTemplate: HTML with DTL that produce populated documents.
+- DocumentSetTemplate: ordered list of Static/Dynamic templates per Deal Type.
+- DocumentSetTemplateItem: one template reference in a Document Set Template.
 """
 
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
 
@@ -45,6 +49,69 @@ class StaticDocumentTemplate(models.Model):
 
     def __str__(self):
         return self.description or self.ref_id
+
+
+class DocumentSetTemplate(models.Model):
+    """
+    A document set template: an ordered list of Static/Dynamic templates,
+    associated with one Deal Type. Used when generating documents for a Deal.
+    """
+
+    deal_type = models.ForeignKey(
+        "deals.DealType",
+        on_delete=models.PROTECT,
+        unique=True,
+        help_text="Deal Type this set applies to (one set per type)",
+    )
+    name = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Display name; if blank, deal type name is used",
+    )
+
+    class Meta:
+        verbose_name = "Document set template"
+        verbose_name_plural = "Document set templates"
+        ordering = ["deal_type__name"]
+
+    def __str__(self):
+        return self.name or str(self.deal_type)
+
+
+class DocumentSetTemplateItem(models.Model):
+    """
+    One template (Static or Dynamic) in a Document Set Template, with order.
+    """
+
+    document_set_template = models.ForeignKey(
+        DocumentSetTemplate,
+        on_delete=models.CASCADE,
+        related_name="items",
+        help_text="Parent document set template",
+    )
+    order = models.PositiveIntegerField(
+        help_text="1-based order within the set",
+    )
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        help_text="StaticDocumentTemplate or DynamicDocumentTemplate",
+    )
+    object_id = models.PositiveIntegerField(
+        help_text="PK of the template",
+    )
+    template = GenericForeignKey("content_type", "object_id")
+
+    class Meta:
+        verbose_name = "Document set template item"
+        verbose_name_plural = "Document set template items"
+        ordering = ["order"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["document_set_template", "order"],
+                name="doctemplates_dstitem_unique_order_per_template",
+            )
+        ]
 
 
 class DynamicDocumentTemplate(models.Model):

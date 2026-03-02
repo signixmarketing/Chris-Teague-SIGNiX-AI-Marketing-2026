@@ -111,6 +111,11 @@
           </a>
         </li>
         <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name|default:''|slice:':14' == 'docsettemplate_' %}active{% endif %}" href="{% url 'doctemplates:docsettemplate_list' %}">
+            <i class="bi bi-collection"></i>Document Set Templates
+          </a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link {% if request.resolver_match.app_name == 'images' %}active{% endif %}" href="{% url 'images:image_list' %}">
             <i class="bi bi-image"></i>Images
           </a>

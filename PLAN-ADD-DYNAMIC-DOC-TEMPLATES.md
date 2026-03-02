@@ -126,6 +126,7 @@ Transforms: `date_day`, `date_month`, `date_year`, `date_month_day`, `count`, `n
 ### 6.4 Delete template
 
 - POST required. Dedicated confirmation page; on POST, delete record and file.
+- **When Document Set Templates exist (PLAN-ADD-DOC-SET-TEMPLATES):** If this Dynamic template is referenced by any Document Set Template, POST does not delete; re-render the confirmation page with an error (e.g. "This template cannot be deleted because it is used in a Document Set Template.").
 
 ---
 

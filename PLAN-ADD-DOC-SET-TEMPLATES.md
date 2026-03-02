@@ -27,7 +27,7 @@ This document outlines how to add **Document Set Templates** to the Django lease
 
 ### DocumentSetTemplate
 
-- `deal_type` — `ForeignKey(DealType, on_delete=models.PROTECT, unique=True)`. One Document Set Template per Deal Type. Import `DealType` from `apps.deals.models`.
+- `deal_type` — `OneToOneField(DealType, on_delete=models.PROTECT)`. One Document Set Template per Deal Type. (Django recommends OneToOneField over ForeignKey(unique=True); both enforce uniqueness.) Import `DealType` from `apps.deals.models`.
 - `name` — `CharField`, max_length=200, optional (blank=True). Display name; if blank, use `str(deal_type)`.
 - Conventions: Docstrings, `__str__` (return `name or str(self.deal_type)`), `verbose_name` / `verbose_name_plural` in `Meta`, `ordering = ['deal_type__name']`.
 
@@ -66,15 +66,15 @@ List starts empty. Users create Document Set Templates via the UI. The platform 
 - **URL:** `/document-templates/doc-set-templates/add/` (name `docsettemplate_add`).
 - **Form:** deal_type (dropdown of Deal Types that do not yet have a Document Set Template), name (optional). Template list: formset of rows; each row has template (dropdown of Static + Dynamic templates, formatted as "ref_id (Static)" or "ref_id (Dynamic)") and order (implicit from row position).
 - **When no Static or Dynamic templates exist:** Redirect to list or show Add form with error message: "Create at least one Static or Dynamic template first." Do not allow submitting until at least one template exists.
-- **When no Deal Type is available** (all have Document Set Templates): Redirect to list with message, or do not show Add link.
+- **When no Deal Type is available** (all have Document Set Templates): Redirect to list with message "Every deal type already has a document set template.", or do not show Add link.
 - **Validation:** At least one template required. No duplicate templates in the same Document Set Template.
 - **On submit:** Create DocumentSetTemplate and DocumentSetTemplateItem records; redirect to list with "Document set template added."
 
 ### 4.3 Edit template
 
 - **URL:** `/document-templates/doc-set-templates/<id>/edit/` (name `docsettemplate_edit`).
-- **Form:** Same as add; pre-fill deal_type, name, and items from instance.
-- **Reordering:** Up/down buttons per row. Each button submits a small form or links to a view that moves the item and redirects back to edit. Implement as: `POST /document-templates/doc-set-templates/<pk>/items/<item_id>/move-up/` and `.../move-down/` views; on POST, adjust `order` values and redirect to edit page.
+- **Form:** Same as add; pre-fill deal_type, name, and items from instance. On edit, deal_type is read-only (disabled) and the template submits it via a hidden input so the form validates; only name and items are updated on save.
+- **Reordering:** Up/down buttons per row for **existing** items only (saved DocumentSetTemplateItem rows). Each button is a small form POSTing to the move-up or move-down URL; new/empty formset rows do not show move buttons. Implement as: `POST /document-templates/doc-set-templates/<pk>/items/<item_id>/move-up/` and `.../move-down/` views; on POST, adjust `order` values and redirect to edit page.
 - **On submit:** Update DocumentSetTemplate and replace items (delete existing, create from formset).
 
 ### 4.4 Delete template
@@ -85,7 +85,7 @@ List starts empty. Users create Document Set Templates via the UI. The platform 
 
 ## 5. Template Selection UI
 
-**Dropdown choices:** Build a combined list of Static and Dynamic templates. Format: `"static-<pk>"` / `"dynamic-<pk>"` for value; label: `"{ref_id} (Static)"` or `"{ref_id} (Dynamic)"`. Helper: `get_document_template_choices()` returns list of `(value, label)` tuples. When choices are empty, show message "Create at least one Static or Dynamic template first."
+**Dropdown choices:** Build a combined list of Static and Dynamic templates. Format: `"static-<pk>"` / `"dynamic-<pk>"` for value; label: `"{ref_id} (Static)"` or `"{ref_id} (Dynamic)"`. **Helper:** `get_document_template_choices()` in `apps/doctemplates/forms.py` returns a list of `(value, label)` tuples. The form adds a blank option (`"---------"`) in `__init__` so extra formset rows can be left empty. When choices are empty, the add view redirects to list with "Create at least one Static or Dynamic template first."
 
 **Parsing:** On form save, parse `"static-5"` → ContentType for StaticDocumentTemplate, object_id=5. Use `ContentType.objects.get_for_model(StaticDocumentTemplate)` and `object_id`.
 
@@ -105,7 +105,7 @@ List starts empty. Users create Document Set Templates via the UI. The platform 
 ### Batch 1 — Data layer (steps 1–3)
 
 1. **DocumentSetTemplate model**
-   - In `apps/doctemplates/models.py`, add `DocumentSetTemplate` with `deal_type` (FK to `DealType`, unique), `name` (CharField, max_length=200, blank=True). Add `__str__` and `Meta`.
+   - In `apps/doctemplates/models.py`, add `DocumentSetTemplate` with `deal_type` (OneToOneField to `DealType`), `name` (CharField, max_length=200, blank=True). Add `__str__` and `Meta`.
    - Ensure `apps.deals` is in `INSTALLED_APPS` before `apps.doctemplates` so DealType is available.
 
 2. **DocumentSetTemplateItem model**
@@ -114,7 +114,7 @@ List starts empty. Users create Document Set Templates via the UI. The platform 
 
 3. **Migrations**
    - Run `python manage.py makemigrations doctemplates --name add_docsettemplate`.
-   - Run `python manage.py migrate`.
+   - Run `python manage.py migrate`. If the shell does not have the project venv activated (e.g. in CI or when an agent runs commands), use the venv interpreter directly: `.venv/bin/python manage.py migrate`.
 
 4. **URL routing**
    - Add `path("doc-set-templates/", ...)` with a minimal list view placeholder. Add paths for add, edit, delete, move-up, move-down (can 404 until Batch 3).
@@ -124,15 +124,15 @@ Batch 1 complete when models exist, migrations apply, and `/document-templates/d
 ### Batch 2 — Forms (steps 5–7)
 
 5. **DocumentSetTemplateForm**
-   - Fields: `deal_type` (ModelChoiceField), `name` (CharField, required=False). On **Add** only: restrict queryset to Deal Types that do not yet have a Document Set Template — `DealType.objects.exclude(id__in=DocumentSetTemplate.objects.values_list('deal_type_id', flat=True))`. On Edit: use full queryset (deal_type is displayed but may be disabled/read-only since it's unique).
-
+   - Fields: `deal_type` (ModelChoiceField), `name` (CharField, required=False). On **Add** only: restrict queryset to Deal Types that do not yet have a Document Set Template — e.g. `DealType.objects.exclude(id__in=DocumentSetTemplate.objects.values_list('deal_type_id', flat=True))`. On Edit: show full queryset but set `deal_type` to disabled so it cannot be changed; override `save()` to update only `name` when editing (disabled fields are omitted from `cleaned_data`, so the template must submit a hidden `deal_type` for validation).
 6. **DocumentSetTemplateItemFormSet**
-   - Form with `template_choice` (ChoiceField, choices from `get_document_template_choices()`). Use `formset_factory` with `extra=2`, `min_num=1` (two default empty rows; typical config has 2 templates).
-   - Helper: `items_to_formset_initial(items)` and `formset_to_items(cleaned_data, document_set_template)` — return unsaved `DocumentSetTemplateItem` instances or dicts for `bulk_create`; either approach is fine.
-   - Validation: no duplicate template choices; at least one item.
+   - Form with `template_choice` (ChoiceField, choices from `get_document_template_choices()` with blank option added in form `__init__`). Use `formset_factory` with `extra=2`, `min_num=1`, `validate_min=True`, and a **custom BaseFormSet** that in `clean()` rejects duplicate template choices (e.g. `BaseDocumentSetTemplateItemFormSet`).
+   - Use a consistent formset prefix (e.g. `items`) for management form and POST keys.
+   - Helpers: `items_to_formset_initial(items)` — convert ordered DocumentSetTemplateItem queryset to list of dicts with key `template_choice` (`"static-<pk>"` or `"dynamic-<pk>"`). `formset_to_items(cleaned_data_list, document_set_template)` — convert formset cleaned_data to unsaved DocumentSetTemplateItem instances; **skip empty rows** (blank template_choice) and assign 1-based order from row position.
+   - Validation: no duplicate template choices; at least one item (enforced by formset min_num and custom clean).
 
 7. **get_document_template_choices()**
-   - In `apps/doctemplates/utils.py` or `forms.py`: return `[(f"static-{t.pk}", f"{t.ref_id} (Static)") for t in StaticDocumentTemplate.objects.all()] + [(f"dynamic-{t.pk}", f"{t.ref_id} (Dynamic)") for t in DynamicDocumentTemplate.objects.all()]`. Order by ref_id for consistency.
+   - In `apps/doctemplates/forms.py`: return `[(f"static-{t.pk}", f"{t.ref_id} (Static)") for t in StaticDocumentTemplate.objects.all().order_by("ref_id")] + [(f"dynamic-{t.pk}", f"{t.ref_id} (Dynamic)") for t in DynamicDocumentTemplate.objects.all().order_by("ref_id")]`. Order by ref_id for consistency. The form adds the blank option when building the field choices.
 
 Batch 2 complete when forms validate and convert correctly.
 
@@ -140,7 +140,7 @@ Batch 2 complete when forms validate and convert correctly.
 
 8. **Views**
    - `docsettemplate_list` — List all DocumentSetTemplate with prefetch_related('items'). Pass `can_add` (True if at least one Deal Type has no Document Set Template) for Add button visibility.
-   - `docsettemplate_add` — GET: if no Static/Dynamic templates exist, redirect to list with error "Create at least one Static or Dynamic template first."; if no available Deal Types, redirect with message. Else: form + formset. POST: validate, create template and items, redirect.
+   - `docsettemplate_add` — GET: if no Static/Dynamic templates exist, redirect to list with error "Create at least one Static or Dynamic template first."; if no available Deal Types, redirect with "Every deal type already has a document set template." Else: form + formset. POST: validate, create template and items, redirect.
    - `docsettemplate_edit` — GET: form with instance, formset from items; POST: validate, update template, replace items.
    - `docsettemplate_delete_confirm` — GET: confirmation; POST: delete.
    - `docsettemplate_item_move_up` / `docsettemplate_item_move_down` — POST only; get item, adjust order with sibling, redirect to edit.
@@ -155,15 +155,14 @@ Batch 2 complete when forms validate and convert correctly.
    - `doc-set-templates/<int:pk>/items/<int:item_id>/move-down/` → move down
 
 10. **Templates**
-    - `docsettemplate_list.html` — table (Name, Deal Type, Templates count, Actions), Add button, empty state.
-    - `docsettemplate_form.html` — deal_type, name; formset for items (template dropdown, order; up/down buttons per row).
-    - `docsettemplate_confirm_delete.html` — confirmation message, POST form.
+    - `docsettemplate_list.html` — table (Name, Deal Type, Templates count, Actions), Add button (only when `can_add`), empty state. Optional subtitle e.g. "Ordered list of Static/Dynamic templates per deal type".
+    - `docsettemplate_form.html` — deal_type, name; formset for items (template dropdown per row). On edit, pass a list of `(form, item_id)` per row (`form_rows`) so the template can render Up/Down only for existing items (`item_id` present); new/empty rows show no move buttons.
+    - `docsettemplate_confirm_delete.html` — confirmation message (show name or deal type, and item count), POST form.
 
 11. **Sidebar**
-    - Add "Document Set Templates" nav item → `docsettemplate_list`, after Dynamic Templates, before Images.
-
+    - Add "Document Set Templates" nav item → `docsettemplate_list`, icon `bi bi-collection`, after Dynamic Templates, before Images. Active when `request.resolver_match.url_name` starts with `docsettemplate_` (list, add, edit).
 12. **Optional**
-    - Register `DocumentSetTemplate` and `DocumentSetTemplateItem` in admin (inline for items).
+    - Register `DocumentSetTemplate` (and `DocumentSetTemplateItem` as inline) in admin. The inline can be read-only (no add) since items reference templates via GenericForeignKey; the main doc set UI is used for editing items.
 
 13. **Verification**
     - Full CRUD via UI; add template with one Static and one Dynamic template; edit and reorder with up/down; delete.
@@ -180,9 +179,9 @@ Implement in **three batches**. After each batch, run the verification steps.
 
 **How to test after Batch 1:**
 
-1. **Django check:** `python manage.py check` — no issues.
+1. **Django check:** `python manage.py check` — no issues. (Use `.venv/bin/python manage.py check` if the venv is not activated.)
 
-2. **Migrations:** `python manage.py migrate` — `doctemplates_documentsettemplate` and `doctemplates_documentsettemplateitem` tables exist.
+2. **Migrations:** Run `python manage.py migrate` (or `.venv/bin/python manage.py migrate` if the venv is not activated). Verify `doctemplates_documentsettemplate` and `doctemplates_documentsettemplateitem` tables exist.
 
 3. **Shell — create DocumentSetTemplate with items:**
    ```python
@@ -322,10 +321,13 @@ Batch 3 complete when all of the above pass.
 
 ## 10. Implementation Notes
 
-- **GenericForeignKey:** Use `ContentType.objects.get_for_model(StaticDocumentTemplate)` and `get_for_model(DynamicDocumentTemplate)` when building/parsing choices. Store `content_type` and `object_id` on save.
-- **Up/down logic:** To move item up: find item with `order == current_order - 1`; swap order values. Use temporary values to avoid unique constraint violation (e.g., set current to 0, set sibling to target, then set current to sibling's old value). To move down: analogous. Re-number sequentially (1, 2, 3, ...) after swap if desired.
+- **deal_type as OneToOneField:** Prefer `OneToOneField(DealType, on_delete=models.PROTECT)` for `DocumentSetTemplate.deal_type`. Django's system check warns that `ForeignKey(unique=True)` should be expressed as `OneToOneField`; using OneToOneField avoids the warning. If the model was created earlier with `ForeignKey(unique=True)`, a migration can change it to OneToOneField.
+- **Running migrations without activated venv:** When the shell does not have the project's virtualenv activated (e.g. in automation, CI, or agent-run commands), run Django via the venv interpreter: `.venv/bin/python manage.py migrate`, `.venv/bin/python manage.py check`, etc.
+- **GenericForeignKey:** Use `ContentType.objects.get_for_model(StaticDocumentTemplate)` and `get_for_model(DynamicDocumentTemplate)` when building/parsing choices. Store `content_type` and `object_id` on save. `formset_to_items` skips empty rows and assigns order from position.
+- **Up/down logic:** To move item up: find item with `order == current_order - 1`; swap order values. Use temporary values to avoid unique constraint violation (e.g., set current to 0, set sibling to current_order, set current to sibling's old order). Then re-number all items sequentially (1, 2, 3, ...). To move down: analogous.
+- **Formset prefix:** Use a constant prefix (e.g. `items`) for the item formset so management form and field names are predictable in templates and views.
 - **DealType import and INSTALLED_APPS:** `from apps.deals.models import DealType`. Ensure `apps.deals` is listed **before** `apps.doctemplates` in `INSTALLED_APPS` to avoid import/dependency issues.
-- **Protect Static/Dynamic templates in use:** Do not allow deleting a Static or Dynamic template if it is referenced by any `DocumentSetTemplateItem`. Add a check in the Static and Dynamic template delete views (or forms): query `DocumentSetTemplateItem` for references to the template via `content_type` and `object_id`; if any exist, block deletion with error (e.g., "This template cannot be deleted because it is used in a Document Set Template.").
+- **Protect Static/Dynamic templates in use:** Do not allow deleting a Static or Dynamic template if it is referenced by any `DocumentSetTemplateItem`. In the Static and Dynamic template **delete confirmation views** (on POST), query `DocumentSetTemplateItem` for references via `content_type` and `object_id`; if any exist, do not delete and re-render the confirmation page with an error message (e.g. "This template cannot be deleted because it is used in a Document Set Template.").
 
 ---
 

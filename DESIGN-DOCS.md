@@ -384,6 +384,7 @@ A **Document Set** is attached to a Deal and contains the documents produced for
 ### Template Reusability
 
 - The same Document Template (Static or Dynamic) can appear in multiple Document Set Templates. For example, the safety advisory may be used in both lease and cash-purchase document sets.
+- **Deletion protection:** A Static or Dynamic template that is referenced by any Document Set Template cannot be deleted. The delete confirmation UI shows an error and does not remove the template, preserving referential integrity.
 
 ### Initial Release Configuration
 
@@ -451,9 +452,9 @@ All templates listed in a Document Set Template are required. The admin configur
 
 ### Creation Flow (Generate Documents)
 
-Documents are created when the Deal has **sufficient data**: all Deal fields have values, and there is at least one vehicle, one user (lease officer), and one signer (contact). The system:
+Documents are created when the Deal has **sufficient data** and a **Document Set Template** exists for the deal's Deal Type. The system:
 
-1. Determines the Deal's Deal Type and looks up the associated Document Set Template
+1. Determines the Deal's Deal Type and looks up the associated Document Set Template (one template per Deal Type; see Document Set Templates section).
 2. Creates a Document Set for the Deal, linking it to that Document Set Template
 3. Iterates through the Document Set Template's ordered list of Document Templates:
    - **Dynamic template:** Obtain deal data via `get_deal_data(deal)` (DESIGN-DATA-INTERFACE.md); build template context from mapping and transforms (including image variables per [Image references](#image-references-in-dynamic-templates)); render HTML/DTL with deal context → render to HTML → convert to PDF (pdfkit/wkhtmltopdf) → store the PDF in a new Document Instance Version
@@ -553,7 +554,7 @@ The same Document Template (Static or Dynamic) can appear in multiple Document S
 
 ### Sufficient data (for Generate Documents)
 
-A Deal has sufficient data when: all Deal fields have values, and there is at least one vehicle, one user (lease officer), and one signer (contact).
+A Deal has sufficient data when: all Deal fields have values, and there is at least one vehicle, one user (lease officer), and one signer (contact). The **Generate Documents** button is enabled only when the deal has sufficient data **and** a Document Set Template exists for the deal's Deal Type. If no template is configured for that type, the button is disabled and the user is informed (e.g. "No document set template configured for this deal type.").
 
 ### Regenerate Documents after SIGNiX
 

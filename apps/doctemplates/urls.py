@@ -22,6 +22,36 @@ urlpatterns = [
         name="dynamic_doctemplate_add",
     ),
     path(
+        "doc-set-templates/",
+        views.docsettemplate_list,
+        name="docsettemplate_list",
+    ),
+    path(
+        "doc-set-templates/add/",
+        views.docsettemplate_add,
+        name="docsettemplate_add",
+    ),
+    path(
+        "doc-set-templates/<int:pk>/edit/",
+        views.docsettemplate_edit,
+        name="docsettemplate_edit",
+    ),
+    path(
+        "doc-set-templates/<int:pk>/delete/",
+        views.docsettemplate_delete_confirm,
+        name="docsettemplate_delete_confirm",
+    ),
+    path(
+        "doc-set-templates/<int:pk>/items/<int:item_id>/move-up/",
+        views.docsettemplate_item_move_up,
+        name="docsettemplate_item_move_up",
+    ),
+    path(
+        "doc-set-templates/<int:pk>/items/<int:item_id>/move-down/",
+        views.docsettemplate_item_move_down,
+        name="docsettemplate_item_move_down",
+    ),
+    path(
         "dynamic/<int:pk>/edit/",
         views.dynamic_doctemplate_edit,
         name="dynamic_doctemplate_edit",

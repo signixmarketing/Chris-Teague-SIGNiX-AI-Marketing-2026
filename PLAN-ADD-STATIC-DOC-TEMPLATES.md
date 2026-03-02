@@ -75,6 +75,7 @@ The list starts empty. No management command or fixture. Users add templates via
 ### 4.4 Delete template
 
 - **POST required.** Dedicated confirmation page: GET shows "Are you sure you want to delete this template?" (show ref_id/description); POST deletes record and file; redirect to list with "Static template deleted."
+- **When Document Set Templates exist (PLAN-ADD-DOC-SET-TEMPLATES):** If this Static template is referenced by any Document Set Template, POST does not delete; re-render the confirmation page with an error (e.g. "This template cannot be deleted because it is used in a Document Set Template.").
 
 ---
 

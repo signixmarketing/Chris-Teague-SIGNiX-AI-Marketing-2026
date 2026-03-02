@@ -19,7 +19,7 @@ This document defines the order in which to implement the document-related featu
 | **Dynamic item_map** | Supported in v1; one row per parsed `item.*` variable; map each to Vehicle field dropdown |
 | **Dynamic variable mapping** | All parsed variables must be mapped (validation on add and edit) |
 | **Identify Fields** | Fetch/AJAX; no page reload (file input preserved) |
-| **Sidebar order** | Static Templates → Dynamic Templates → Images |
+| **Sidebar order** | Static Templates → Dynamic Templates → Document Set Templates → Images |
 | **Data interface** | Dynamic templates use `apps.schema.services.get_paths_grouped_for_mapping()` for deal paths and append Images optgroup from Image model; context builder uses `get_deal_data()` for deal data and resolves `image:<uuid>` via Image model—no model traversal for deal paths (DESIGN-DATA-INTERFACE) |
 
 ---
