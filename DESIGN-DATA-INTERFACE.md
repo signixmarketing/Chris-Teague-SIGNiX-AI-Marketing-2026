@@ -224,7 +224,7 @@ The output is a nested dict with `deal` at the root. The structure mirrors the s
 The **context builder** (used when populating dynamic templates; see DESIGN-DOCS.md):
 
 1. Calls `get_deal_data(deal)` to obtain the full deal-centric structure.
-2. Applies the mapping config: for each template variable (e.g. `data.payment_amount`), looks up the source path (e.g. `deal.payment_amount`) in the returned structure, applies any transform (e.g. `date_day`, `concat`), and builds the template context.
+2. Applies the mapping config: for each template variable (e.g. `data.payment_amount`), looks up the source path (e.g. `deal.payment_amount`) in the returned structure, applies any transform (e.g. `date_day`, `date_month_day`), and builds the template context.
 
 The context builder **must not** traverse Django models or QuerySets directly; it works exclusively from the structure returned by `get_deal_data()`. Path resolution (e.g. `deal.contacts[0]` for "first contact") is performed on that structure—e.g. the first element of the `contacts` list—not via database queries. DESIGN-DOCS.md enforces this no-circumvention requirement for all document features.
 

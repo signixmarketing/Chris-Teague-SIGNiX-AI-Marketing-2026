@@ -88,7 +88,6 @@ Items to resolve when creating the corresponding plans:
 | Plan | Topic | Notes |
 |------|-------|-------|
 | Doc Set Templates | Template ordering UI | **Decided:** Up/down buttons for v1 (see PLAN-ADD-DOC-SET-TEMPLATES.md). |
-| Dynamic (v1) | `concat` transform | Concatenation needs multiple source fields (e.g. first_name + last_name). Mapping UI for selecting fields—defer to v1 or add simple multi-select? |
 | Document Sets | Deal detail / View–Edit split | **Decided:** Implemented in PLAN-ADD-DEALS (deal_detail, View primary from list, Edit/Delete on detail). Document Sets adds Documents section to the existing detail page. |
 | Document Sets | HTML-to-PDF | pdfkit/wkhtmltopdf per DESIGN-DOCS; see PLAN-ADD-DOCUMENT-SETS Section 12 for image URL handling. |
 | SIGNiX | Integration design | Deferred; PLAN-ADD-SIGNIX-INTEGRATION created after SIGNiX design is documented. |

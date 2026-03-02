@@ -96,7 +96,7 @@ Structure per DESIGN-DOCS (refinable in implementation):
 
 Each mapping entry includes `var_type` (`data_source`, `list`, `list_item`, `image`, `scalar`) for context builder and future use. Parsing infers roots (e.g. `data`) from dotted variable prefixes; list-item variables are those referenced inside a `{% for %}` loop; image variables are detected by naming convention (`_image_url`, `_image`, `_logo_url`, `_logo`); scalars are the remainder.
 
-Transforms: `date_day`, `date_month`, `date_year`, `date_month_day`, `concat`, `count`, `number_to_word`, `plural_suffix`. See DESIGN-DOCS for full list and schema.
+Transforms: `date_day`, `date_month`, `date_year`, `date_month_day`, `count`, `number_to_word`, `plural_suffix`. See DESIGN-DOCS for full list and schema.
 
 ---
 

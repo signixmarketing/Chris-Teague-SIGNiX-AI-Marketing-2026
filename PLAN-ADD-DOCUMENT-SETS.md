@@ -38,7 +38,7 @@ This document outlines how to add **Document Sets**, **Document Instances**, and
 - `order` — `PositiveIntegerField` — order within the set (1-based)
 - `content_type` — `ForeignKey(ContentType, on_delete=models.PROTECT)`
 - `object_id` — `PositiveIntegerField`
-- `source_template` — `GenericForeignKey('content_type', 'object_id')` — Static or Dynamic template
+- `source_document_template` — `GenericForeignKey('content_type', 'object_id')` — Static or Dynamic template this instance was created from
 - `template_type` — `CharField(max_length=20)` — `"static"` or `"dynamic"` (denormalized for display)
 - Conventions: `Meta` with `ordering = ['order']`, `UniqueConstraint` on (document_set, order)
 
@@ -102,10 +102,12 @@ Wrap creation in `transaction.atomic()`. On any failure, roll back. Log errors w
 
 ## 6. Dynamic Template Rendering
 
-1. **Context builder:** `build_document_context(deal, mapping)` — call `get_deal_data(deal)` from `apps.schema.services` to obtain the deal-centric structure; do not traverse Django models or QuerySets directly. Apply mapping and transforms to build the template context (e.g. `data.payment_amount` → nested `{"data": {"payment_amount": ...}}`). Resolve sources from the dict returned by `get_deal_data()`; apply transforms (date_day, concat, count, etc.). Per DESIGN-DATA-INTERFACE and DESIGN-DOCS no-circumvention requirement.
-2. **Render:** `Template(html_string).render(Context(context))`.
-3. **HTML-to-PDF:** Use `pdfkit` with `wkhtmltopdf`. wkhtmltopdf requires absolute URLs for images (e.g. `http://localhost:8000/media/...`).
-4. **Image URLs — decided:** Generation runs from a view (POST to generate); pass `request` to the generation service. Use `request.build_absolute_uri()` for the base URL when rendering—Django's `{% static %}` and media URLs in the template will resolve relative to the request's host. For the HTML string passed to pdfkit, ensure `RequestContext` or a custom context includes a base URL (e.g. `base_url = request.build_absolute_uri('/')`); templates can use it to build absolute image URLs. Alternatively, post-process the rendered HTML to convert relative `/media/` and `/static/` URLs to absolute using `request.build_absolute_uri()`. Add optional `SITE_URL` in settings as fallback for any future generation outside request context (e.g. management command).
+The context builder (implemented in `apps.documents`) produces the template context from the deal, the template's mapping, and an optional request. Deal data and image URLs are resolved as follows.
+
+1. **Deal data:** Call `get_deal_data(deal)` from `apps.schema.services`; do not traverse Django models or QuerySets for deal paths. Resolve each mapping entry's source from the returned dict. Apply transforms via `apps.doctemplates.utils.apply_transform()` (date_day, date_month_day, count, number_to_word, plural_suffix, etc.). Build nested context (e.g. `data.payment_amount` → `{"data": {"payment_amount": ...}}`). Per DESIGN-DATA-INTERFACE and DESIGN-DOCS.
+2. **Image variables:** For mapping entries whose `source` starts with `image:`, parse the UUID and resolve via `Image.objects.get(uuid=...)` (apps.images.models). If the Image does not exist, raise a clear error so generation fails with an actionable message. Set the context value to the image file URL. When building for PDF, the URL must be absolute so wkhtmltopdf can load it: use `request.build_absolute_uri(image.file.url)` when request is provided; when request is None (e.g. management command), use `settings.SITE_URL` + relative path when SITE_URL is set (otherwise relative URLs may cause wkhtmltopdf to fail).
+3. **Render:** `Template(html_string).render(Context(context))`.
+4. **HTML-to-PDF:** Use `pdfkit` with `wkhtmltopdf`. Pass a base URL (e.g. `request.build_absolute_uri('/')` or `SITE_URL`) so relative URLs in the rendered HTML resolve. Image URLs injected by the context builder are already absolute when request is present; when generation runs without a request, set `SITE_URL` in settings for correct image loading.
 
 ---
 
@@ -165,7 +167,7 @@ Batch 2 complete when Generate works for Static-only Document Set Templates.
    - Add `pdfkit` to `requirements.txt` (e.g. `pdfkit>=1.0`). Run `pip install pdfkit`. Assumes `wkhtmltopdf` is already installed on the system.
 
 9. **Context builder**
-   - `build_document_context(deal, mapping)` — call `get_deal_data(deal)` from `apps.schema.services` to obtain deal data; resolve sources from that dict, apply transforms via `apply_transform()`. For list variables, pass list through; `item_map` optional when names match. Do not traverse models directly. See DESIGN-DOCS mapping types and DESIGN-DATA-INTERFACE.
+   - In `apps.documents` (e.g. `services.py`), implement `build_document_context(deal, mapping, request=None)` per Section 6: resolve deal data from `get_deal_data(deal)` and apply transforms; resolve image sources via the Image model and raise a clear error if an Image is missing; supply absolute image URLs (using request when present, else `SITE_URL`). Use `apps.doctemplates.utils.apply_transform()` for transforms. Do not traverse models for deal paths.
 
 10. **Dynamic render and HTML-to-PDF**
     - Read Dynamic template HTML; build context; render with `Template().render(Context())`; convert to PDF with pdfkit. Store PDF in `DocumentInstanceVersion.file`. Ensure image URLs are absolute for wkhtmltopdf.
@@ -178,7 +180,7 @@ Batch 3 complete when Generate and Regenerate work for both Static and Dynamic t
 ### Batch 4 — UI (steps 12–15)
 
 12. **Documents table on Deal detail**
-    - Render table: document name (from source_template.ref_id or description), latest version info, "View latest", "View all versions" links.
+    - Render table: document name (from source_document_template.ref_id or description), latest version info, "View latest", "View all versions" links.
 
 13. **View latest / Document Instance page**
     - View for serving PDF (inline) and download. URL e.g. `/documents/versions/<pk>/view/` and `/documents/versions/<pk>/download/`.
@@ -279,23 +281,29 @@ Batch 4 complete when full UI works and PDFs view/download correctly.
 
 ## 11. Implementation Notes
 
-- **pdfkit:** Add `pdfkit` to `requirements.txt` (step 8). Assumes `wkhtmltopdf` is installed on the system. Use `pdfkit.from_string(html, False, options={'base': base_url})` with `base_url = request.build_absolute_uri('/')` so relative URLs in the HTML resolve. Add optional `SITE_URL` in settings for future use when generation runs without a request.
-- **Context builder:** Call `get_deal_data(deal)` from `apps.schema.services` to obtain deal data—do not traverse models directly. Work from the returned dict; mapping keys use dot notation (e.g. `data.payment_amount`). Build nested context: `{"data": {"payment_amount": value}}`. For list variables (e.g. `data.jet_pack_list` → `deal.vehicles`), pass list through; when template item field names match schema, no `item_map` needed. For "first contact" or "first vehicle", use index 0: `deal_data["deal"]["contacts"][0]`, `deal_data["deal"]["vehicles"][0]`.
-- **Transforms (v1):** Use `apps.doctemplates.utils.apply_transform(value, transform_name)` for date transforms and others. Implemented: `date_day`, `date_month`, `date_year`, `date_month_day` (outputs "September 1" from ISO date), `number_to_word` (0–99), `plural_suffix` ("" if count==1 else "s"), `concat` (join with single space), `count`. Other transforms per DESIGN-DOCS.
+- **pdfkit:** Add `pdfkit` to `requirements.txt` (step 8). Assumes `wkhtmltopdf` is installed. Use `pdfkit.from_string(html, False, options={'base': base_url})` with `base_url = request.build_absolute_uri('/')` when request is present, or `settings.SITE_URL` when generation runs without a request (e.g. management command).
+- **Context builder:** Implement in `apps.documents` (e.g. `services.py`). Resolve deal data from `get_deal_data(deal)`; build nested context from mapping and apply transforms via `apply_transform()`. For list variables, pass lists through; for "first contact" or "first vehicle", use index 0 on the deal data structure. Resolve image sources (`source` starting with `image:`) via the Image model; raise a clear error if the Image does not exist. Use `request.build_absolute_uri(image.file.url)` for image URLs when request is present; when request is None, use `settings.SITE_URL` + relative path (unset SITE_URL may cause wkhtmltopdf to fail on images).
+- **Transforms (v1):** Use `apps.doctemplates.utils.apply_transform(value, transform_name)` for date transforms and others. Implemented: `date_day`, `date_month`, `date_year`, `date_month_day` (outputs "September 1" from ISO date), `count`, `number_to_word` (0–99), `plural_suffix` ("" if count==1 else "s"). Other transforms per DESIGN-DOCS.
 - **Atomicity:** Use `with transaction.atomic():` around entire Generate/Regenerate flow. On exception, rollback and re-raise or return error to user.
 - **Logging:** Log each step (template lookup, context build, render, PDF conversion, file save) with deal id, template ref_id. On error, log exception with context.
 
 ---
 
-## 12. Open Questions / Significant Implementation Decisions
+## 12. Implementation Decisions
 
-| # | Topic | Notes |
-|---|-------|-------|
-| 1 | **Deal detail vs Edit** | **Decided and implemented in PLAN-ADD-DEALS:** deal_detail view, View primary from list, Edit and Delete on detail. This plan extends the detail page with Documents. See Section 3. |
-| 2 | **Image URLs for wkhtmltopdf** | **Decided:** Pass `request` to generation; use `request.build_absolute_uri('/')` as base for pdfkit. Add optional `SITE_URL` in settings as fallback. See Section 6 and Implementation Notes. |
-| 3 | **Transform implementations** | **Decided:** Use `apps.doctemplates.utils.apply_transform()`. Date transforms (date_day, date_month, date_year, date_month_day) handle ISO strings; `date_month_day` outputs "September 1". `number_to_word` 0–99; `plural_suffix` "" if count==1 else "s"; `concat` join with single space. See Implementation Notes. |
-| 4 | **First contact / first vehicle** | **Decided:** Resolve from `get_deal_data(deal)` output: `deal_data["deal"]["contacts"][0]`, `deal_data["deal"]["vehicles"][0]`. Vehicles and contacts are ordered by id in `get_deal_data()` per DESIGN-DATA-INTERFACE. See Implementation Notes. |
-| 5 | **Document Set Template missing** | **Decided:** If Deal's Deal Type has no Document Set Template, disable Generate and show "No document set template configured for this deal type." See Section 4 and Batch 2. |
+The following are fixed for this plan so that implementation is consistent.
+
+| # | Topic | Decision |
+|---|-------|----------|
+| 1 | **Deal detail** | Deal detail page (View primary from list, Edit/Delete on detail) is implemented in PLAN-ADD-DEALS. This plan adds the Documents section to that page. See Section 3. |
+| 2 | **Image URLs for PDF** | Pass `request` to generation; use `request.build_absolute_uri('/')` as base for pdfkit. Use `SITE_URL` in settings when generation runs without a request (e.g. management command). See Section 6. |
+| 3 | **Transforms** | Use `apps.doctemplates.utils.apply_transform()`. Supported: date_day, date_month, date_year, date_month_day, count, number_to_word, plural_suffix. See Implementation Notes. |
+| 4 | **First contact / first vehicle** | Resolve from `get_deal_data(deal)` output at index 0; ordering is by id per DESIGN-DATA-INTERFACE. |
+| 5 | **No Document Set Template** | If the deal's Deal Type has no Document Set Template, disable Generate and show "No document set template configured for this deal type." See Section 4. |
+| 6 | **Image resolution** | Mapping entries with source `image:<uuid>` are resolved via the Image model; context value is the image file URL (absolute when building for PDF). See Section 6 and DESIGN-DOCS "Image references in dynamic templates." |
+| 7 | **Context builder location** | Implement `build_document_context` in `apps.documents` (e.g. `services.py`). Used only at generation time. |
+| 8 | **Missing Image at generation** | If an Image referenced by mapping no longer exists, raise a clear error; do not substitute empty string. |
+| 9 | **Generation without request** | When `request` is None, use `SITE_URL` + relative path for image URLs. If SITE_URL is unset, image loading in wkhtmltopdf may fail—document as a limitation. |
 
 ---
 

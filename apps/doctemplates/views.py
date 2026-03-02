@@ -50,7 +50,6 @@ TRANSFORM_CHOICES = [
     ("date_month", "date_month"),
     ("date_year", "date_year"),
     ("date_month_day", "date_month_day"),
-    ("concat", "concat"),
     ("count", "count"),
     ("number_to_word", "number_to_word"),
     ("plural_suffix", "plural_suffix"),

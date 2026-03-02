@@ -304,7 +304,6 @@ The mapping feature **consumes the Internal Data Schema** (see DESIGN-DATA-INTER
 | **Direct (derived)** | `data.lessee_name` → `deal.contacts.item.full_name` | Pass-through; `full_name` is pre-computed in `get_deal_data()` (first + middle + last, space-separated). For flat variables, context builder uses first contact. |
 | **Date part** | `data.entered_day` → day of `deal.date_entered` | Transform: extract day, month, or year from date value in `get_deal_data()` output. |
 | **Date formatted** | `data.lease_start_day_month` → "September 1" | Transform: `date_month_day` formats date as month name + day (e.g. `deal.lease_start_date` → "September 1"). |
-| **Concatenate** | Other multi-field joins | Transform: join fields from an object when no pre-computed path exists. |
 | **List** | `data.jet_pack_list` → `deal.vehicles` | Map list source; pass-through when template item field names match schema (e.g. `item.sku` → `sku`). `item_map` optional—only for renaming or field selection. |
 | **Direct (derived)** | `data.number_of_items_number` → `deal.vehicles_count` | Pass-through; count pre-computed in `get_deal_data()`. |
 | **Count + transform** | `data.number_of_items_text` → `deal.vehicles_count` + `number_to_word` | Transform formats count as "one", "two", etc. Same for `plural_suffix` ("" or "s"). Pattern applies to `deal.contacts_count` as well. |
@@ -321,7 +320,6 @@ The mapping UI offers a fixed set of transforms. Each mapping entry specifies: t
 | `date_month` | Date (ISO string) | Month as int (1–12) | `data.entered_month` |
 | `date_year` | Date (ISO string) | Year as int | `data.entered_year` |
 | `date_month_day` | Date (ISO string) | "September 1" (month name + day) | `data.lease_start_day_month`, `data.lease_end_day_month` |
-| `concat` | Multiple text fields | Joined string | When no pre-computed path (e.g. `deal.contacts.item.full_name`) exists |
 | `count` | List | Integer count | When source is list and count needed (alternative to pre-computed `deal.vehicles_count`) |
 | `number_to_word` | Integer | "one", "two", etc. | Format count for display (e.g. source `deal.vehicles_count`) |
 | `plural_suffix` | Integer | "" or "s" | Format count for plural inflection (e.g. source `deal.vehicles_count`) |
@@ -458,7 +456,7 @@ Documents are created when the Deal has **sufficient data**: all Deal fields hav
 1. Determines the Deal's Deal Type and looks up the associated Document Set Template
 2. Creates a Document Set for the Deal, linking it to that Document Set Template
 3. Iterates through the Document Set Template's ordered list of Document Templates:
-   - **Dynamic template:** Obtain deal data via `get_deal_data(deal)` (DESIGN-DATA-INTERFACE.md); build template context from mapping and transforms; render HTML/DTL with deal context; images via static references (see [Image references](#image-references-in-dynamic-templates)) → render to HTML → convert to PDF (pdfkit/wkhtmltopdf) → store the PDF in a new Document Instance Version
+   - **Dynamic template:** Obtain deal data via `get_deal_data(deal)` (DESIGN-DATA-INTERFACE.md); build template context from mapping and transforms (including image variables per [Image references](#image-references-in-dynamic-templates)); render HTML/DTL with deal context → render to HTML → convert to PDF (pdfkit/wkhtmltopdf) → store the PDF in a new Document Instance Version
    - **Static template:** Copy the static PDF from the template to a new Document Instance Version
 4. For each template, creates a Document Instance (with link to source template, template_type) and adds the first Document Instance Version with status "Draft"
 

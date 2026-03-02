@@ -4,7 +4,7 @@ This document outlines how to add **Document Set Templates** to the Django lease
 
 **Design reference:** DESIGN-DOCS.md — Document Set Templates section.
 
-**Prerequisites:** PLAN-ADD-STATIC-DOC-TEMPLATES.md and PLAN-ADD-DYNAMIC-DOC-TEMPLATES.md must be implemented (apps.doctemplates with Static and Dynamic templates). PLAN-MASTER plans 1–6 are implemented, including PLAN-ADD-DEALS (DealType and Deal with deal_type exist; Deal Type "Lease - Single Signer" is the default).
+**Prerequisites:** PLAN-ADD-STATIC-DOC-TEMPLATES.md and PLAN-ADD-DYNAMIC-DOC-TEMPLATES.md must be implemented (apps.doctemplates with Static and Dynamic templates). Dynamic templates may include image variable mapping (Images optgroup, source format `image:<uuid>` per DESIGN-DOCS); Document Set Templates reference templates by type only and do not depend on mapping contents. PLAN-MASTER plans 1–6 are implemented, including PLAN-ADD-DEALS (DealType and Deal with deal_type exist; Deal Type "Lease - Single Signer" is the default).
 
 **Review this plan before implementation.** Implementation order is in **Section 7**; **Section 7a** defines batches and verification.
 
