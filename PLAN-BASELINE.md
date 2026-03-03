@@ -109,7 +109,8 @@ django-lease/
   - `full_name` (CharField, optional or derived) — for display; can be a property or stored field
   - `phone_number` (CharField)
   - `email` (EmailField) — can mirror or override User.email
-- **Conventions**: Prefer one source of truth (e.g. profile) for display; optionally sync with `User` on save for consistency with admin/auth.
+  - `timezone` (CharField) — IANA timezone name (e.g. America/New_York); default America/New_York. Used to display dates and times app-wide (deal dates, document version dates, etc.). Daylight saving is handled automatically by the timezone database.
+- **Conventions**: Prefer one source of truth (e.g. profile) for display; optionally sync with `User` on save for consistency with admin/auth. Middleware activates the profile timezone per request so template date/time filters show the user's local time.
 
 **Design choice**: Store `full_name` as a CharField (or computed property from first_name + last_name). Plan will assume a **computed property** in code and/or a `save()` that sets a `full_name` field from first + last to keep display logic simple.
 
@@ -119,7 +120,7 @@ django-lease/
 
 - **Username**: `karl`
 - **Password**: `karl` (plain for demo; document that production must use strong passwords and env-based secrets)
-- **Profile**: First = "Karl", Last = "Matthews", Phone = "9197440153", Email = "kmatthews@signix.com"
+- **Profile**: First = "Karl", Last = "Matthews", Phone = "9197440153", Email = "kmatthews@signix.com", Timezone = America/New_York
 - **Implementation**: Use a **management command** (e.g. `setup_initial_user`) that:
   - Creates user `karl` if not present (set `is_staff=True`, `is_superuser=True` for full admin access).
   - Creates/updates `LeaseOfficerProfile` with the above data.
@@ -140,8 +141,8 @@ django-lease/
 
 ## 8. Profile Flow
 
-- **View** (`/profile/`): Display current user's profile (first name, last name, full name, phone, email). Read-only page with an "Edit" button.
-- **Edit** (`/profile/edit/`): Form to update first name, last name, phone, email. Full name can be read-only (computed) or editable per model design. On save, redirect to profile view and show a success message.
+- **View** (`/profile/`): Display current user's profile (first name, last name, full name, phone, email, time zone). Read-only page with an "Edit" button.
+- **Edit** (`/profile/edit/`): Form to update first name, last name, phone, email, and time zone. Full name can be read-only (computed) or editable per model design. On save, redirect to profile view and show a success message. The profile time zone controls how dates and times are displayed elsewhere in the app (e.g. deal dates, document version dates).
 - **Permissions**: User can only view/edit their own profile (enforced in the view by using `request.user`).
 
 ---
@@ -161,6 +162,7 @@ django-lease/
 - **SECRET_KEY**: Load from environment variable in production; for local/demo, a default in settings is fine (document in this plan to override in production).
 - **DEBUG**: Default True for demo; for production set `DEBUG=False` and configure `ALLOWED_HOSTS`.
 - **SQLite**: Default `db.sqlite3` in project root; add to `.gitignore` if you do not want to commit the DB (optional).
+- **Time zone**: Set `USE_TZ = True` so datetimes are stored in UTC. Set `TIME_ZONE` to the default display zone (e.g. America/New_York) for anonymous users and fallback; logged-in users' profile timezone overrides this per request via middleware.
 
 ---
 
@@ -235,11 +237,12 @@ These are the concrete steps that match the Admin look and fix common issues whe
 
 3. **Users app and model**
    - Create the `apps/users` app (ensure `apps/` package and `apps/users/` package exist; add `apps/users/apps.py` with `name = "apps.users"`, and `apps/users/migrations/__init__.py`). Add `apps.users` to `INSTALLED_APPS`.
-   - Define `LeaseOfficerProfile` with OneToOne to User and fields above; add `full_name` as a computed property (e.g. `@property` from first_name + last_name).
+   - Define `LeaseOfficerProfile` with OneToOne to User and fields above; add `full_name` as a computed property (e.g. `@property` from first_name + last_name) and `timezone` (CharField, IANA name, default America/New_York, choices for common zones).
    - Run `python manage.py makemigrations users` and `python manage.py migrate`.
+   - Add middleware (e.g. in `apps/users/middleware.py`) that activates the request user's profile timezone for each request so that all date/time display in templates uses the user's local time; register it in `MIDDLEWARE` after `AuthenticationMiddleware`. Set `TIME_ZONE` in settings to the default display zone (e.g. America/New_York) for anonymous or fallback.
 
 4. **Initial user**
-   - Add a management command at `apps/users/management/commands/setup_initial_user.py` that creates or updates user `karl` (password `karl`, `is_staff=True`, `is_superuser=True`) and a `LeaseOfficerProfile` with the plan data (Section 6). Use `get_or_create` so the command is idempotent.
+   - Add a management command at `apps/users/management/commands/setup_initial_user.py` that creates or updates user `karl` (password `karl`, `is_staff=True`, `is_superuser=True`) and a `LeaseOfficerProfile` with the plan data (Section 6), including timezone America/New_York. Use `get_or_create` so the command is idempotent.
 
 5. **Auth and base template**
    - Configure `LOGIN_URL`, `LOGIN_REDIRECT_URL`, `LOGOUT_REDIRECT_URL`.
@@ -248,7 +251,7 @@ These are the concrete steps that match the Admin look and fix common issues whe
 
 6. **Profile views and URLs**
    - Implement a root redirect view (e.g. `root_redirect`: if authenticated → redirect to `users:profile`, else → redirect to `login`). Implement profile view and profile edit view; use `@login_required` and `get_object_or_404(LeaseOfficerProfile, user=request.user)`.
-   - Add `forms.py` with a ModelForm for the profile (fields: first_name, last_name, phone_number, email); on valid POST save and redirect to profile with a success message.
+   - Add `forms.py` with a ModelForm for the profile (fields: first_name, last_name, phone_number, email, timezone); on valid POST save and redirect to profile with a success message.
    - In `config/urls.py`: `path("", root_redirect)`, `path("accounts/", include("django.contrib.auth.urls"))`, `path("", include("apps.users.urls"))`, `path("admin/", admin.site.urls)`. In `apps/users/urls.py` set `app_name = "users"` and define `path("profile/", profile_view, name="profile")`, `path("profile/edit/", profile_edit, name="profile_edit")`.
    - Override `templates/admin/base.html` so the Admin top-right person icon is a direct link to `/profile/` (see Section 9 and Section 12.1).
 
@@ -273,7 +276,7 @@ Implementation can be done in **two batches**. After each batch, run the verific
    - `python manage.py shell`
    - `from django.contrib.auth.models import User; from apps.users.models import LeaseOfficerProfile`
    - `u = User.objects.get(username='karl')`
-   - `u.lease_officer_profile.first_name` → `'Karl'`, `u.lease_officer_profile.email` → `'kmatthews@signix.com'`, `u.lease_officer_profile.phone_number` → `'9197440153'`
+   - `u.lease_officer_profile.first_name` → `'Karl'`, `u.lease_officer_profile.email` → `'kmatthews@signix.com'`, `u.lease_officer_profile.phone_number` → `'9197440153'`, `u.lease_officer_profile.timezone` → `'America/New_York'`
 
 You will not have the login page or Profile menu until Batch 2; Batch 1 is complete when the above all pass.
 
@@ -294,7 +297,7 @@ You will not have the login page or Profile menu until Batch 2; Batch 1 is compl
 
 1. Start the server (F5 or `python manage.py runserver`). Open the app in the browser (e.g. `http://127.0.0.1:8000/`).
 2. You should be redirected to the login page. Log in with username `karl`, password `karl`.
-3. After login you should see the app with a menu. Open **Profile** — the profile view should show Karl's name, email, and phone. Use **Edit** to change a field, save, and confirm the profile view shows the update.
+3. After login you should see the app with a menu. Open **Profile** — the profile view should show Karl's name, email, phone, and time zone. Use **Edit** to change a field (including time zone), save, and confirm the profile view shows the update. Dates and times shown elsewhere in the app (e.g. deal dates, document version dates) will use the profile time zone.
 4. Use the menu to open **Admin** (or go to `/admin/`); confirm the Django admin loads (log in with karl/karl if prompted). Click "Back to app" in the sidebar to return; click the person icon in the top-right to go to Profile.
 5. **Logout:** Use Log out in the app menu (or in Admin); confirm no 405 (logout must be POST).
 

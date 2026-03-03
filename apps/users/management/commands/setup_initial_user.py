@@ -21,6 +21,7 @@ INITIAL_FIRST_NAME = "Karl"
 INITIAL_LAST_NAME = "Matthews"
 INITIAL_PHONE = "9197440153"
 INITIAL_EMAIL = "kmatthews@signix.com"
+INITIAL_TIMEZONE = "America/New_York"
 
 
 class Command(BaseCommand):
@@ -55,6 +56,7 @@ class Command(BaseCommand):
                 "last_name": INITIAL_LAST_NAME,
                 "phone_number": INITIAL_PHONE,
                 "email": INITIAL_EMAIL,
+                "timezone": INITIAL_TIMEZONE,
             },
         )
         if not profile_created:
@@ -63,6 +65,7 @@ class Command(BaseCommand):
             profile.last_name = INITIAL_LAST_NAME
             profile.phone_number = INITIAL_PHONE
             profile.email = INITIAL_EMAIL
+            profile.timezone = INITIAL_TIMEZONE
             profile.save()
             self.stdout.write("Updated existing lease officer profile.")
         else:

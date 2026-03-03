@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "apps.schema",
     "apps.images",
     "apps.doctemplates",
+    "apps.documents",
 ]
 
 MIDDLEWARE = [
@@ -55,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.users.middleware.ProfileTimezoneMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -112,7 +114,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# Display datetimes in this zone when no user timezone is active (anonymous or fallback).
+# Per-user timezone is set on the profile and activated by ProfileTimezoneMiddleware.
+TIME_ZONE = 'America/New_York'
 
 USE_I18N = True
 

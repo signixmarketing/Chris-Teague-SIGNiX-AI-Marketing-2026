@@ -1,20 +1,32 @@
 """
 Lease officer profile model.
 
-One profile per User; holds display name, phone, and email for vehicle (jet pack)
-lease origination. full_name is derived from first_name + last_name.
+One profile per User; holds display name, contact info, and timezone for
+vehicle (jet pack) lease origination. full_name is derived from first_name + last_name.
+Timezone controls how dates and times are displayed app-wide (e.g. deal dates, document version dates).
 """
 
 from django.conf import settings
 from django.db import models
+
+# Common IANA timezone choices for profile; default Eastern.
+DEFAULT_TIMEZONE = "America/New_York"
+TIMEZONE_CHOICES = [
+    ("America/New_York", "Eastern (America/New_York)"),
+    ("America/Chicago", "Central (America/Chicago)"),
+    ("America/Denver", "Mountain (America/Denver)"),
+    ("America/Los_Angeles", "Pacific (America/Los_Angeles)"),
+    ("America/Phoenix", "Arizona (America/Phoenix)"),
+    ("UTC", "UTC"),
+]
 
 
 class LeaseOfficerProfile(models.Model):
     """
     Profile for a lease officer (one-to-one with User).
 
-    Used as the source of truth for display name, phone, and email in the
-    lease origination app. full_name is computed from first_name and last_name.
+    Used as the source of truth for display name, phone, email, and timezone.
+    full_name is computed from first_name and last_name.
     """
 
     user = models.OneToOneField(
@@ -26,6 +38,12 @@ class LeaseOfficerProfile(models.Model):
     last_name = models.CharField(max_length=150)
     phone_number = models.CharField(max_length=30)
     email = models.EmailField()
+    timezone = models.CharField(
+        max_length=63,
+        choices=TIMEZONE_CHOICES,
+        default=DEFAULT_TIMEZONE,
+        help_text="Timezone for displaying dates and times in the app (e.g. Eastern).",
+    )
 
     class Meta:
         verbose_name = "Lease officer profile"

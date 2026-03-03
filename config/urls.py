@@ -28,6 +28,7 @@ urlpatterns = [
     path("vehicles/", include("apps.vehicles.urls")),
     path("contacts/", include("apps.contacts.urls")),
     path("deals/", include("apps.deals.urls")),
+    path("documents/", include("apps.documents.urls")),
     path("schema/", include("apps.schema.urls")),
     path("images/", include("apps.images.urls")),
     path("document-templates/", include("apps.doctemplates.urls")),

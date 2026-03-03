@@ -450,6 +450,10 @@ All templates listed in a Document Set Template are required. The admin configur
 - `status` — See [Status flow](#status-flow) below
 - `file` — The PDF file (FileField)
 
+### Implementation
+
+The document-sets feature is implemented per **PLAN-ADD-DOCUMENT-SETS**. That plan defines the **apps.documents** app (models, service layer, and viewing URLs), the integration with the deal detail page (Documents section, Generate/Regenerate/Delete/Send for Signature), URL layout (deal-scoped actions under `/deals/<pk>/documents/...`, instance and version viewing under `/documents/...`), and the batch-wise implementation order with verification steps. Deal-scoped document actions are implemented in the deals app; document instance and version viewing (view/download PDFs) in the documents app.
+
 ### Creation Flow (Generate Documents)
 
 Documents are created when the Deal has **sufficient data** and a **Document Set Template** exists for the deal's Deal Type. The system:
@@ -487,7 +491,7 @@ The goal is to automate as much as possible. Use language users will understand:
 - The deal detail page (read-only summary with Back, Edit, Delete) already exists. The Documents section will be added at the **bottom of this page**. (Layout may be refined during implementation—e.g., tabs or other restructuring.) Debug data viewing is on a separate "Debug Data" page (see DESIGN-DATA-INTERFACE.md), not on the deal detail page.
 
 **Deal page — before Document Set exists:**
-- **"Generate Documents"** button — Enabled when Deal has sufficient data (all Deal fields populated; at least one vehicle, one user/lease officer, one signer/contact). Creates Document Set, Document Instances, and first Document Instance Versions automatically.
+- **"Generate Documents"** button — Enabled when Deal has sufficient data and a Document Set Template exists for the deal's Deal Type (see Sufficient data, below). Creates Document Set, Document Instances, and first Document Instance Versions automatically.
 - **"Send for Signature"** — **Inactive** when there are no documents yet.
 
 **Deal page — after Document Set exists:**
@@ -600,6 +604,10 @@ For mappings that use "first contact" or "first vehicle" (e.g., `data.lessee_nam
 ### Document Set creation: atomicity and error handling
 
 If Document Set creation fails at any step, roll back all Document Instance creation and Document Instance Versions. Include sufficient logging and error handling so that if an error occurs, the cause can be diagnosed and the fix determined.
+
+### Document generation: service layer
+
+Document generation (Generate and Regenerate) is implemented in a **service layer** (e.g. `apps.documents.services`). The deal detail view does not contain generation logic; it calls the service (e.g. `generate_documents_for_deal(deal, request)`). On success the service returns the created or updated Document Set; on failure it raises an exception with a user-facing message. The view catches that exception and displays the message; on success it redirects with a success message. This keeps generation testable without HTTP and keeps views thin. Deal-scoped document actions (Generate, Regenerate, Delete Document Set, Send for Signature) are implemented in the **deals** app; document viewing (instance detail, version view/download) is implemented in the **documents** app. See PLAN-ADD-DOCUMENT-SETS for the full service contract and URL summary.
 
 ### Data interface: no circumvention
 

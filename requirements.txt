@@ -3,3 +3,4 @@
 Django>=5.0,<6
 django-jazzmin>=3.0
 Pillow>=10.0
+pdfkit>=1.0

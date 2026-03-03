@@ -1,7 +1,7 @@
 """
 Forms for the users app.
 
-LeaseOfficerProfileEditForm: edit first_name, last_name, phone_number, email.
+LeaseOfficerProfileEditForm: edit first_name, last_name, phone_number, email, timezone.
 full_name is read-only (computed from first + last).
 """
 
@@ -15,4 +15,4 @@ class LeaseOfficerProfileEditForm(forms.ModelForm):
 
     class Meta:
         model = LeaseOfficerProfile
-        fields = ["first_name", "last_name", "phone_number", "email"]
+        fields = ["first_name", "last_name", "phone_number", "email", "timezone"]

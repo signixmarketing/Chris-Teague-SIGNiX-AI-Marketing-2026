@@ -67,8 +67,87 @@
 
 <div class="card">
   <div class="card-body">
-    <h6 class="text-muted mb-2">Documents</h6>
-    <p class="text-muted small mb-0">Document generation will be available when Document Set Templates are configured.</p>
+    <h6 class="text-muted mb-3">Documents</h6>
+    {% if document_set %}
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <span class="text-muted small">Document set exists. Regenerate to create new versions; Delete removes the set.</span>
+      <div>
+        <form method="post" action="{% url 'deals:deal_regenerate_documents' deal.pk %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-secondary btn-sm">Regenerate Documents</button>
+        </form>
+        <form method="post" action="{% url 'deals:deal_delete_document_set' deal.pk %}" class="d-inline ms-1">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-danger btn-sm">Delete Document Set</button>
+        </form>
+        <form method="post" action="{% url 'deals:deal_send_for_signature_stub' deal.pk %}" class="d-inline ms-1">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-primary btn-sm">Send for Signature</button>
+        </form>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Document</th>
+            <th>Latest version</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for instance in document_set.instances.all %}
+          <tr>
+            <td>
+              {% if instance.source_document_template %}
+                {{ instance.source_document_template.ref_id|default:instance.source_document_template.description|default:"—" }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% with version=instance.versions.first %}
+              {% if version %}
+                v{{ version.version_number }} · {{ version.status }} · {{ version.created_at|date:"M j, Y" }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+              {% endwith %}
+            </td>
+            <td class="text-end">
+              {% with version=instance.versions.first %}
+              {% if version %}
+                {% if version.file %}
+                <a href="{% url 'documents:document_version_view' version.pk %}" class="btn btn-link btn-sm p-0" target="_blank" rel="noopener noreferrer">View latest</a>
+                <a href="{% url 'documents:document_version_download' version.pk %}" class="btn btn-link btn-sm p-0 ms-1">Download latest</a>
+                {% endif %}
+                <a href="{% url 'documents:document_instance_detail' instance.pk %}" class="btn btn-link btn-sm p-0 ms-1">View all versions</a>
+              {% else %}
+                <span class="text-muted small">—</span>
+              {% endif %}
+              {% endwith %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" class="text-center text-muted py-3">No documents in this set.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted small mb-2">Generate documents from the deal's Document Set Template. A document set template must be configured for this deal type.</p>
+    <form method="post" action="{% url 'deals:deal_generate_documents' deal.pk %}" class="d-inline">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-primary" {% if not can_generate %}disabled{% endif %} title="{% if not can_generate %}{{ cannot_generate_reason }}{% endif %}">Generate Documents</button>
+    </form>
+    {% if not can_generate and cannot_generate_reason %}
+    <span class="text-muted small ms-2">{{ cannot_generate_reason }}</span>
+    {% else %}
+    <span class="text-muted small ms-2">Send for Signature — inactive until documents exist.</span>
+    {% endif %}
+    {% endif %}
   </div>
 </div>
 {% endblock %}

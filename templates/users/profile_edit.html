@@ -26,6 +26,16 @@
     <input type="email" name="email" id="id_email" class="form-control" value="{{ form.email.value|default:'' }}" required>
     {% if form.email.errors %}<div class="invalid-feedback d-block">{{ form.email.errors }}</div>{% endif %}
   </div>
+  <div class="mb-3">
+    <label for="id_timezone" class="form-label">Time zone</label>
+    <select name="timezone" id="id_timezone" class="form-select">
+      {% for value, label in form.fields.timezone.choices %}
+      <option value="{{ value }}" {% if form.timezone.value == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <div class="form-text">Used to display dates and times in the app (e.g. deal dates, document versions).</div>
+    {% if form.timezone.errors %}<div class="invalid-feedback d-block">{{ form.timezone.errors }}</div>{% endif %}
+  </div>
   <button type="submit" class="btn btn-primary">Save</button>
   <a href="{% url 'users:profile' %}" class="btn btn-outline-secondary">Cancel</a>
 </form>
