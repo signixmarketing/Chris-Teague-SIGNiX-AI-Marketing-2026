@@ -63,9 +63,9 @@ This document defines the order in which to implement the document-related featu
 
 ---
 
-## 5. PLAN-ADD-SIGNIX-INTEGRATION.md *(to be created, after SIGNiX design)*
+## 5. SIGNiX integration — see PLAN-SIGNiX-SUBMIT-MASTER.md
 
-**Purpose:** Send for Signature—package documents and send to SIGNiX. Handle completion notification, download signed documents, create Final Document Instance Versions. Depends on SIGNiX integration design in DESIGN-DOCS or a separate design document.
+**Purpose:** Send for Signature, completion handling, and related SIGNiX features are **not** implemented as a single plan under PLAN-DOCS-MASTER. They are implemented via **PLAN-SIGNiX-SUBMIT-MASTER.md**, which follows PLAN-DOCS-MASTER plans 1–4 in the overall implementation order (see PLAN-MASTER.md). Plan 5 here is superseded by that master plan and its nine sub-plans.
 
 ---
 
@@ -77,7 +77,7 @@ This document defines the order in which to implement the document-related featu
 | 2     | PLAN-ADD-DYNAMIC-DOC-TEMPLATES.md | Dynamic HTML templates, mapping, text tagging       |
 | 3     | PLAN-ADD-DOC-SET-TEMPLATES.md     | Document Set Templates, ordered template list       |
 | 4     | PLAN-ADD-DOCUMENT-SETS.md         | Document Sets, generation, viewing UI               |
-| 5     | PLAN-ADD-SIGNIX-INTEGRATION.md    | Send for Signature, completion handling             |
+| 5     | *(superseded)* → PLAN-SIGNiX-SUBMIT-MASTER.md | SIGNiX submit flow; see PLAN-MASTER.md next steps |
 
 ---
 
@@ -90,10 +90,10 @@ Items to resolve when creating the corresponding plans:
 | Doc Set Templates | Template ordering UI | **Decided:** Up/down buttons for v1 (see PLAN-ADD-DOC-SET-TEMPLATES.md). |
 | Document Sets | Deal detail / View–Edit split | **Decided:** Implemented in PLAN-ADD-DEALS (deal_detail, View primary from list, Edit/Delete on detail). Document Sets adds Documents section to the existing detail page. |
 | Document Sets | HTML-to-PDF | pdfkit/wkhtmltopdf per DESIGN-DOCS; see PLAN-ADD-DOCUMENT-SETS Section 12 for image URL handling. |
-| SIGNiX | Integration design | Deferred; PLAN-ADD-SIGNIX-INTEGRATION created after SIGNiX design is documented. |
+| SIGNiX | Integration design | **Resolved:** Implemented via PLAN-SIGNiX-SUBMIT-MASTER.md (see PLAN-MASTER.md). |
 
 **Implementation order:** Deal Type is already implemented as part of PLAN-ADD-DEALS (PLAN-MASTER plan 4); Document Set Templates depend on it. Summary table above reflects the document-feature order.
 
 ---
 
-*To implement document features: PLAN-MASTER plans 1–6 must be complete (they are the current platform; Deals includes Deal Type and the View/Edit split; Data Interface provides schema and deal data for Dynamic templates). Then implement PLAN-DOCS-MASTER plans 1–5 in order.*
+*To implement document features: PLAN-MASTER plans 1–6 must be complete (they are the current platform; Deals includes Deal Type and the View/Edit split; Data Interface provides schema and deal data for Dynamic templates). Then implement PLAN-DOCS-MASTER plans 1–4 in order. For the SIGNiX submit flow, implement the plans in PLAN-SIGNiX-SUBMIT-MASTER.md per PLAN-MASTER.md.*

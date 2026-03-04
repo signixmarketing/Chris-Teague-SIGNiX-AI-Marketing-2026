@@ -199,7 +199,7 @@ Plans 1 and 2 have no dependencies on each other and can be implemented in eithe
 
 ## Relation to PLAN-DOCS-MASTER
 
-**PLAN-DOCS-MASTER** item 5 (PLAN-ADD-SIGNIX-INTEGRATION) is superseded by this master and the nine plans above. DESIGN-SIGNiX-SUBMIT.md scopes the first phase to **submit only** (no push, no DownloadDocument/ConfirmDownload). This master covers that scope. When updating PLAN-DOCS-MASTER, replace the SIGNiX item with a reference to **PLAN-SIGNiX-SUBMIT-MASTER** and these plans; full integration (push, download, confirm) can be a later master or extension.
+**PLAN-DOCS-MASTER** item 5 (SIGNiX integration) has been replaced by a reference to this master and the nine plans above; implement document features as DOCS plans 1–4 only, then this master. DESIGN-SIGNiX-SUBMIT.md scopes the first phase to **submit only** (no push, no DownloadDocument/ConfirmDownload). This master covers that scope. Full integration (push, download, confirm) can be a later master or extension.
 
 ---
 

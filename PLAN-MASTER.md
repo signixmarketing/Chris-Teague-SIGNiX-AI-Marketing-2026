@@ -69,8 +69,14 @@ This document defines the order in which to implement all PLANs to build (or reb
 
 ## Next Steps: Document Features
 
-Once plans 1–6 above are completed, proceed to **PLAN-DOCS-MASTER.md** for document-related features (Static Document Templates, Dynamic Document Templates, Document Set Templates, etc.). See PLAN-DOCS-MASTER.md for the implementation sequence.
+Once plans 1–6 above are completed, proceed to **PLAN-DOCS-MASTER.md** for document-related features (Static Document Templates, Dynamic Document Templates, Document Set Templates, Document Sets with Generate/Regenerate and Send for Signature stub). See PLAN-DOCS-MASTER.md for the implementation sequence. PLAN-DOCS-MASTER item 5 (SIGNiX integration) is superseded by the next step.
 
 ---
 
-*To recreate this app from scratch: implement plans 1–6 in order, following each plan's implementation order and verification steps. Then implement the plans in PLAN-DOCS-MASTER.md.*
+## Next Steps: SIGNiX Submit
+
+Once PLAN-DOCS-MASTER plans 1–4 are completed (Document Sets includes the Send for Signature stub), proceed to **PLAN-SIGNiX-SUBMIT-MASTER.md** for the SIGNiX submit flow: configuration, signer identification, transaction packager, Send for Signature (replace stub), signature transactions dashboard, and related transactions on Deal View. Implement the nine plans (PLAN-SIGNiX-CONFIG through PLAN-SIGNiX-DEAL-VIEW-TRANSACTIONS) in the order defined in PLAN-SIGNiX-SUBMIT-MASTER.md.
+
+---
+
+*To recreate this app from scratch: implement plans 1–6 in order, following each plan's implementation order and verification steps. Then implement the plans in PLAN-DOCS-MASTER.md (plans 1–4). Then implement the plans in PLAN-SIGNiX-SUBMIT-MASTER.md (plans 1–9).*
