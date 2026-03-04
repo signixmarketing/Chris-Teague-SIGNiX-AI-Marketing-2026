@@ -65,6 +65,67 @@
   </div>
 </div>
 
+{% if signers %}
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="text-muted mb-3">Signers</h6>
+    <form method="post" action="{% url 'deals:deal_signers_update_auth' deal.pk %}" id="signers-auth-form">
+      {% csrf_token %}
+    </form>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Order</th>
+            <th>Role</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th class="d-none d-md-table-cell">Phone</th>
+            <th>Authentication</th>
+            <th class="text-end">Reorder</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in signers %}
+          <tr>
+            <td>{{ s.order_index }}</td>
+            <td>{{ s.role_label }}</td>
+            <td>
+              {% if s.person %}
+                {{ s.person.first_name }}{% if s.person.middle_name %} {{ s.person.middle_name }}{% endif %} {{ s.person.last_name }}
+              {% else %}
+                <span class="text-muted">— No contact —</span>
+              {% endif %}
+            </td>
+            <td>{% if s.person %}{{ s.person.email }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+            <td class="d-none d-md-table-cell">{% if s.person %}{{ s.person.phone|default:"—" }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+            <td>
+              <select name="auth_{{ s.slot }}" class="form-select form-select-sm" form="signers-auth-form">
+                {% for value, label in auth_choices %}
+                <option value="{{ value }}" {% if s.auth == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td class="text-end">
+              <form method="post" action="{% url 'deals:deal_signers_reorder' deal.pk %}" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="slot" value="{{ s.slot }}">
+                <button type="submit" name="action" value="move_up" class="btn btn-outline-secondary btn-sm" {% if forloop.first %}disabled{% endif %} title="Move up">↑</button>
+                <button type="submit" name="action" value="move_down" class="btn btn-outline-secondary btn-sm" {% if forloop.last %}disabled{% endif %} title="Move down">↓</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="mt-2">
+      <button type="submit" form="signers-auth-form" class="btn btn-outline-primary btn-sm">Save signer settings</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <div class="card">
   <div class="card-body">
     <h6 class="text-muted mb-3">Documents</h6>
@@ -80,9 +141,9 @@
           {% csrf_token %}
           <button type="submit" class="btn btn-outline-danger btn-sm">Delete Document Set</button>
         </form>
-        <form method="post" action="{% url 'deals:deal_send_for_signature_stub' deal.pk %}" class="d-inline ms-1">
+        <form method="post" action="{% url 'deals:deal_send_for_signature' deal.pk %}" class="d-inline ms-1">
           {% csrf_token %}
-          <button type="submit" class="btn btn-outline-primary btn-sm">Send for Signature</button>
+          <button type="submit" class="btn btn-outline-primary btn-sm" {% if not can_send_for_signature %}disabled{% endif %} title="{% if not can_send_for_signature %}{{ cannot_send_for_signature_reason }}{% endif %}">Send for Signature</button>
         </form>
       </div>
     </div>
@@ -150,4 +211,12 @@
     {% endif %}
   </div>
 </div>
+{% if open_signing_url %}
+<script>
+(function() {
+  var url = "{{ open_signing_url|escapejs }}";
+  if (url) window.open(url, '_blank', 'noopener,noreferrer');
+})();
+</script>
+{% endif %}
 {% endblock %}

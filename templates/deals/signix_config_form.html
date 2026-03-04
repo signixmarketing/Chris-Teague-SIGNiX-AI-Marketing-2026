@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}SIGNiX Configuration — Vehicle Leasing{% endblock %}
+{% block content_header %}SIGNiX Configuration{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger mb-3" role="alert">
+        {% for error in form.non_field_errors %}<span class="d-block">{{ error }}</span>{% endfor %}
+      </div>
+      {% endif %}
+
+      <h6 class="mb-2">Credentials</h6>
+      <p class="text-muted small">All five are required for submit. Stored and sent in SIGNiX API calls.</p>
+      <div class="row">
+        <div class="col-md-6 mb-2">
+          <label for="id_sponsor" class="form-label">Sponsor</label>
+          {{ form.sponsor }}
+          {% if form.sponsor.errors %}<div class="invalid-feedback d-block">{{ form.sponsor.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-6 mb-2">
+          <label for="id_client" class="form-label">Client</label>
+          {{ form.client }}
+          {% if form.client.errors %}<div class="invalid-feedback d-block">{{ form.client.errors }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-2">
+          <label for="id_user_id" class="form-label">User id</label>
+          {{ form.user_id }}
+          {% if form.user_id.errors %}<div class="invalid-feedback d-block">{{ form.user_id.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-6 mb-2">
+          <label for="id_password" class="form-label">Password</label>
+          {{ form.password }}
+          {% if form.password.help_text %}<div class="form-text">{{ form.password.help_text }}</div>{% endif %}
+          {% if form.password.errors %}<div class="invalid-feedback d-block">{{ form.password.errors }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="mb-3">
+        <label for="id_workgroup" class="form-label">Workgroup</label>
+        {{ form.workgroup }}
+        {% if form.workgroup.errors %}<div class="invalid-feedback d-block">{{ form.workgroup.errors }}</div>{% endif %}
+      </div>
+
+      <h6 class="mt-4 mb-2">Submitter</h6>
+      <p class="text-muted small">Used when building SubmitDocument (submitter name/email/phone). Submitter email is required.</p>
+      <div class="row">
+        <div class="col-md-4 mb-2">
+          <label for="id_submitter_first_name" class="form-label">First name</label>
+          {{ form.submitter_first_name }}
+        </div>
+        <div class="col-md-4 mb-2">
+          <label for="id_submitter_middle_name" class="form-label">Middle name</label>
+          {{ form.submitter_middle_name }}
+        </div>
+        <div class="col-md-4 mb-2">
+          <label for="id_submitter_last_name" class="form-label">Last name</label>
+          {{ form.submitter_last_name }}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-2">
+          <label for="id_submitter_email" class="form-label">Submitter email <span class="text-danger">*</span></label>
+          {{ form.submitter_email }}
+          {% if form.submitter_email.errors %}<div class="invalid-feedback d-block">{{ form.submitter_email.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-6 mb-2">
+          <label for="id_submitter_phone" class="form-label">Submitter phone</label>
+          {{ form.submitter_phone }}
+        </div>
+      </div>
+
+      <h6 class="mt-4 mb-2">Settings</h6>
+      <div class="row">
+        <div class="col-md-6 mb-2">
+          <div class="form-check mt-2">
+            {{ form.demo_only }}
+            <label class="form-check-label" for="id_demo_only">Demo only (use Webtest endpoint)</label>
+          </div>
+        </div>
+        <div class="col-md-6 mb-2">
+          <label for="id_delete_documents_after_days" class="form-label">Delete documents after (days)</label>
+          {{ form.delete_documents_after_days }}
+        </div>
+      </div>
+      <div class="mb-3">
+        <label for="id_default_email_content" class="form-label">Default email content</label>
+        {{ form.default_email_content }}
+      </div>
+
+      <button type="submit" class="btn btn-primary">Save configuration</button>
+    </form>
+  </div>
+</div>
+<style>
+  .card .form-control { max-width: 100%; }
+  .card .form-check input { margin-right: 0.5rem; }
+</style>
+{% endblock %}

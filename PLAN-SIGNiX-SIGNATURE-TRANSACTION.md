@@ -38,7 +38,7 @@ This document outlines how to add the **SignatureTransaction** model and its rel
 
 **Status choices:**
 
-Define constants and choices so Plan 6 and UI use the same values. Allowed values:
+Define constants and choices so Plan 6 and UI use the same values. **Define the five constants as class attributes on the model** (e.g. `STATUS_SUBMITTED = "Submitted"`) so that code can use `SignatureTransaction.STATUS_SUBMITTED`. Allowed values:
 
 | Constant | Value (display) |
 |----------|------------------|
@@ -117,7 +117,7 @@ Batch 1 is complete when the above pass.
 |------|--------|
 | App | `apps.deals` |
 | Model | `SignatureTransaction` (Section 2) |
-| Migration | `apps/deals/migrations/xxx_add_signature_transaction.py` (or auto-generated name) |
+| Migration | `apps/deals/migrations/0004_add_signature_transaction.py` (number may differ if Plan 1 added migrations; use `--name add_signature_transaction`) |
 | Deal relation | `deal.signature_transactions` (reverse relation from SignatureTransaction.deal) |
 
 ---
@@ -129,6 +129,13 @@ Batch 1 is complete when the above pass.
 - **transaction_id optional:** Design allows optional client-chosen TransactionID. Model uses **max_length=36** (UUID format per Design/Plan 5) and **blank=True** so Plan 6 can set it from build_submit_document_body metadata when present.
 - **first_signing_url length:** 512 is used to accommodate long SIGNiX URLs; increase in a future migration if the API returns longer URLs.
 - **Admin registration:** Optional. Register `SignatureTransaction` in `apps.deals.admin` for convenience during development if desired; not required by this plan.
+
+---
+
+## 8. Implementation Notes (from Plan 2 Batch 1)
+
+- **Status constants on the model:** Define each of the five status values as a class attribute on `SignatureTransaction` (e.g. `STATUS_SUBMITTED = "Submitted"`) and build `STATUS_CHOICES` from them so that Plan 6 and templates can use `SignatureTransaction.STATUS_SUBMITTED` etc. without duplicating strings.
+- **document_set ForeignKey:** Use the string `'documents.DocumentSet'` so Django resolves the app label and model without importing from `apps.documents` in `apps.deals.models` (avoids circular import). The `documents` app must be in `INSTALLED_APPS`.
 
 ---
 

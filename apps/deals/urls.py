@@ -17,5 +17,7 @@ urlpatterns = [
     path("<int:pk>/documents/generate/", views.deal_generate_documents, name="deal_generate_documents"),
     path("<int:pk>/documents/regenerate/", views.deal_regenerate_documents, name="deal_regenerate_documents"),
     path("<int:pk>/documents/delete/", views.deal_delete_document_set, name="deal_delete_document_set"),
-    path("<int:pk>/documents/send-for-signature/", views.deal_send_for_signature_stub, name="deal_send_for_signature_stub"),
+    path("<int:pk>/documents/send-for-signature/", views.deal_send_for_signature, name="deal_send_for_signature"),
+    path("<int:pk>/signers/update-auth/", views.deal_signers_update_auth, name="deal_signers_update_auth"),
+    path("<int:pk>/signers/reorder/", views.deal_signers_reorder, name="deal_signers_reorder"),
 ]

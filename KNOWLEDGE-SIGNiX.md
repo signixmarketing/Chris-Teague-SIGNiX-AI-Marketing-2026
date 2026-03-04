@@ -127,7 +127,7 @@ flowchart TB
 
 The Flex API uses **XML** for request bodies and responses. Two common approaches for building request XML are:
 
-- **Template-based** — A Jinja2 (or similar) template with placeholders; render with a data dict and send the result. The XML structure is visible in one place and easy to align with vendor examples.
+- **Template-based** — A Django template (DTL) or similar with placeholders; render with a data dict and send the result. The XML structure is visible in one place and easy to align with vendor examples.
 - **Programmatic** — Build a tree with `xml.etree.ElementTree` or `lxml`, then serialize. Better when the structure is highly variable or optional.
 
 **Recommendation for this integration:**
@@ -136,11 +136,13 @@ The Flex API uses **XML** for request bodies and responses. Two common approache
 - **Responses** — Always **parse with ElementTree or lxml**. Do not rely on string parsing or regex.
 - **Highly dynamic requests** — If a payload has many optional blocks or complex conditionals, building the tree in code (ElementTree/lxml) may be clearer than a template full of `{% if %}`.
 
-**Escaping and `| safe`:** In Jinja2, `{{ value }}` escapes `<`, `>`, and `&`, which is correct for normal text (names, emails, IDs) and prevents XML injection. Use **`| safe` only** for fields that are intentionally XML (e.g. embedded `<Form>` content). Never use `| safe` on user-controlled plain text.
+**Escaping and `| safe`:** In Django templates (DTL), `{{ value }}` escapes `<`, `>`, and `&`, which is correct for normal text (names, emails, IDs) and prevents XML injection. Use **`| safe` only** for fields that are intentionally XML (e.g. embedded `<Form>` content). Never use `| safe` on user-controlled plain text.
 
-**Form element and document encoding:** Documents inside the `<Form>` element are sent **base64-encoded** (per Flex API). You may embed the entire Form XML fragment (including base64 document content) via a single placeholder like `{{ data.form | safe }}`. Base64 uses only A–Z, a–z, 0–9, +, /, and =, so it does not require `| safe` for escaping; use `| safe` only because the fragment contains XML tags. The template approach works fine with base64. For the exact structure of Form (e.g. `<LengthOfData>`, `<Data>`, or URL reference), see the [Flex API — SubmitDocument](https://www.signix.com/apidocumentation#SubmitDocument) request XML documentation.
+**Form element and document encoding:** Documents inside the `<Form>` element are sent **base64-encoded** (per Flex API). You may embed the entire Form XML fragment (including base64 document content) via a single placeholder like `{{ data.form | safe }}`. Base64 uses only A–Z, a–z, 0–9, +, /, and =, so it does not require `| safe` for escaping; use `| safe` only because the fragment contains XML tags.
 
-**Example: SubmitDocument request template (Jinja2)**
+**Form structure (Flex API schema):** The Form element’s **child elements and order** must match the Flex API schema. For **AcroForm (static) PDFs**: use RefID, Desc, FileName, MimeType, then SignatureLine(s) (each with MemberInfoNumber and optional SignField for the PDF field name, and optional DateSignedField/DateSignedFormat for the signature date), then Length, then Data (base64). For **text-tagged (generated) PDFs**: use RefID, Desc, FileName, MimeType, then TextTagField (e.g. DateSigned) and TextTagSignature elements (with AnchorText, AnchorXOffset, AnchorYOffset, Width, Height, MemberInfoNumber, optional DateSignedTagName/DateSignedFormat), then Length, Data. Do **not** use legacy names such as FormID, Title, ContentType, LengthOfData—use RefID, Desc, MimeType, Length per the current schema. See the [Flex API — SubmitDocument](https://www.signix.com/apidocumentation#SubmitDocument) request XML and [Text Tagging](https://www.signix.com/api-text-tagging) documentation.
+
+**Example: SubmitDocument request template (Django / DTL)**
 
 The following template illustrates the structure of a SubmitDocument request. Replace placeholders with your data dict; only the `data.form` field should be rendered with `| safe` if it contains XML.
 
@@ -194,13 +196,16 @@ For the exact elements and attributes required by SubmitDocument (and other comm
 These notes clarify how key fields are typically used when building SubmitDocument in an integrating application. Confirm against the Flex API documentation for your environment.
 
 - **TransactionID** — Client-chosen identifier for the transaction. Should be **unique per transaction** (e.g. include a timestamp or UUID). Used for idempotency and correlation with your records. SIGNiX returns DocumentSetID; TransactionID is what you send.
-- **DocSetDescription** — Human-readable label for the transaction (e.g. shown in SIGNiX dashboards or signer communications). Often derived from business context (e.g. “Deal #123 – Lease Documents”).
+- **DocSetDescription** — Human-readable label for the transaction (e.g. shown in SIGNiX dashboards or signer email subject). Use **ASCII hyphen** between parts (e.g. "Deal #123 - Lease Documents") to avoid encoding issues in email subjects; avoid Unicode en dash or em dash.
 - **Submitter vs first signer** — The **submitter** (SubmitterName, SubmitterEmail in the Data block) is the party initiating the transaction; Flex typically requires these. The **first signer** is the first Member in the signing order (first MemberInfo). GetAccessLink is often called for the **first signer** to obtain the signing URL (so the app can open it in a separate window); the submitter and first signer may or may not be the same person. Store submitter details in configuration when the same identity is used for all submissions.
 - **Submitter phone** — If the API or your configuration requires a submitter phone number, use a configured value or a sensible default (e.g. a main line) when not provided per transaction.
-- **ContactInfo, DeliveryType, FileName** — Purpose and required status depend on Flex API version and configuration. When not required, omit or use Flex defaults. FileName is often per-document (e.g. for download naming).
+- **ContactInfo, DeliveryType, FileName** — Purpose and required status depend on Flex API version and configuration. When DeliveryType is required, use a valid enum value (e.g. **SDDDC**). FileName is often per-document (e.g. for download naming).
 - **SuspendOnStart** — When **false**, the transaction is sent immediately and signers are notified. When **true**, the transaction is held so the submitter can make changes before signers are invited. Most “submit and send” flows use **false**.
-- **MemberInfo — SSN, DOB** — Used for certain authentication methods (e.g. KBA). For **SelectOneClick** and **SMSOneClick**, SSN/DOB can often be omitted or sent with placeholder values; confirm in the Flex API documentation. When omitted, some integrations send fixed placeholder values so the XML structure remains valid.
+- **MemberInfo — element order** — The Flex API schema requires a **specific order** for MemberInfo children. Typically: RefID, SSN, DOB, FirstName, MiddleName, LastName, Email, then **Service**, then **MobileNumber** (for SMSOneClick, Service must be followed by the mobile number). Include **SMSCount** (0 for SelectOneClick, 1 for SMSOneClick) as required by the schema. Then optional elements (e.g. KBA, Notary) if applicable.
+- **MemberInfo — MobileNumber** — **Required for SMS/SharedSecret** (e.g. SMSOneClick). Send the signer's phone in `<MobileNumber>`; omitting it for SMS auth will cause a validation error.
+- **MemberInfo — SSN, DOB** — Used for certain authentication methods (e.g. KBA). For **SelectOneClick** and **SMSOneClick**, SSN/DOB can often be omitted or sent with placeholder values; use **DOB format MM/DD/YYYY** (e.g. 01/01/1990) when sending a placeholder. Confirm in the Flex API documentation.
 - **MemberInfo — FirstName, MiddleName, LastName** — Flex expects name components separately. Map from your contact/user model (e.g. Contact.first_name, middle_name, last_name or User/LeaseOfficerProfile equivalents). Use blank or a single space for missing middle name if your model has none.
+- **Workgroup** — Must match the **exact value** assigned by SIGNiX for your client (e.g. case-sensitive; a typo such as SSD instead of SDD will result in "workgroup does not exist" errors).
 
 ---
 

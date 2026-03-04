@@ -45,7 +45,7 @@ This document outlines how to **replace the Send for Signature stub** on the Dea
    - Call **`submit_document_set_for_signature(deal, document_set)`** (Plan 6).
    - **On success:** `(signature_transaction, first_signing_url)` is returned. Set a success message (e.g. “Documents sent for signature.”). Store `first_signing_url` for the “open in new window” step (see Section 4). Redirect to deal detail (or to the opener page if using the alternative).
    - **On SignixValidationError:** Do not call SIGNiX. Show the validation errors (e.g. `messages.error(request, exception.errors[0])` or join with “; ”). Re-render deal detail with the same context so the user stays on the page and sees the message.
-   - **On SignixApiError:** Show a generic user-facing message (e.g. “SIGNiX request failed; try again or contact support.”). Redirect to deal detail or re-render with error. (Orchestrator already logs the exception.)
+   - **On SignixApiError:** Show a generic user-facing message (e.g. “SIGNiX request failed; try again or contact support.”). Redirect to deal detail or re-render with error. (Orchestrator already logs the exception.) Optionally include the SIGNiX error message in the flash (e.g. in parentheses) for debugging.
    - **Empty first_signing_url:** If success but `first_signing_url` is empty, optionally add a message (e.g. “Transaction created; signing link could not be retrieved. You can check the transaction or contact support.”). Do not store a URL to open; redirect to deal detail without opening a window.
 
 **Location:** `apps/deals/views.py`. Import orchestrator and exceptions from `apps.deals.signix` (or the module where Plan 6 lives).
@@ -56,10 +56,10 @@ This document outlines how to **replace the Send for Signature stub** on the Dea
 
 Two approaches; choose one for implementation.
 
-**Option A — Session + script on deal detail (recommended)**
+**Option A — Session + script on deal detail (recommended; implemented)**
 
 - On success (and when `first_signing_url` is non-empty), store the URL in the session, e.g. `request.session['signix_open_signing_url'] = first_signing_url`, then redirect to deal detail with a success message.
-- The **deal detail template** (or a small included partial) checks for this session key. If present, output a short script that: opens the URL in a new window (`window.open(url, '_blank', 'noopener,noreferrer')` or equivalent), then clears the key (e.g. by requesting a small endpoint that clears it, or by including a one-off token in the redirect URL that the same view clears when rendering deal detail). Simpler: the **deal detail view** (GET) checks for `request.session.get('signix_open_signing_url')` and passes it to the template as `open_signing_url`; the template renders a script that opens it and then the view clears the session key after the response (or the script triggers a harmless GET to a “clear” URL). To avoid an extra request, the view can pass `open_signing_url` to the template and clear the session key in the same GET that renders the redirect target (i.e. the view that handles the redirect after POST is “redirect to deal detail”; the deal detail view, when it sees the session key, passes it to the template and clears it at the start of the request so the script runs once). So: after POST success, redirect to `deals:deal_detail` with `pk`; deal detail view (GET) sees `signix_open_signing_url` in session, adds it to context as `open_signing_url`, clears the key, and renders; template has `{% if open_signing_url %}... script ...{% endif %}`.
+- Deal detail view (GET) pops `signix_open_signing_url` from session, passes it to the template as `open_signing_url`, and clears the key. The template runs a script that opens the URL in a new window (`window.open(..., '_blank', 'noopener,noreferrer')`).
 - **Pros:** No extra URL or view; user lands back on deal detail and a new tab opens automatically. **Cons:** Requires deal detail view to read session and clear key; template needs a small script block.
 
 **Option B — Dedicated “Sign in new window” page**
@@ -136,6 +136,12 @@ Two approaches; choose one for implementation.
 2. POST with invalid data (e.g. wrong deal or missing submitter email); expect error message and re-render or redirect with message.
 3. Deal detail GET with document_set and valid preconditions: context has can_send_for_signature True. With invalid preconditions: can_send_for_signature False and reason set.
 
+**Implementation notes (Batch 1):** Replaced stub with `deal_send_for_signature`. View loads deal with same prefetch as deal_detail. No document_set → messages.error and redirect. On success: store first_signing_url in session when non-empty, redirect; when empty add messages.info. SignixValidationError → re-render deal detail with _deal_detail_context(can_send_for_signature=False, reason). SignixApiError → generic message, redirect. Option A: deal_detail GET pops signix_open_signing_url from session, passes open_signing_url to context; template script opens URL in new window. _deal_detail_context computes can_send via validate_submit_preconditions when document_set exists (or accepts overrides). URL name deal_send_for_signature; template form action, button disabled/title, opener script. Tests: test_send_for_signature_views (GET redirects, POST no document set, deal detail can_send).
+
+**Completed (Batch 1):** View, context, session opener, template updates, 3 view tests. All 60 deals tests pass.
+
+**Manual testing (after Batch 1):** Deal with no document set → POST yields "No document set to send." and redirect. Deal with document set and valid config → Send for Signature → redirect, success message, new tab opens with signing URL. Button disabled when preconditions fail (e.g. no submitter email); tooltip shows reason.
+
 **Batch 2 — Template and button**
 
 **Includes:** Template form action (URL name), script to open signing URL when open_signing_url is in context, button disabled and title when can_send_for_signature is False, optional message when first_signing_url is empty.
@@ -152,6 +158,8 @@ Two approaches; choose one for implementation.
 **How to test after Batch 3:**
 
 1. All tests pass. Manual smoke test: enable Send, submit, sign in new tab, return to deal.
+
+**Completed (Batch 3):** View tests added in `test_send_for_signature_views.py`: (1) POST no document set → error, redirect. (2) POST with valid deal/document_set (mock orchestrator success) → redirect, success message, session `signix_open_signing_url` set then cleared on deal detail GET. (3) POST with mock SignixValidationError → re-render deal detail (200) with error message. (4) POST with mock SignixApiError → redirect to deal detail with generic message. (5) GET send-for-signature → redirect (existing). (6) Deal detail context: without document set → can_send False; with document set and valid config → can_send True; with document set and unresolved signer → can_send False and reason set. Cleanup: PLAN-ADD-DOCUMENT-SETS updated to state Send for Signature is implemented (Plan 7); no stub references left in code. All 8 Plan 7 tests pass.
 
 ---
 

@@ -5,7 +5,7 @@ All views require login. Lease officer defaults to request.user on create.
 Delete uses GET for confirmation page and POST to perform delete.
 """
 
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -18,18 +18,94 @@ from apps.documents.services import (
     regenerate_documents,
 )
 
-from .forms import DealForm
-from .models import Deal, DealType
+from .forms import DealForm, SignixConfigForm
+from .models import Deal, DealType, SignixConfig
+from .signix import (
+    get_signix_config,
+    get_signer_order_for_deal,
+    get_signer_authentication_for_slot,
+    get_role_label_for_slot,
+    resolve_signer_slot,
+    validate_submit_preconditions,
+    submit_document_set_for_signature,
+    SignixValidationError,
+    SignixApiError,
+    AUTH_SELECT_ONE_CLICK,
+    AUTH_SMS_ONE_CLICK,
+)
 
 
-def _deal_detail_context(deal, document_set, can_generate):
-    """Build context for deal detail template."""
-    return {
+def _document_set_template_for_deal(deal, document_set):
+    """Return the document set template for the deal: from document_set if present, else from deal_type."""
+    if document_set:
+        template = getattr(document_set, "document_set_template", None)
+        if template is not None:
+            return template
+    if getattr(deal, "deal_type_id", None) and deal.deal_type_id:
+        from apps.doctemplates.models import DocumentSetTemplate
+        return DocumentSetTemplate.objects.filter(deal_type=deal.deal_type).first()
+    return None
+
+
+def _build_signers_list(deal, document_set_template):
+    """Build list of signer dicts for the template: slot, order_index, role_label, person, auth."""
+    if not document_set_template:
+        return []
+    order = get_signer_order_for_deal(deal, document_set_template)
+    signers = []
+    for i, slot in enumerate(order, start=1):
+        person = resolve_signer_slot(deal, slot)
+        auth = get_signer_authentication_for_slot(deal, slot)
+        role_label = get_role_label_for_slot(slot)
+        signers.append({
+            "slot": slot,
+            "order_index": i,
+            "role_label": role_label,
+            "person": person,
+            "auth": auth,
+        })
+    return signers
+
+
+def _deal_detail_context(
+    deal, document_set, can_generate,
+    can_send_for_signature=None,
+    cannot_send_for_signature_reason=None,
+    open_signing_url=None,
+):
+    """Build context for deal detail template. Optionally pass can_send overrides for re-render after validation error."""
+    document_set_template = _document_set_template_for_deal(deal, document_set)
+    signers = _build_signers_list(deal, document_set_template) if document_set_template else []
+    if document_set is None:
+        can_send = False
+        cannot_send_reason = None
+    elif can_send_for_signature is not None:
+        can_send = can_send_for_signature
+        cannot_send_reason = cannot_send_for_signature_reason
+    else:
+        try:
+            validate_submit_preconditions(deal, document_set)
+            can_send = True
+            cannot_send_reason = None
+        except SignixValidationError as e:
+            can_send = False
+            cannot_send_reason = "; ".join(e.errors) if e.errors else "Validation failed."
+    ctx = {
         "deal": deal,
         "document_set": document_set,
         "can_generate": can_generate,
         "cannot_generate_reason": None if can_generate else get_cannot_generate_reason(deal),
+        "can_send_for_signature": can_send,
+        "cannot_send_for_signature_reason": cannot_send_reason,
+        "signers": signers,
+        "auth_choices": [
+            (AUTH_SELECT_ONE_CLICK, AUTH_SELECT_ONE_CLICK),
+            (AUTH_SMS_ONE_CLICK, AUTH_SMS_ONE_CLICK),
+        ],
     }
+    if open_signing_url is not None:
+        ctx["open_signing_url"] = open_signing_url
+    return ctx
 
 
 @login_required
@@ -37,16 +113,19 @@ def deal_detail(request, pk):
     """Show read-only deal summary including deal type; Edit and Delete buttons; Documents section."""
     deal = get_object_or_404(
         Deal.objects.select_related("lease_officer", "deal_type").prefetch_related(
-            "vehicles", "contacts", "document_sets__instances__versions"
+            "vehicles", "contacts", "document_sets__document_set_template", "document_sets__instances__versions"
         ),
         pk=pk,
     )
     document_set = deal.document_sets.first()
     can_generate = can_generate_documents(deal)
+    open_signing_url = None
+    if "signix_open_signing_url" in request.session:
+        open_signing_url = request.session.pop("signix_open_signing_url")
     return render(
         request,
         "deals/deal_detail.html",
-        _deal_detail_context(deal, document_set, can_generate),
+        _deal_detail_context(deal, document_set, can_generate, open_signing_url=open_signing_url),
     )
 
 
@@ -57,7 +136,7 @@ def deal_generate_documents(request, pk):
         return redirect("deals:deal_detail", pk=pk)
     deal = get_object_or_404(
         Deal.objects.select_related("lease_officer", "deal_type").prefetch_related(
-            "vehicles", "contacts", "document_sets__instances__versions"
+            "vehicles", "contacts", "document_sets__document_set_template", "document_sets__instances__versions"
         ),
         pk=pk,
     )
@@ -83,7 +162,7 @@ def deal_regenerate_documents(request, pk):
         return redirect("deals:deal_detail", pk=pk)
     deal = get_object_or_404(
         Deal.objects.select_related("lease_officer", "deal_type").prefetch_related(
-            "vehicles", "contacts", "document_sets__instances__versions"
+            "vehicles", "contacts", "document_sets__document_set_template", "document_sets__instances__versions"
         ),
         pk=pk,
     )
@@ -112,7 +191,7 @@ def deal_delete_document_set(request, pk):
         return redirect("deals:deal_detail", pk=pk)
     deal = get_object_or_404(
         Deal.objects.select_related("lease_officer", "deal_type").prefetch_related(
-            "vehicles", "contacts", "document_sets__instances__versions"
+            "vehicles", "contacts", "document_sets__document_set_template", "document_sets__instances__versions"
         ),
         pk=pk,
     )
@@ -129,12 +208,110 @@ def deal_delete_document_set(request, pk):
 
 
 @login_required
-def deal_send_for_signature_stub(request, pk):
-    """Stub: show message that SIGNiX integration is coming; redirect back to deal detail."""
+def deal_send_for_signature(request, pk):
+    """POST: submit document set to SIGNiX; on success redirect to deal detail and open signing URL in new window (Option A)."""
     if request.method != "POST":
         return redirect("deals:deal_detail", pk=pk)
-    get_object_or_404(Deal, pk=pk)
-    messages.info(request, "SIGNiX integration will be available in a future release.")
+    deal = get_object_or_404(
+        Deal.objects.select_related("lease_officer", "deal_type").prefetch_related(
+            "vehicles", "contacts", "document_sets__document_set_template", "document_sets__instances__versions"
+        ),
+        pk=pk,
+    )
+    document_set = deal.document_sets.first()
+    if not document_set:
+        messages.error(request, "No document set to send.")
+        return redirect("deals:deal_detail", pk=pk)
+    try:
+        _tx, first_signing_url = submit_document_set_for_signature(deal, document_set)
+    except SignixValidationError as e:
+        reason = "; ".join(e.errors) if e.errors else "Validation failed."
+        messages.error(request, reason)
+        can_generate = can_generate_documents(deal)
+        context = _deal_detail_context(
+            deal, document_set, can_generate,
+            can_send_for_signature=False,
+            cannot_send_for_signature_reason=reason,
+        )
+        return render(request, "deals/deal_detail.html", context)
+    except SignixApiError as e:
+        messages.error(
+            request,
+            f"SIGNiX request failed; try again or contact support. ({getattr(e, 'message', str(e))})",
+        )
+        return redirect("deals:deal_detail", pk=pk)
+    messages.success(request, "Documents sent for signature.")
+    if first_signing_url:
+        request.session["signix_open_signing_url"] = first_signing_url
+    else:
+        messages.info(
+            request,
+            "Transaction created; signing link could not be retrieved. You can check the transaction or contact support.",
+        )
+    return redirect("deals:deal_detail", pk=pk)
+
+
+@login_required
+def deal_signers_update_auth(request, pk):
+    """POST: save signer authentication for all slots; redirect back to deal detail."""
+    if request.method != "POST":
+        return redirect("deals:deal_detail", pk=pk)
+    deal = get_object_or_404(
+        Deal.objects.select_related("deal_type").prefetch_related("document_sets__document_set_template"),
+        pk=pk,
+    )
+    document_set = deal.document_sets.first()
+    template = _document_set_template_for_deal(deal, document_set)
+    if not template:
+        messages.error(request, "No document set template for this deal.")
+        return redirect("deals:deal_detail", pk=pk)
+    order = get_signer_order_for_deal(deal, template)
+    auth_map = dict(deal.signer_authentication) if isinstance(deal.signer_authentication, dict) else {}
+    valid = {AUTH_SELECT_ONE_CLICK, AUTH_SMS_ONE_CLICK}
+    for slot in order:
+        key = f"auth_{slot}"
+        value = request.POST.get(key)
+        if value in valid:
+            auth_map[str(slot)] = value
+    deal.signer_authentication = auth_map
+    deal.save(update_fields=["signer_authentication"])
+    messages.success(request, "Signer settings saved.")
+    return redirect("deals:deal_detail", pk=pk)
+
+
+@login_required
+def deal_signers_reorder(request, pk):
+    """POST: move a signer up or down; redirect back to deal detail."""
+    if request.method != "POST":
+        return redirect("deals:deal_detail", pk=pk)
+    deal = get_object_or_404(Deal.objects.select_related("deal_type").prefetch_related("document_sets__document_set_template"), pk=pk)
+    document_set = deal.document_sets.first()
+    template = _document_set_template_for_deal(deal, document_set)
+    if not template:
+        messages.error(request, "No document set template for this deal.")
+        return redirect("deals:deal_detail", pk=pk)
+    order = get_signer_order_for_deal(deal, template)
+    action = request.POST.get("action")
+    try:
+        slot = int(request.POST.get("slot", 0))
+    except (TypeError, ValueError):
+        slot = 0
+    if action == "move_up" and slot in order:
+        idx = order.index(slot)
+        if idx > 0:
+            order = list(order)
+            order[idx], order[idx - 1] = order[idx - 1], order[idx]
+            deal.signer_order = order
+            deal.save(update_fields=["signer_order"])
+            messages.success(request, "Signer order updated.")
+    elif action == "move_down" and slot in order:
+        idx = order.index(slot)
+        if idx < len(order) - 1:
+            order = list(order)
+            order[idx], order[idx + 1] = order[idx + 1], order[idx]
+            deal.signer_order = order
+            deal.save(update_fields=["signer_order"])
+            messages.success(request, "Signer order updated.")
     return redirect("deals:deal_detail", pk=pk)
 
 
@@ -197,3 +374,23 @@ def deal_delete_confirm(request, pk):
         messages.success(request, "Deal deleted.")
         return redirect("deals:deal_list")
     return render(request, "deals/deal_confirm_delete.html", {"deal": deal})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def signix_config_edit(request):
+    """GET: show SIGNiX Configuration form. POST: save and redirect with success message."""
+    config = get_signix_config()
+    if request.method == "POST":
+        form = SignixConfigForm(request.POST, instance=config)
+        if form.is_valid():
+            instance = form.save(commit=False)
+            # Keep existing password when editing and password field left blank
+            if instance.pk and not form.cleaned_data.get("password"):
+                instance.password = SignixConfig.objects.get(pk=instance.pk).password
+            instance.save()
+            messages.success(request, "SIGNiX configuration saved.")
+            return redirect("signix_config")
+    else:
+        form = SignixConfigForm(instance=config)
+    return render(request, "deals/signix_config_form.html", {"form": form})

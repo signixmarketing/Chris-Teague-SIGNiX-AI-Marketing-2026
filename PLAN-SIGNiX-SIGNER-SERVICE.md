@@ -67,7 +67,7 @@ This document outlines how to add the **signer identification** and **slot→per
   - `SignerPerson` (dataclass or similar) with fields above.
   - `get_signers_for_document_set_template(document_set_template)`.
   - `resolve_signer_slot(deal, slot_number)`.
-- **Imports:** DocumentSetTemplate, DocumentSetTemplateItem; StaticDocumentTemplate, DynamicDocumentTemplate; Deal, Contact, LeaseOfficerProfile, User. Use string refs or local imports to avoid circular imports (e.g. `from apps.doctemplates.models import DocumentSetTemplate, DocumentSetTemplateItem`).
+- **Imports:** `signix.py` does not import doctemplates, Contact, LeaseOfficerProfile, or User; it uses `getattr` on the document_set_template, deal, and related instances passed in. Plan 1’s `get_signix_config` only needs `SignixConfig` from `apps.deals.models`. This avoids circular imports; callers pass in instances with relations loaded as needed.
 
 - **Optional:** If Plan 1 already added `get_signix_config()` in this file, append the signer functions to the same module. Do not duplicate `get_signix_config` in this plan.
 
@@ -130,6 +130,19 @@ This document outlines how to add the **signer identification** and **slot→per
 
 1. Create a Deal with lease_officer (User with LeaseOfficerProfile) and one Contact. Call `resolve_signer_slot(deal, 1)` and `resolve_signer_slot(deal, 2)`; assert names and email match. Call `resolve_signer_slot(deal, 3)`; assert None.
 2. Run full test suite for signix. All pass.
+
+---
+
+### Implementation notes (from Batch 1)
+
+- **get_signers_for_document_set_template** does not import doctemplates in `signix.py`; it receives a `DocumentSetTemplate` instance from the caller and uses `document_set_template.items.all()`. Item order follows `DocumentSetTemplateItem.Meta.ordering = ["order"]`. Each item’s template is accessed via `getattr(item, "template", None)` and `tagging_data` via `getattr(template, "tagging_data", None)` so missing or wrong-type templates are skipped without raising. Only `isinstance(tagging_data, list)` and `isinstance(entry, dict)` with `isinstance(val, int)` for `member_info_number` are collected; malformed or non-list `tagging_data` is skipped.
+- **Unit tests** that build document set templates must provide `file` for Static/Dynamic templates (e.g. `SimpleUploadedFile`). Use `ContentType.objects.get_for_model(StaticDocumentTemplate)` (and `DynamicDocumentTemplate`) when creating `DocumentSetTemplateItem` so the GenericForeignKey resolves correctly.
+
+### Implementation notes (from Batch 2)
+
+- **resolve_signer_slot** does not import `Contact` or `LeaseOfficerProfile` in `signix.py`; it uses `getattr(deal, "lease_officer", None)`, `getattr(user, "lease_officer_profile", None)`, and `getattr(contact, "first_name", None)` etc. so the module stays free of model imports from `apps.contacts` and `apps.users`, avoiding circular imports. The deal instance is assumed to have `lease_officer` and `contacts` loaded (callers can use `select_related("lease_officer")` and `prefetch_related("contacts")`).
+- **SignerPerson** was implemented as a **frozen** dataclass (`@dataclass(frozen=True)`).
+- **Unit tests** include an extra case for slot 1 when the user has blank `get_full_name()` → first_name becomes `user.get_username()`, last_name `""`. Deal with no lease officer is tested by setting `deal.lease_officer = None` in memory (no need for a nullable FK in the DB).
 
 ---
 

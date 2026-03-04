@@ -1,0 +1,37 @@
+<?xml version="1.0" ?>
+<SubmitDocumentRq xmlns="urn:com:signix:schema:sdddc-1-1">
+    <CustInfo>
+        <Sponsor>{{ data.cust_info.sponsor }}</Sponsor>
+        <Client>{{ data.cust_info.client }}</Client>
+        <UserId>{{ data.cust_info.userId }}</UserId>
+        <Pswd>{{ data.cust_info.password }}</Pswd>
+        <Workgroup>{{ data.cust_info.workgroup }}</Workgroup>
+        <Demo>{{ data.cust_info.demo }}</Demo>
+        <DelDocsAfter>{{ data.cust_info.del_docs_after }}</DelDocsAfter>
+        <EmailContent>{{ data.cust_info.email_content }}</EmailContent>
+    </CustInfo>
+    <Data>
+        <TransactionID>{{ data.transaction_data.transactionId }}</TransactionID>
+        <DocSetDescription>{{ data.transaction_data.doc_set_description }}</DocSetDescription>
+        <SubmitterEmail>{{ data.submitter.email }}</SubmitterEmail>
+        <SubmitterName>{{ data.submitter.name }}</SubmitterName>
+        <ContactInfo></ContactInfo>
+        <DeliveryType>SDDDC</DeliveryType>
+        <SuspendOnStart>{{ data.transaction_data.suspend_on_start }}</SuspendOnStart>
+        {% for signer in data.signers %}
+        <MemberInfo>
+            <RefID>{{ signer.ref_id }}</RefID>
+            <SSN>{{ signer.ssn }}</SSN>
+            <DOB>{{ signer.dob }}</DOB>
+            <FirstName>{{ signer.first_name }}</FirstName>
+            <MiddleName>{{ signer.middle_name }}</MiddleName>
+            <LastName>{{ signer.last_name }}</LastName>
+            <Email>{{ signer.email }}</Email>
+            <Service>{{ signer.service }}</Service>
+            <MobileNumber>{{ signer.phone }}</MobileNumber>
+            <SMSCount>{{ signer.sms_count }}</SMSCount>
+        </MemberInfo>
+        {% endfor %}
+        {{ data.form|safe }}
+    </Data>
+</SubmitDocumentRq>

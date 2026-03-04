@@ -128,6 +128,14 @@ This document outlines how to **send** the built SubmitDocument body to SIGNiX (
 1. Mock successful SubmitDocument response XML (with DocumentSetID); call send_submit_document; assert result.document_set_id matches. Mock 500; assert SignixApiError raised.
 2. Unit tests for send_submit_document with mocked requests.
 
+**Implementation notes (Batch 1):** SignixApiError has `message`, `http_status`, `response_text`. Endpoint constants: SIGNIX_ENDPOINT_WEBTEST and SIGNIX_ENDPOINT_PRODUCTION; get_signix_submit_endpoint(config) returns URL per config.demo_only. send_submit_document uses requests.post with data={"method": "SubmitDocument", "request": body} and Content-Type application/x-www-form-urlencoded. Response parsed with ElementTree; namespace-agnostic helpers (_find_text_in_element_tree by local tag name) for StatusCode, StatusDesc, DocumentSetID; first-signing URL found by scanning for any element whose text looks like an http(s) URL. Dependency: requests added to requirements.txt. Tests in apps.deals.tests.test_signix_send (GetSignixSubmitEndpointTests, SendSubmitDocumentTests with mocked requests.post).
+
+**Completed (Batch 1):** SignixApiError, get_signix_submit_endpoint, SendSubmitDocumentResult (document_set_id, first_signing_url), send_submit_document implemented. Unit tests (9) in test_signix_send.py; all 50 signix-related tests pass.
+
+**Manual testing (after Batch 1):**
+- **Django shell:** Build a body with build_submit_document_body(deal, document_set), then call send_submit_document(body, get_signix_submit_endpoint(config), config). This performs a real POST to SIGNiX Webtest/Production; only do this with valid credentials and a test deal. Expect SignixApiError if credentials are invalid or network fails.
+- **Optional:** Use a mock HTTP server (e.g. httpretty or a small Flask app) that returns a canned SubmitDocument response and assert result.document_set_id and result.first_signing_url.
+
 **Batch 2 — GetAccessLink and orchestrator**
 
 **Includes:** get_access_link_signer (or equivalent), submit_document_set_for_signature(deal, document_set), version status update to "Submitted to SIGNiX", error handling (re-raise validation and API errors).
@@ -137,6 +145,14 @@ This document outlines how to **send** the built SubmitDocument body to SIGNiX (
 1. Integration test: submit_document_set_for_signature with mocked SubmitDocument (and GetAccessLink if needed); assert SignatureTransaction created, versions updated.
 2. Assert on transaction_id from metadata, signix_document_set_id from response, first_signing_url from response or GetAccessLink.
 
+**Implementation notes (Batch 2):** get_access_link_signer(document_set_id, config, member_info_number=1) builds GetAccessLinkSignerRq XML with CustInfo (Sponsor, Client, UserId, Pswd, Workgroup) and Data (DocumentSetID, MemberInfoNumber). POST with method=GetAccessLinkSigner; parse response with same _find_text_in_element_tree and _find_first_signing_url helpers. submit_document_set_for_signature: validate, build body, send (with try/except SignixApiError and logger.error then raise), GetAccessLink if first_signing_url is None (on SignixApiError log and set first_signing_url=""), create SignatureTransaction, update each instance's latest version (instance.versions.first()) to VERSION_STATUS_SUBMITTED_TO_SIGNIX, return (transaction, first_signing_url). Constant VERSION_STATUS_SUBMITTED_TO_SIGNIX = "Submitted to SIGNiX" in signix module.
+
+**Completed (Batch 2):** get_access_link_signer, submit_document_set_for_signature, VERSION_STATUS_SUBMITTED_TO_SIGNIX, SignixApiError logging on send failure. Integration tests in test_signix_send.SubmitDocumentSetForSignatureTests: success with URL in response, success with GetAccessLink when no URL, SubmitDocument failure (no transaction, no version update), validation failure (no HTTP), GetAccessLink failure after submit success (transaction still created with empty first_signing_url). All 55 signix-related tests pass.
+
+**Manual testing (after Batch 2):**
+- **Django shell (real SIGNiX):** With valid Webtest config and a deal that has a document set with instances and files, call submit_document_set_for_signature(deal, deal.document_sets.first()). Expect (transaction, first_signing_url). Verify SignatureTransaction record and that each instance's latest version has status "Submitted to SIGNiX". Open first_signing_url in a browser to confirm signing experience loads.
+- **Validation:** Call with a document_set that belongs to another deal; expect SignixValidationError and no HTTP call. With invalid or missing config, expect validation or API error as appropriate.
+
 **Batch 3 — Tests and edge cases**
 
 **Includes:** Additional integration tests for failure paths, GetAccessLink-failure policy (document choice).
@@ -144,6 +160,13 @@ This document outlines how to **send** the built SubmitDocument body to SIGNiX (
 **How to test after Batch 3:**
 
 1. All tests pass. Document any GetAccessLink-failure policy in Open issues.
+
+**Implementation notes (Batch 3):** Batch 3 adds explicit verification that validation failure triggers no HTTP call (test_validation_failure_makes_no_http_call: patch requests.post, call orchestrator with wrong deal, assert mock_post.assert_not_called()). Add test_submit_4xx_creates_no_transaction_no_version_update (mock 400 response; assert SignixApiError, no transaction, version still Draft). GetAccessLink-failure policy is already in Section 8 and tested in Batch 2 (test_get_access_link_failure_after_submit_success_still_creates_transaction).
+
+**Completed (Batch 3):** test_validation_failure_makes_no_http_call, test_submit_4xx_creates_no_transaction_no_version_update added. Full signix test suite: 57 tests pass (test_signix_send, test_signix_build_body, test_signix).
+
+**Manual testing (after Batch 3):**
+- Same as Batch 2: Django shell with valid Webtest config and a deal with document set; submit_document_set_for_signature(deal, deal.document_sets.first()); verify transaction and version status; open first_signing_url. For validation: call with other deal's document_set and confirm SignixValidationError and no network call (e.g. no SIGNiX logs). Run full suite: `python manage.py test apps.deals.tests.test_signix_send apps.deals.tests.test_signix_build_body apps.deals.tests.test_signix -v 2`.
 
 ---
 

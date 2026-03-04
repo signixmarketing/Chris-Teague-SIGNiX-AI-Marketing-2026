@@ -14,7 +14,7 @@ This document outlines how to add **Document Sets**, **Document Instances**, and
 
 - **Models:** `DocumentSet`, `DocumentInstance`, `DocumentInstanceVersion`.
 - **Flows:** Generate Documents (create from templates), Regenerate Documents (add new versions), Delete Document Set.
-- **UI:** Deal detail page with Documents section (table, Generate/Regenerate/Delete buttons, View latest, Download latest, View all versions). Document Instance page (version history, View and Download PDF per version). "Send for Signature" button present but stub until SIGNiX plan.
+- **UI:** Deal detail page with Documents section (table, Generate/Regenerate/Delete buttons, View latest, Download latest, View all versions). Document Instance page (version history, View and Download PDF per version). "Send for Signature" button (implemented in PLAN-SIGNiX-SEND-FOR-SIGNATURE, Plan 7; was a stub until then).
 - **Access:** Authenticated users only (`@login_required`).
 
 ---
@@ -131,7 +131,7 @@ The **context builder** and **Dynamic render-to-PDF** logic live in the same ser
 ### 7.1 Deal Detail (Documents section)
 
 - **Before Document Set exists:** "Generate Documents" button (enabled when sufficient data). "Send for Signature" — inactive/disabled.
-- **After Document Set exists:** "Regenerate Documents", "Delete Document Set", "Send for Signature" (active; stub — POST shows message "SIGNiX integration will be available in a future release." and redirects to deal detail). Documents table: Document name, Latest version (number, status, date), "View latest", "Download latest", "View all versions".
+- **After Document Set exists:** "Regenerate Documents", "Delete Document Set", "Send for Signature" (active; implemented in Plan 7 — calls SIGNiX orchestrator, opens first signer URL in new window; see PLAN-SIGNiX-SEND-FOR-SIGNATURE). Documents table: Document name, Latest version (number, status, date), "View latest", "Download latest", "View all versions".
 
 ### 7.2 Document Instance (Version history)
 
@@ -207,15 +207,15 @@ Batch 3 complete when Generate and Regenerate work for both Static and Dynamic t
     - View for serving PDF (inline) and download. URL e.g. `/documents/versions/<pk>/view/` and `/documents/versions/<pk>/download/`.
     - Document Instance page: `/documents/instances/<pk>/` — list versions, View and Download per version.
 
-14. **Send for Signature stub**
-    - Button visible when document set exists. POST to `/deals/<pk>/documents/send-for-signature/` → set `messages.info` "SIGNiX integration will be available in a future release." and redirect to deal detail. No status change.
+14. **Send for Signature**
+    - Button visible when document set exists. POST to `/deals/<pk>/documents/send-for-signature/` — implemented in Plan 7 (PLAN-SIGNiX-SEND-FOR-SIGNATURE): calls orchestrator; on success opens first signer URL in new window; on validation/API error shows message and stays on deal detail.
 
 15. **File cleanup**
     - On Delete Document Set, remove PDF files from storage. (Implemented in Batch 3 as part of `delete_document_set`.)
 
 Batch 4 complete when full UI works and PDFs view/download correctly.
 
-**Status: Implemented.** Documents table has "View latest" (inline PDF), "Download latest", and "View all versions" (instance detail page with version list and View/Download per version). URLs: `/documents/versions/<pk>/view/`, `/documents/versions/<pk>/download/`, `/documents/instances/<pk>/`. Send for Signature stub: POST to `/deals/<pk>/documents/send-for-signature/` shows info message "SIGNiX integration will be available in a future release." and redirects to deal detail. File cleanup was implemented in Batch 3.
+**Status: Implemented.** Documents table has "View latest" (inline PDF), "Download latest", and "View all versions" (instance detail page with version list and View/Download per version). URLs: `/documents/versions/<pk>/view/`, `/documents/versions/<pk>/download/`, `/documents/instances/<pk>/`. Send for Signature: implemented in Plan 7 (PLAN-SIGNiX-SEND-FOR-SIGNATURE); POST to `/deals/<pk>/documents/send-for-signature/` calls orchestrator, opens first signer URL in new window on success. File cleanup was implemented in Batch 3.
 
 ---
 
@@ -279,7 +279,7 @@ Batch 4 complete when full UI works and PDFs view/download correctly.
 1. Deal detail: Documents table shows document names, latest version, View latest, Download latest, View all versions (all active).
 2. View latest: PDF opens in browser (inline). Download latest: PDF downloads.
 3. View all versions: Document Instance page (`/documents/instances/<pk>/`) lists versions (latest first); View and Download per version work.
-4. Send for Signature: button POSTs; info message shown and redirect to deal detail.
+4. Send for Signature: button POSTs; calls SIGNiX (Plan 7); on success opens signing URL in new window; on error shows message.
 5. Insufficient data / no template: Generate disabled when deal lacks data or when no Document Set Template exists for deal type; appropriate message shown.
 
 ---
@@ -294,7 +294,7 @@ Batch 4 complete when full UI works and PDFs view/download correctly.
 | Generate | POST to `/deals/<pk>/documents/generate/` |
 | Regenerate | POST `/deals/<pk>/documents/regenerate/` |
 | Delete set | POST `/deals/<pk>/documents/delete/` |
-| Send for Signature (stub) | POST `/deals/<pk>/documents/send-for-signature/` |
+| Send for Signature | POST `/deals/<pk>/documents/send-for-signature/` |
 | Document Instance | `/documents/instances/<pk>/` |
 | View PDF (inline) | `/documents/versions/<pk>/view/` |
 | Download PDF | `/documents/versions/<pk>/download/` |
@@ -306,7 +306,7 @@ Batch 4 complete when full UI works and PDFs view/download correctly.
 
 ## 10. Out of Scope (This Phase)
 
-- SIGNiX integration (plan 6) — Send for Signature is a stub.
+- SIGNiX integration — Send for Signature is implemented (Plan 7, PLAN-SIGNiX-SEND-FOR-SIGNATURE). Dashboard and Deal View transaction list are Plan 8–9.
 - Edit UI for Document Instances or Versions (view-only per design).
 - Pagination on version list.
 - HTML-to-PDF alternatives (pdfkit/wkhtmltopdf per DESIGN-DOCS).

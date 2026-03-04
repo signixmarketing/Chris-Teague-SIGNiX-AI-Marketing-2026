@@ -76,7 +76,7 @@ This document defines the order in which to implement the **submit flow** from *
 
 **Deliverables:**  
 - **`build_submit_document_body(deal, document_set, ...)`** — Returns full SubmitDocument XML string (and optionally metadata e.g. TransactionID). Uses SignixConfig (CustInfo, submitter, Data-level defaults), signer order and authentication (Plan 4), slot→person (Plan 3), document_set instances and latest version PDFs, template tagging_data for Form structure. All data sourcing per DESIGN-SIGNiX-SUBMIT Section 6.1.1.  
-- Jinja2 template (or equivalent) for the request XML; data dict built from config + deal + document_set + signers.  
+- Django template (DTL) for the request XML; data dict built from config + deal + document_set + signers.  
 - Validation helper used by this function: document set belongs to deal; instances present; latest version has file; all signer slots resolved to a person; SignixConfig present with submitter email.  
 - Unit tests: assert on structure and key values in built XML (no HTTP). Optional: management command or debug view to dump body without sending.
 

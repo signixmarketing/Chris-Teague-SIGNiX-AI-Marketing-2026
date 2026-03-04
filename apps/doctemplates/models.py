@@ -42,6 +42,11 @@ class StaticDocumentTemplate(models.Model):
         default=list,
         help_text="Array of form-field definitions: tag_name, field_type, member_info_number, etc.",
     )
+    signature_field_names = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Optional map of member_info_number to PDF AcroForm field name when tag_name is not set in tagging_data. E.g. {\"1\": \"LessorSignature\", \"2\": \"LesseeSignature\"}. If empty, defaults Lessor/Lessee are used.",
+    )
 
     class Meta:
         verbose_name = "Static document template"

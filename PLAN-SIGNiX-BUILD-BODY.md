@@ -14,7 +14,7 @@ This document outlines how to implement **building the SubmitDocument request bo
 
 - **`build_submit_document_body(deal, document_set, ...)`** — Build the full SubmitDocument request XML string from deal, document_set, and stored configuration. No HTTP is performed. Uses SignixConfig (CustInfo, submitter, Data-level defaults), signer order and authentication (Plan 4), slot→person resolution (Plan 3), document_set instances and latest-version PDFs, and template `tagging_data` for Form structure. All data sourcing per DESIGN-SIGNiX-SUBMIT Section 6.1.1.
 - **Validation** — A validation helper used by this function (and by the Plan 6 orchestrator) ensures: document set belongs to deal; at least one instance present; each instance has a latest version with a file; every signer slot from the document set template is resolved to a person; SignixConfig is present with submitter email. On validation failure, do not build body; surface errors to caller.
-- **Jinja2 template** — Request XML is produced by rendering a Jinja2 template with a data dict. Only intentionally embedded XML (e.g. Form content) is marked `| safe`; all other values are escaped.
+- **Django template (DTL)** — Request XML is produced by rendering a Django template with a data dict. Only intentionally embedded XML (e.g. Form content) is marked `| safe`; all other values are escaped.
 - **Return value** — Function returns the XML string and optionally metadata (e.g. client-chosen TransactionID) so Plan 6 can persist it on SignatureTransaction.
 - **Unit tests** — Assert on structure and key values in the built XML (no HTTP). Optional: management command or debug view to dump body without sending.
 - **Out of scope:** POST to SIGNiX, response parsing, GetAccessLink, creating SignatureTransaction, updating DocumentInstanceVersion status (Plan 6).
@@ -51,7 +51,7 @@ A single validation step must pass before building the body. The same validation
 
 ## 3. Data Dict Structure
 
-The Jinja2 template is rendered with a single data dict. Structure below matches DESIGN 6.1.1 and KNOWLEDGE-SIGNiX example.
+The Django template is rendered with a single data dict. Structure below matches DESIGN 6.1.1 and KNOWLEDGE-SIGNiX example.
 
 ### 3.1 CustInfo (from SignixConfig)
 
@@ -71,10 +71,10 @@ The Jinja2 template is rendered with a single data dict. Structure below matches
 | Key | Source / rule |
 |-----|----------------|
 | `transaction_data.transactionId` | Client-chosen; **max length 36 characters** in **standard UUID format** (e.g. `uuid.uuid4()` → `"550e8400-e29b-41d4-a716-446655440000"`). Unique per transaction; Plan 6 persists it on SignatureTransaction. |
-| `transaction_data.doc_set_description` | `"Deal #<deal_id> – <template_name>"`; template_name from same as above. Escape for XML if needed (Jinja2 escapes by default). |
+| `transaction_data.doc_set_description` | `"Deal #<deal_id> - <template_name>"`; use **ASCII hyphen** between parts to avoid encoding issues in signer email subject. Template name from same as above. Escape for XML if needed (Django escapes by default). |
 | `transaction_data.filename` | If Flex API requires a single FileName at Data level: use first document's template `ref_id` + `.pdf` (e.g. `ZoomJetPackLease.pdf`), or omit per API. Per-Form filename: use that Form's source template `ref_id` + `.pdf`. See Section 9. |
 | `transaction_data.contact_info` | Omit or config submitter email/phone per design. |
-| `transaction_data.delivery_type` | Omit or Flex default. |
+| `transaction_data.delivery_type` | Use **`"SDDDC"`** when Flex requires DeliveryType (valid enum). |
 | `transaction_data.suspend_on_start` | `"false"` (constant). |
 | `submitter.email` | config.submitter_email |
 | `submitter.name` | config.submitter_first_name + middle + last, trimmed, space-separated (blank if all empty). |
@@ -93,41 +93,40 @@ The Jinja2 template is rendered with a single data dict. Structure below matches
 | `middle_name` | person.middle_name or `""` |
 | `last_name` | person.last_name |
 | `email` | person.email |
-| `phone` | person.phone (for SMSOneClick; optional otherwise) |
+| `phone` | person.phone (required for SMSOneClick; send in MemberInfo as MobileNumber). |
 | `service` | Auth type: `"SelectOneClick"` or `"SMSOneClick"` from get_signer_authentication_for_slot |
+| `sms_count` | `1` for SMSOneClick, `0` for SelectOneClick (schema requires SMSCount; order per Flex: Service then MobileNumber then SMSCount). |
 | `ssn` | Default `"910000000"` (design 6.1.1). |
-| `dob` | Default `"1112223333"` (design 6.1.1). |
+| `dob` | Default `"01/01/1990"` — **MM/DD/YYYY** format (Flex DateType); placeholder for SelectOneClick/SMSOneClick. |
 | `ref_id` | Role or position, e.g. `"Signer 1"`, `"Signer 2"` or from get_role_label_for_slot; implementation choice. |
 
 ### 3.4 Form (documents)
 
 - **One Form per document instance** — order by `document_set.instances.order_by("order")`.
-- **Per Form:** Document name/label and filename from the instance's **source template `ref_id`** + `.pdf` (e.g. `ZoomJetPackLease.pdf`). **Tag definitions** from that template's `tagging_data`; **document content** = base64-encoded bytes of latest version's `file`. The Form XML structure (element names, order, attributes) follows the **Flex API SubmitDocument request XML** specification.
+- **Branch on template type:** **StaticDocumentTemplate** → AcroForm path (SignatureLine, SignField, optional DateSignedField/DateSignedFormat). **DynamicDocumentTemplate** → text-tagging path (TextTagField, TextTagSignature).
+- **Per Form:** Document identifier and filename from the instance's **source template `ref_id`** + `.pdf` (e.g. `ZoomJetPackLease.pdf`). **Tag definitions** from that template's `tagging_data`; **document content** = base64-encoded bytes of latest version's `file`. The Form XML structure (element names, order, attributes) follows the **Flex API SubmitDocument request XML** specification.
 
-- **Data we have:** We have everything needed from our templates to build the Form field definitions:
-  - **StaticDocumentTemplate:** `tagging_data` is a list of form-field definitions (e.g. `tag_name`, `field_type`, `member_info_number`, and any PDF field name/key). These map directly to Flex API elements for AcroForm fields (field name, type, member reference).
-  - **DynamicDocumentTemplate:** `tagging_data` is a list of text-tagging (or coordinate-based) definitions: `tag_name`, `field_type`, `anchor_text` or `bounding_box`/coordinates, `member_info_number`. These map directly to Flex API text-tagging or coordinate-based elements.
-
-- **Implementation:** The Form builder reads each template's `tagging_data` and emits the corresponding Flex API XML (e.g. SignatureLine, View, LengthOfData, Data) per the [Flex API — SubmitDocument](https://www.signix.com/apidocumentation#SubmitDocument) request XML documentation. No application data is missing—only the one-time mapping from our field names to the API's element names and order is required.
-- **Template rendering:** The Form XML fragment for all documents is built in Python (one concatenated string per document) and passed into the main template as `data.form` rendered with `| safe` (KNOWLEDGE-SIGNiX).
+- **Static (AcroForm):** Form elements per schema: **RefID**, **Desc**, **FileName**, **MimeType**, **SignatureLine(s)** (each with MemberInfoNumber, **SignField** = PDF AcroForm field name, and optional **DateSignedField** / **DateSignedFormat** when tagging_data has date_signed_field_name), **Length**, **Data**. When tag_name is missing in tagging_data, use **signature_field_names** on StaticDocumentTemplate if present (e.g. mapping member to field name); otherwise default Lessor for member 1, Lessee for member 2.
+- **Dynamic (text-tagging):** Form elements: RefID, Desc, FileName, MimeType, then **TextTagField** entries (e.g. Type DateSigned, AnchorText, bounding box, TagName) and **TextTagSignature** entries (MemberInfoNumber, anchor, box, optional DateSignedTagName/DateSignedFormat) from tagging_data. Emit **date fields before signature tags** (SIGNiX requirement).
+- **Template rendering:** The Form XML fragment for all documents is built in Python (one concatenated string per document) and passed into the main Django template as `data.form` rendered with `| safe` (KNOWLEDGE-SIGNiX).
 
 **Building Form XML from tagging_data (mapping):**
 
-- **Static (PDF form fields):** Each entry in `tagging_data` has at least tag_name, field_type, member_info_number. The Flex API uses specific elements for AcroForm fields (e.g. field name reference, type, which Member). Map each entry to those elements; member_info_number maps to the Member reference (RefID or 1-based index per API).
-- **Dynamic (text-tagging / coordinate-based):** Each entry has tag_name, field_type, anchor_text or bounding_box/coordinates, member_info_number. Map to Flex API text-tagging or coordinate elements (e.g. Page, Type, XPosition, YPosition, Width, Height, TagName, member reference) per the API doc.
-- **Document content:** Read `latest_version.file.open("rb").read()`, encode with `base64.b64encode(bytes).decode("ascii")`. Wrap in the Form's `<LengthOfData>` / `<Data>` (or equivalent) per Flex API.
+- **Static (PDF form fields):** Each entry in `tagging_data` has at least tag_name (or SignField), field_type, member_info_number; optional date_signed_field_name, date_signed_format. Map to SignatureLine with SignField and optional DateSignedField/DateSignedFormat; member_info_number maps to MemberInfoNumber.
+- **Dynamic (text-tagging):** Each entry has field_type (date_signed or signature), anchor_text, bounding_box (x_offset, y_offset, width, height), member_info_number; for signature, optional date_signed_field_name, date_signed_format. Map to TextTagField (DateSigned) or TextTagSignature; emit date tags first, then signature tags.
+- **Document content:** Read `latest_version.file.open("rb").read()`, encode with `base64.b64encode(bytes).decode("ascii")`. Wrap in the Form's `<Length>` / `<Data>` (or equivalent) per Flex API.
 
 ---
 
-## 4. Jinja2 Template
+## 4. Django template (DTL)
 
-- **Location:** e.g. `apps/deals/templates/signix/submit_document_request.xml` or `templates/signix/submit_document_rq.xml`. Use a path under the app or project templates so the template loader finds it.
-- **Structure:** Follow the KNOWLEDGE-SIGNiX example: root `SubmitDocumentRq` with xmlns, `CustInfo`, `Data` (TransactionID, DocSetDescription, SubmitterEmail, SubmitterName, ContactInfo, DeliveryType, SuspendOnStart, then loop over signers for MemberInfo, then `{{ data.form | safe }}`).
-- **Escaping:** All `{{ ... }}` values are escaped by Jinja2 except `data.form`, which is intentionally XML and passed with `| safe`. Do not use `| safe` on user-controlled text (names, emails, IDs).
+- **Location:** e.g. `apps/deals/templates/signix/submit_document_request.xml` or `templates/signix/submit_document_rq.xml`. Use a path under the app or project templates so the Django template loader finds it.
+- **Structure:** Follow the KNOWLEDGE-SIGNiX example: root `SubmitDocumentRq` with xmlns, `CustInfo`, `Data` (TransactionID, DocSetDescription, SubmitterEmail, SubmitterName, ContactInfo, DeliveryType e.g. SDDDC, SuspendOnStart, then loop over signers for MemberInfo in **schema order**: RefID, SSN, DOB, FirstName, MiddleName, LastName, Email, Service, MobileNumber, SMSCount, then `{{ data.form | safe }}`).
+- **Escaping:** All `{{ ... }}` values are escaped by Django except `data.form`, which is intentionally XML and passed with `| safe`. Do not use `| safe` on user-controlled text (names, emails, IDs).
 - **Demo:** CustInfo uses `{{ data.cust_info.demo }}` — ensure the value is the string `"true"` or `"false"` as required by the API.
 - **File name:** Use the document (template) name: **template `ref_id` + `.pdf`** (e.g. `ZoomJetPackLease.pdf`) per document. If the API expects a single FileName at Data level, use the first document's filename or omit per API; if per-Form, use `ref_id.pdf` for each Form.
 
-Reference template snippet (align with Flex API doc):
+Reference template snippet (DTL; align with Flex API doc):
 
 ```xml
 <?xml version="1.0" ?>
@@ -149,6 +148,8 @@ Reference template snippet (align with Flex API doc):
             ...
             <Email>{{ signer.email }}</Email>
             <Service>{{ signer.service }}</Service>
+            <MobileNumber>{{ signer.phone }}</MobileNumber>
+            <SMSCount>{{ signer.sms_count }}</SMSCount>
         </MemberInfo>
         {% endfor %}
         {{ data.form | safe }}
@@ -167,7 +168,7 @@ Reference template snippet (align with Flex API doc):
   1. Call `validate_submit_preconditions(deal, document_set)`. If it raises, propagate (caller handles).
   2. Load config: `get_signix_config()`.
   3. Build data dict (CustInfo, Data, signers, Form fragments) per Section 3. Form fragments built by iterating `document_set.instances.order_by("order")`, resolving source template (instance's GenericForeignKey), reading latest version file, base64-encoding, and building Form XML per Flex API from template's tagging_data.
-  4. Render Jinja2 template with data dict.
+  4. Render Django template with data dict.
   5. Return `(xml_string, metadata)` where metadata contains at least `transaction_id` (the client-chosen TransactionID) so Plan 6 can persist it on SignatureTransaction.
 
 **Location:** `apps.deals.signix`.
@@ -177,7 +178,7 @@ Reference template snippet (align with Flex API doc):
 ## 6. TransactionID and DocSetDescription
 
 - **TransactionID:** **Max length 36 characters**, **standard UUID format** (e.g. `str(uuid.uuid4())`). Unique per transaction; used for idempotency and correlation. No slug or timestamp format—UUID satisfies length and uniqueness.
-- **DocSetDescription:** `"Deal #<deal_id> – <template_display_name>"`. Use template name or deal type name; human-readable (no length constraint like TransactionID).
+- **DocSetDescription:** `"Deal #<deal_id> - <template_display_name>"`. Use **ASCII hyphen** between parts; template name or deal type name; human-readable (no length constraint like TransactionID).
 
 ---
 
@@ -202,7 +203,7 @@ Reference template snippet (align with Flex API doc):
 5. **Form XML builder**
    - For each document instance: get source template (Static or Dynamic), get latest version and file, base64-encode content. Build Form XML fragment from the template's `tagging_data`: we have all required data (tag_name, field_type, member_info_number; for Static, PDF field identifiers; for Dynamic, anchor_text or bounding_box). Map these to the Flex API Form elements (AcroForm vs text-tagging) per the [Flex API — SubmitDocument](https://www.signix.com/apidocumentation#SubmitDocument) request XML. Append each `<Form>...</Form>` to `data.form`.
 
-6. **Jinja2 template**
+6. **Django template**
    - Create `submit_document_request.xml` (or similar) under app/project templates. CustInfo, Data, MemberInfo loop, then `{{ data.form | safe }}`. Ensure XML declaration and xmlns match Flex API.
 
 7. **build_submit_document_body**
@@ -235,14 +236,18 @@ Reference template snippet (align with Flex API doc):
 1. validate_submit_preconditions: pass with valid deal+document_set; raise with wrong deal, no instances, no file, unresolved signer, no submitter email.
 2. Data dict: with valid fixture, assert cust_info and transaction_data and signers list are populated; signers have first_name, email, service, ssn, dob.
 
+**Implementation notes (Batch 1):** SignixValidationError is a custom exception with `errors: list[str]` (and str(err) joins them). validate_submit_preconditions raises immediately when document_set is None; otherwise collects all failures (wrong deal, no template, unresolved slots, no instances / no version / no file per instance, missing submitter email) and raises once. TransactionID is generated with `str(uuid.uuid4())` (36 chars). build_submit_data_dict(deal, document_set, config) returns dict with cust_info, transaction_data, signers, and transaction_id; call validate_submit_preconditions first. Submitter phone defaults to "800-555-1234" when config.submitter_phone is blank. Unit tests live in `apps.deals.tests.test_signix_build_body`.
+
 **Batch 2 — Form XML and build_submit_document_body**
 
-**Includes:** Form XML builder from tagging_data and latest version file, Jinja2 template, build_submit_document_body returning (body, metadata).
+**Includes:** Form XML builder from tagging_data and latest version file, Django template (DTL), build_submit_document_body returning (body, metadata).
 
 **How to test after Batch 2:**
 
 1. build_submit_document_body(deal, document_set) returns (str, dict); XML contains SubmitDocumentRq, CustInfo, Data, MemberInfo (count = signer count), Form(s). metadata["transaction_id"] present.
 2. Form section contains base64-looking content and tag/field structure (exact format depends on Flex API).
+
+**Implementation notes (Batch 2):** Branch on template type: Static (AcroForm) vs Dynamic (text-tagging) per Section 3.4; Static uses SignatureLine with SignField and optional DateSignedField/DateSignedFormat, and template's signature_field_names when tag_name missing. Signers in data dict include phone, sms_count, dob "01/01/1990"; MemberInfo in template order: RefID, SSN, DOB, FirstName, MiddleName, LastName, Email, Service, MobileNumber, SMSCount. Form XML is built per document instance: get source template (instance.source_document_template), ref_id for FileName, latest version file read and base64-encoded. Each Form includes at least one SignatureLine (MemberInfoNumber from tagging_data or default 1) so the API’s “at least one SignatureLine or View” is satisfied; tag definitions from tagging_data map to SignatureLine/View elements per Flex API. The full data dict is built by calling build_submit_data_dict then adding a top-level "submitter" dict (email, name, phone) and "form" (concatenated Form XML string). Render with Django’s `django.template.loader.get_template(...).render(context)`; template uses DTL (`{% for signer in data.signers %}`) and `{{ data.form | safe }}`. Template path: `signix/submit_document_request.xml` (resolved from app templates). Form fragment order: RefID, Desc, FileName, MimeType, SignatureLine(s) or TextTagField/TextTagSignature, Length, Data. Branch Static vs Dynamic per Section 3.4. ContactInfo and DeliveryType (SDDDC) in template.
 
 **Batch 3 — Tests and optional dump**
 
@@ -252,6 +257,14 @@ Reference template snippet (align with Flex API doc):
 
 1. pytest (or Django test) for apps.deals.tests.test_signix_build_body (or test_build_body). All pass.
 2. Optional: run dump command and open XML in browser or validator.
+
+**Implementation notes (Batch 3):** Batch 3 adds unit tests for signer order (deal.signer_order = [2, 1] → MemberInfo order in XML reflects second slot first) and auth (Service element contains SelectOneClick or SMSOneClick). Optional management command `signix_dump_body` takes one positional argument (deal_id), loads the deal’s first document_set, calls build_submit_document_body, and writes XML to stdout (or to a file with --output). Command lives in `apps/deals/management/commands/signix_dump_body.py`.
+
+**Completed (Batch 3):** Unit tests added in `test_signix_build_body.py`: `test_signer_order_reflected_in_member_info_order`, `test_service_element_contains_auth_value`, `test_xml_contains_doc_set_description_and_submitter`. Management command `signix_dump_body` implemented: `python manage.py signix_dump_body <deal_id>` prints XML; `--output` / `-o <path>` writes to file. Command validates preconditions and exits with clear errors if deal not found or deal has no document set. All 41 signix/build_body tests pass.
+
+**Manual testing (after Batch 3):**
+- **Django shell:** Load a deal that has a document set with instances and latest-version files; call `build_submit_document_body(deal, document_set)` and inspect the returned XML string and metadata (e.g. `transaction_id`). Optionally set `deal.signer_order = [2, 1]` and confirm MemberInfo order and Service values.
+- **Dump command:** With a valid deal ID that has a document set: `python manage.py signix_dump_body <deal_id>` (XML to stdout). To save to file: `python manage.py signix_dump_body <deal_id> --output submit.xml`. Confirm XML is well-formed (e.g. open in browser or validator). Run with invalid deal_id or deal with no document set to confirm error messages.
 
 ---
 
@@ -280,7 +293,7 @@ Reference template snippet (align with Flex API doc):
 
 - **Validation API:** **Decided:** Raise `SignixValidationError` with `errors: list[str]` on failure; no return value on success. Orchestrator catches and returns user-facing message.
 
-- **ContactInfo, DeliveryType:** **Decided:** Omit from data dict unless Flex API or integration testing requires them. Add placeholders to the Jinja2 template as empty or commented if the API requires empty tags; otherwise omit.
+- **ContactInfo, DeliveryType:** **Decided:** Output ContactInfo (empty or from config) and **DeliveryType** with value **SDDDC** in the template when the Flex API requires them. See Section 3.2.
 
 - **Slug length / TransactionID max length:** **Decided:** TransactionID **max length 36 characters**, **standard UUID format** (e.g. `str(uuid.uuid4())`). Use a new UUID per transaction; no slug or timestamp format. Satisfies Flex API length constraint and guarantees uniqueness.
 

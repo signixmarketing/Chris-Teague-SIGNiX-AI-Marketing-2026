@@ -32,7 +32,7 @@ This document outlines how to add **SignixConfig** (SIGNiX credentials and submi
 | `client` | CharField(max_length=255, blank=True) | Flex API Client (CustInfo). Required in form for save. |
 | `user_id` | CharField(max_length=255, blank=True) | Flex API User id (CustInfo). Required in form for save. |
 | `password` | CharField(max_length=255, blank=True) | Flex API Password (CustInfo). Store with appropriate protection per security policy; use password input in forms. Required in form for initial save; on edit, blank means “keep existing”. |
-| `workgroup` | CharField(max_length=255, blank=True) | Flex API Workgroup (CustInfo). Required in form for save. |
+| `workgroup` | CharField(max_length=255, blank=True) | Flex API Workgroup (CustInfo). **Must match the exact value** assigned by SIGNiX for your client (case-sensitive; a typo such as SSD instead of SDD causes "workgroup does not exist"). Required in form for save. |
 | `demo_only` | BooleanField(default=True) | When True, use Webtest endpoint; when False, use Production. |
 | `delete_documents_after_days` | PositiveIntegerField(default=60) | Maps to Flex DelDocsAfter (retention). |
 | `default_email_content` | TextField(default=… see below) | Used for EmailContent in SubmitDocument. Default: `"Your documents for the Sample Application are available online for viewing and signing."` |
@@ -74,7 +74,7 @@ This document outlines how to add **SignixConfig** (SIGNiX credentials and submi
   1. **Credentials:** sponsor, client, user_id, password, workgroup. All five are **required in the form** when saving (so that once saved, the config is valid for submit).
   2. **Submitter:** submitter_first_name, submitter_middle_name, submitter_last_name, submitter_email, submitter_phone. Require **submitter_email** in form validation. Other submitter fields optional.
   3. **Settings:** demo_only (checkbox), delete_documents_after_days (number), default_email_content (textarea).
-- **Password:** Use `forms.PasswordInput` (or `widget=forms.PasswordInput(render_value=True)` on edit so the field can show “••••••” or leave blank to keep existing). **Validation:** Require the password field when the instance has no password set (e.g. `not instance.password`). When the instance already has a password, a blank password field means “keep existing”—do not update `instance.password` in `save()` (implement in view or form `save(commit=False)` + set password only when the form’s password value is non-empty).
+- **Password:** Use `forms.PasswordInput` (or `widget=forms.PasswordInput(render_value=True)` on edit so the field can show “••••••” or leave blank to keep existing). Optional: `attrs={"autocomplete": "new-password"}` to reduce browser prompts. **Validation:** Require the password field when the instance has no password set (e.g. `not instance.password`). When the instance already has a password, a blank password field means “keep existing”—do not update `instance.password` in `save()` (implement in view or form `save(commit=False)` + set password only when the form’s password value is non-empty).
 - **Defaults:** Pre-fill default_email_content and delete_documents_after_days when creating the singleton.
 
 ### 4.3 Template
@@ -84,7 +84,7 @@ This document outlines how to add **SignixConfig** (SIGNiX credentials and submi
 
 ### 4.4 View
 
-- **View:** Function-based or class-based. On GET: get or create the singleton (e.g. `get_signix_config()`), pass to form as instance. On POST: bind form, validate, save. Redirect to same page (or a “view” page) with success message. Handle password: if password field is blank on edit, remove it from `cleaned_data` and do not update the password field on the model (so existing password is preserved).
+- **View:** Function-based or class-based. On GET: get or create the singleton (e.g. `get_signix_config()`), pass to form as instance. On POST: bind form, validate, save. Redirect to same page (or a “view” page) with success message. Handle password: if password field is blank on edit, **either** remove it from `cleaned_data` and do not update the password field on the model, **or** (simpler) after `form.save(commit=False)` set `instance.password = SignixConfig.objects.get(pk=instance.pk).password` when the form’s password value is empty, then call `instance.save()` so the existing password is preserved.
 
 ---
 
@@ -124,7 +124,7 @@ This document outlines how to add **SignixConfig** (SIGNiX credentials and submi
    - In `config/urls.py`, add `path("signix/config/", signix_config_edit, name="signix_config")` and import: `from apps.deals.views import signix_config_edit` (or add to existing deals view imports).
 
 8. **Template**
-   - Create `templates/deals/signix_config_form.html`. Extend base. Form with csrf_token, form.as_p or form fields grouped (Credentials, Submitter, Settings). Submit button. Display non-field errors. Use Bootstrap/card layout consistent with the app.
+   - Create `templates/deals/signix_config_form.html`. Extend base. Form with csrf_token, form.as_p or form fields grouped (Credentials, Submitter, Settings). Submit button. Display non-field errors. Use Bootstrap/card layout consistent with the app. If using Bootstrap, apply `form-control` to inputs in the form’s `__init__`; use `form-check-input` for the `demo_only` checkbox (not `form-control`).
 
 9. **Sidebar**
    - In `templates/base.html`, add “SIGNiX Configuration” link for staff users (`{% if user.is_staff %}`), linking to `{% url 'signix_config' %}`. Place after other main nav items (e.g. after Document Set Templates or in an Admin/Settings group if one exists).
@@ -186,7 +186,17 @@ Batch 2 is complete when all of the above pass.
 
 - **Password storage:** For this first release, the password may be stored in the database in plain text (with a password input in the UI so it is not visible in the browser). **Before deploying the app to a Production environment (in a later release), the password storage approach must be addressed**—e.g. encryption at rest, a secrets manager, or environment-based secrets—per your security policy.
 - **Permission:** Design allows “dedicated configurator permission”; this plan uses `is_staff`. A custom permission can be added later.
+- **Workgroup:** Value must match the exact Workgroup string assigned by SIGNiX (case-sensitive); typo causes "workgroup does not exist" on submit.
 - **Singleton enforcement:** If you allow multiple rows by mistake, the packager will use `get_signix_config()` which returns one; document that the UI should only ever show/edit that one (e.g. always pk=1 or the first row). A database constraint (e.g. check that id=1 or a single-row table) can be added in a follow-up if desired.
+
+---
+
+## 9. Implementation Notes (from Plan 1 implementation)
+
+- **default_email_content in one place:** Define a constant (e.g. `DEFAULT_SIGNIX_EMAIL_CONTENT`) in `apps/deals/models.py` and use it for both the `SignixConfig.default_email_content` model default and in `get_signix_config()`'s `defaults` dict so the string is not duplicated.
+- **Password "keep existing" in the view:** A simple approach: after `form.is_valid()`, do `instance = form.save(commit=False)`. If `instance.pk` and `not form.cleaned_data.get('password')`, set `instance.password = SignixConfig.objects.get(pk=instance.pk).password`. Then `instance.save()`. The view must import `SignixConfig` from `apps.deals.models`.
+- **Bootstrap form classes:** In the form's `__init__`, loop over `self.fields` and set `widget.attrs.setdefault('class', 'form-control')` for text/email/number/textarea fields. For the `demo_only` BooleanField use `form-check-input` instead so the checkbox is styled correctly.
+- **URL namespace:** The path is registered in `config/urls.py` (project root), so the URL name is `signix_config` with no app prefix. Use `{% url 'signix_config' %}` in templates.
 
 ---
 

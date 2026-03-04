@@ -110,6 +110,8 @@ These allow the packager (Plan 5) and the Signers table to share the same logic.
 
 1. Migrate; in shell create or load a deal with a document set template. Assert `get_signer_order_for_deal(deal, template)` returns `[1, 2]` when signer_order is empty. Set `deal.signer_order = [2, 1]`, save; assert helper returns `[2, 1]`. Assert `get_signer_authentication_for_slot(deal, 1)` is SelectOneClick and for slot 2 is SMSOneClick when signer_authentication is empty; set auth for 2 to SelectOneClick, assert helper returns it.
 
+**Implementation notes (Batch 1):** Helpers live in `apps.deals.signix` with constants `AUTH_SELECT_ONE_CLICK` and `AUTH_SMS_ONE_CLICK`. `get_signer_order_for_deal` treats `signer_order` as “set” only when it is a non-empty list; `None` or `[]` fall back to template order. `get_signer_authentication_for_slot` uses string keys (`str(slot_number)`) and only accepts the two auth constants; invalid or missing values use slot defaults. Unit tests are in `apps.deals.tests.test_signix.SignerOrderAndAuthHelpersTests`.
+
 **Batch 2 — UI and save**
 
 **Includes:** Signers card on deal detail; context with signers list; POST endpoints (or one) to save auth and reorder; redirect back to deal detail.
@@ -117,6 +119,8 @@ These allow the packager (Plan 5) and the Signers table to share the same logic.
 **How to test after Batch 2:**
 
 1. Open deal detail for a deal that has a document set template (and ideally a document set with signer slots 1 and 2). Signers table appears with two rows. Change authentication for one signer; save; reload and confirm. Use move up/down; reload and confirm order. Confirm unresolved slot (e.g. no contact) shows a placeholder and table still renders.
+
+**Implementation notes (Batch 2):** The deal detail context builds `signers` by resolving the document set template from `document_set.document_set_template` when a document set exists, else `DocumentSetTemplate.objects.filter(deal_type=deal.deal_type).first()`. Prefetch `document_sets__document_set_template` where deal detail is loaded so the template is not queried per request. The reorder view must load the deal’s template (same logic) to compute the current effective order before swapping; it then writes the new list to `deal.signer_order` and redirects. Auth update view merges POSTed auth keys (e.g. `auth_1`, `auth_2`) into existing `signer_authentication` so other slots are preserved; only values in `AUTH_SELECT_ONE_CLICK` / `AUTH_SMS_ONE_CLICK` are stored. **Template forms:** The auth form must not wrap the reorder forms (invalid nested forms in HTML). Implement by having the auth form contain only `{% csrf_token %}`, then use `form="signers-auth-form"` on each auth `<select>` and on the “Save signer settings” button so they submit with the auth form; reorder buttons stay in their own per-row `<form>` that POSTs to the reorder URL.
 
 ---
 
