@@ -19,7 +19,7 @@ from apps.documents.services import (
 )
 
 from .forms import DealForm, SignixConfigForm
-from .models import Deal, DealType, SignixConfig
+from .models import Deal, DealType, SignixConfig, SignatureTransaction
 from .signix import (
     get_signix_config,
     get_signer_order_for_deal,
@@ -102,6 +102,7 @@ def _deal_detail_context(
             (AUTH_SELECT_ONE_CLICK, AUTH_SELECT_ONE_CLICK),
             (AUTH_SMS_ONE_CLICK, AUTH_SMS_ONE_CLICK),
         ],
+        "signature_transactions": deal.signature_transactions.order_by("-submitted_at"),
     }
     if open_signing_url is not None:
         ctx["open_signing_url"] = open_signing_url
@@ -249,6 +250,44 @@ def deal_send_for_signature(request, pk):
             "Transaction created; signing link could not be retrieved. You can check the transaction or contact support.",
         )
     return redirect("deals:deal_detail", pk=pk)
+
+
+@login_required
+def signature_transaction_list(request):
+    """List all signature transactions (Plan 8 dashboard)."""
+    transactions = (
+        SignatureTransaction.objects.all()
+        .order_by("-submitted_at")
+        .select_related("deal", "deal__deal_type", "document_set", "document_set__document_set_template")
+    )
+    return render(
+        request,
+        "deals/signature_transaction_list.html",
+        {"signature_transaction_list": transactions},
+    )
+
+
+@login_required
+def signature_transaction_delete_all(request):
+    """GET: show confirmation page. POST: delete all signature transactions and redirect to list (Plan 8)."""
+    if request.method == "POST":
+        count = SignatureTransaction.objects.count()
+        SignatureTransaction.objects.all().delete()
+        messages.success(request, f"All signature transaction records ({count}) have been removed.")
+        return redirect("deals:signature_transaction_list")
+    return render(request, "deals/signature_transaction_delete_all_confirm.html")
+
+
+@login_required
+def deal_signature_transaction_delete_all(request, pk):
+    """GET: show confirmation page. POST: delete this deal's signature transactions and redirect to deal detail (Plan 9)."""
+    deal = get_object_or_404(Deal, pk=pk)
+    if request.method == "POST":
+        count = SignatureTransaction.objects.filter(deal_id=pk).count()
+        SignatureTransaction.objects.filter(deal_id=pk).delete()
+        messages.success(request, f"All signature transaction records for this deal ({count}) have been removed.")
+        return redirect("deals:deal_detail", pk=pk)
+    return render(request, "deals/deal_signature_transaction_delete_all_confirm.html", {"deal": deal})
 
 
 @login_required

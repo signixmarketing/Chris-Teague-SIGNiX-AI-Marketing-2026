@@ -126,7 +126,7 @@
 </div>
 {% endif %}
 
-<div class="card">
+<div class="card mb-3">
   <div class="card-body">
     <h6 class="text-muted mb-3">Documents</h6>
     {% if document_set %}
@@ -208,6 +208,55 @@
     {% else %}
     <span class="text-muted small ms-2">Send for Signature — inactive until documents exist.</span>
     {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="text-muted mb-3">Signature transactions</h6>
+    {% if signature_transactions %}
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <a href="{% url 'deals:signature_transaction_list' %}" class="text-muted small">View all signature transactions</a>
+      <a href="{% url 'deals:deal_signature_transaction_delete_all' deal.pk %}" class="btn btn-outline-danger btn-sm">Delete Transaction History</a>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Submitted at</th>
+            <th>SIGNiX DocumentSetID</th>
+            <th>Status</th>
+            <th class="text-end">Open signing</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in signature_transactions %}
+          <tr>
+            <td>{{ t.submitted_at|date:"M j, Y g:i A" }}</td>
+            <td>{{ t.signix_document_set_id }}</td>
+            <td>{{ t.status }}</td>
+            <td class="text-end">
+              {% if t.first_signing_url %}
+                {% if t.status == "Submitted" or t.status == "In Progress" %}
+                  <a href="{{ t.first_signing_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary">Open signing</a>
+                {% else %}
+                  —
+                {% endif %}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted small mb-0">No signature transactions for this deal.</p>
+    <p class="mt-2 mb-0 small">
+      <a href="{% url 'deals:signature_transaction_list' %}">View all signature transactions</a>
+    </p>
     {% endif %}
   </div>
 </div>

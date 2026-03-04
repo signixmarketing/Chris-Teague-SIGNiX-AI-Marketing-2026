@@ -25,7 +25,7 @@ This document outlines how to add **related signature transactions** on the Deal
 ## 2. Data and Context
 
 - **Source:** `deal.signature_transactions` (reverse relation from Plan 2). Order by `-submitted_at` for newest first.
-- **Deal detail view:** Add to the deal detail context: `signature_transactions = deal.signature_transactions.order_by('-submitted_at')`. **Decided:** Pass this in the view (or extend `_deal_detail_context` to include it); ensure every code path that renders deal detail, including Plan 7 re-render on validation error, includes `signature_transactions`. One extra query per deal detail load is acceptable.
+- **Deal detail view:** Add to the deal detail context: `signature_transactions = deal.signature_transactions.order_by('-submitted_at')`. **Decided:** Add this inside **`_deal_detail_context`** (the helper that builds the context dict) so every code path that renders deal detail — including Plan 7 re-render on validation error, generate-documents error, regenerate-documents error — gets `signature_transactions` without changing each view. One extra query per deal detail load is acceptable.
 - **Delete for this deal:** `SignatureTransaction.objects.filter(deal=deal).delete()` (or `deal_id=pk`). Run in a POST view after confirmation.
 
 ---
@@ -45,8 +45,8 @@ This document outlines how to add **related signature transactions** on the Deal
 
 ## 5. Deal Detail Template Changes
 
-- **Placement:** After the Documents card, add a **new card** with heading "Signature transactions" (or "Related signature transactions") (decided: separate card).
-- **Content:** A table with columns: Submitted at, SIGNiX DocumentSetID, Status, optional "Open signing" (link with `target="_blank"` and `rel="noopener noreferrer"` to `transaction.first_signing_url` when non-empty and status in [Submitted, In Progress]). Below or above the table: link "View all signature transactions" to `deals:signature_transaction_list`; button "Delete Transaction History" that links to the deal-scoped delete confirmation URL (GET). When there are no transactions, show empty state message and hide the Delete button.
+- **Placement:** After the Documents card, add a **new card** with heading "Signature transactions" (or "Related signature transactions") (decided: separate card). Use the same vertical spacing as other section cards (e.g. Bootstrap `mb-3`). **Spacing:** So the gap between Documents and Signature transactions matches the gap between Signers and Documents, the **Documents card** should also have a bottom margin (`mb-3`); if it currently has none, add it when adding the new subsection.
+- **Content:** When there are transactions: a **top row above the table** with the "View all signature transactions" link on the left and the "Delete Transaction History" button on the right (same pattern as the Documents card: `d-flex justify-content-between` so action buttons are top right). Then the table. A table with columns: Submitted at, SIGNiX DocumentSetID, Status, optional "Open signing" (link with `target="_blank"` and `rel="noopener noreferrer"` to `transaction.first_signing_url` when non-empty and status in [Submitted, In Progress]). When there are no transactions, show empty state message and the "View all signature transactions" link only; hide the Delete button.
 - **Empty state:** When `signature_transactions` is empty, show a single line or message: e.g. "No signature transactions for this deal." and the "View all signature transactions" link. Do not show the Delete button when the list is empty.
 
 ---
@@ -56,10 +56,10 @@ This document outlines how to add **related signature transactions** on the Deal
 ### Batch 1 — Deal detail context and table (steps 1–4)
 
 1. **Deal detail context**
-   - In `deal_detail` (and wherever deal detail context is built for re-renders, e.g. Plan 7), add `signature_transactions = deal.signature_transactions.order_by('-submitted_at')`. If context is built by a helper (e.g. `_deal_detail_context`), extend the helper to include `signature_transactions` so all callers get it.
+   - Add `signature_transactions = deal.signature_transactions.order_by('-submitted_at')` to the **`_deal_detail_context`** helper (in `apps/deals/views.py`) so all callers — deal_detail, deal_generate_documents (error path), deal_regenerate_documents (error path), deal_send_for_signature (validation error path) — get it without changing each view.
 
 2. **Template — subsection and table**
-   - In `templates/deals/deal_detail.html`, after the Documents card, add a new card: heading "Signature transactions" (or "Related signature transactions"), table with columns Submitted at, SIGNiX DocumentSetID, Status, Open signing (when applicable). Iterate over `signature_transactions`. Use Bootstrap table classes to match the Documents table. Date format: e.g. `|date:"M j, Y g:i A"`.
+   - In `templates/deals/deal_detail.html`, after the Documents card, add a new card: heading "Signature transactions" (or "Related signature transactions"), table with columns Submitted at, SIGNiX DocumentSetID, Status, Open signing (when applicable). Use the same card margin as other sections (e.g. `mb-3`). If the Documents card has no bottom margin, add `mb-3` to it so spacing between Documents and Signature transactions is consistent with Signers–Documents. Iterate over `signature_transactions`. Use Bootstrap table classes to match the Documents table. Date format: e.g. `|date:"M j, Y g:i A"`.
 
 3. **Link to dashboard**
    - In the same subsection, add a link "View all signature transactions" pointing to `{% url 'deals:signature_transaction_list' %}`.
@@ -76,7 +76,7 @@ This document outlines how to add **related signature transactions** on the Deal
    - Create `templates/deals/deal_signature_transaction_delete_all_confirm.html`. Content: message "Are you sure? This will remove all transaction records for this deal.", form with POST to the delete URL, Cancel link back to deal detail.
 
 7. **Delete button on deal detail**
-   - In the Signature transactions subsection, add a "Delete Transaction History" button that links to the confirmation page (GET). Show only when `signature_transactions` is non-empty.
+   - In the Signature transactions subsection, add a "Delete Transaction History" button that links to the confirmation page (GET). Show only when `signature_transactions` is non-empty. Place it in a **top row above the table** (link "View all signature transactions" on the left, button on the right), matching the Documents card so action buttons are consistently in the top right.
 
 8. **Verification (Batch 2)**
    - From deal detail, click "Delete Transaction History"; confirmation page appears. Confirm; only this deal's transactions are deleted; redirect to deal detail with success message.
@@ -84,10 +84,10 @@ This document outlines how to add **related signature transactions** on the Deal
 ### Batch 3 — Tests and polish (steps 9–10)
 
 9. **Tests**
-   - Deal detail: with no signature transactions, subsection shows empty state and no Delete button. With transactions, table shows rows and Delete button. Open signing link appears when first_signing_url and status allow. Delete flow: GET returns confirmation; POST deletes only that deal's transactions and redirects to deal detail.
+   - Deal detail: with no signature transactions, subsection shows empty state and no Delete button. With transactions, table shows rows and Delete button. Open signing link appears when first_signing_url and status allow; **when status is e.g. Complete, assert the signing URL is not in the response** (column header "Open signing" is always present). Delete flow: GET and **POST** require login; GET returns confirmation; POST deletes only that deal's transactions and redirects to deal detail. **Re-render context:** Test that when a deal-detail re-render path is used (e.g. Plan 7 validation error), the response still contains the Signature transactions subsection (e.g. mock `SignixValidationError` on send-for-signature, POST, then assert "Signature transactions" in response and `deal_detail.html` used).
 
 10. **Polish**
-    - Ensure re-render paths (e.g. Plan 7 validation error) pass signature_transactions in context so the subsection always renders correctly.
+    - Re-render paths (Plan 7 validation error, generate/regenerate error) already receive `signature_transactions` because it is added in `_deal_detail_context`; no extra code change. Verify by testing at least one re-render path (e.g. send-for-signature validation error) and asserting the subsection appears in the response.
 
 ---
 
@@ -95,9 +95,15 @@ This document outlines how to add **related signature transactions** on the Deal
 
 **Batch 1 — Context and table:** Add signature_transactions to deal detail context; new card in deal_detail.html with table and "View all signature transactions" link; empty state when no transactions.
 
+**Implementation notes (Batch 1):** Add `signature_transactions` in **`_deal_detail_context`** so every deal detail render path gets it. Use `mb-3` on the new Signature transactions card; ensure the Documents card also has `mb-3` so the vertical gap between Documents and Signature transactions matches the gap between Signers and Documents. Tests: optional in Batch 1; see `apps/deals/tests/test_deal_view_signature_transactions.py` for examples (subsection presence, empty state, table content, Open signing link).
+
 **Batch 2 — Delete for this deal:** URL `/deals/<pk>/signatures/delete-all/`, view with GET confirm and POST delete, confirmation template, Delete button on deal detail (shown only when there are transactions).
 
+**Implementation notes (Batch 2):** Place the "View all signature transactions" link and "Delete Transaction History" button in a **top row above the table** (`d-flex justify-content-between`: link left, button right) so the Delete button is in the top right, consistent with the Documents card (Regenerate, Delete Document Set, Send for Signature). When the list is empty, do not show the top row with the button — only the empty state message and the View all link.
+
 **Batch 3 — Tests and polish:** Tests for subsection and delete flow; context on re-renders.
+
+**Implementation notes (Batch 3):** Test module can use three classes: list/subsection tests, delete-all tests, and Batch 3 tests (re-render, POST login, open signing when not allowed). **Delete flow:** Assert both GET and POST require login for the deal-scoped delete-all URL. **Open signing when not allowed:** To assert the link is hidden (e.g. status Complete), assert the **signing URL** is not in the response, not the text "Open signing" (column header is always present). **Re-render polish:** No code change needed if `signature_transactions` is in `_deal_detail_context`; verify by triggering a re-render (e.g. mock `SignixValidationError` on `submit_document_set_for_signature`, POST to `deal_send_for_signature`) and asserting the response contains "Signature transactions" and uses `deal_detail.html`.
 
 ---
 
@@ -109,7 +115,8 @@ This document outlines how to add **related signature transactions** on the Deal
 | View | `deal_signature_transaction_delete_all(request, pk)` in `apps/deals/views.py` |
 | Template (confirm) | `deals/deal_signature_transaction_delete_all_confirm.html` |
 | Template (deal detail) | `deals/deal_detail.html` — add Signature transactions card and table |
-| Context (deal detail) | `signature_transactions` (ordered by -submitted_at) |
+| Context (deal detail) | `signature_transactions` in `_deal_detail_context` (ordered by -submitted_at) |
+| Tests | `apps/deals/tests/test_deal_view_signature_transactions.py` — subsection, empty state, table, Open signing, delete flow, re-render (Batches 1–3) |
 | Model | `SignatureTransaction` (Plan 2); no new models |
 
 ---
@@ -124,7 +131,7 @@ This document outlines how to add **related signature transactions** on the Deal
 
 - **"Open signing" visibility:** **Decided:** Same as Plan 8 — show for **all authenticated users** when first_signing_url is non-empty and status is Submitted or In Progress.
 
-- **Context (signature_transactions):** **Decided:** Add `signature_transactions = deal.signature_transactions.order_by('-submitted_at')` in the view or extend `_deal_detail_context` to include it; ensure every code path that renders deal_detail (including Plan 7 re-render) gets signature_transactions.
+- **Context (signature_transactions):** **Decided:** Add `signature_transactions = deal.signature_transactions.order_by('-submitted_at')` **inside `_deal_detail_context`** so every code path that renders deal_detail (including Plan 7 re-render, generate/regenerate error paths) gets it without changing each view.
 
 - **Empty state wording:** **Decided:** Use "No signature transactions for this deal." Optional: add "Send documents for signature from the Documents section above."
 
@@ -140,7 +147,9 @@ This document outlines how to add **related signature transactions** on the Deal
 | **When to show subsection** | Always show on deal detail; empty state when no transactions; hide Delete button when empty. |
 | **Delete URL** | Separate URL `/deals/<pk>/signatures/delete-all/` with GET = confirm, POST = delete, redirect to deal detail. |
 | **"Open signing" visibility** | Same as Plan 8 — show for all authenticated users when URL present and status allows. |
-| **Context (signature_transactions)** | Add in view or extend _deal_detail_context; ensure all deal detail render paths include it. |
+| **Context (signature_transactions)** | Add in `_deal_detail_context`; all deal detail render paths then include it. |
+| **Card spacing** | New card uses `mb-3`; Documents card should have `mb-3` so spacing between sections is consistent. |
+| **Delete button / View all** | When transactions exist: top row above table — link left, Delete button right (match Documents card). |
 | **Empty state** | "No signature transactions for this deal."; optional hint about Send for Signature. |
 
 ---

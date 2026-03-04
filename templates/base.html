@@ -96,8 +96,13 @@
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.app_name == 'deals' %}active{% endif %}" href="{% url 'deals:deal_list' %}">
+          <a class="nav-link {% if request.resolver_match.app_name == 'deals' and request.resolver_match.url_name != 'signature_transaction_list' and request.resolver_match.url_name != 'signature_transaction_delete_all' %}active{% endif %}" href="{% url 'deals:deal_list' %}">
             <i class="bi bi-file-earmark-text"></i>Deals
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name == 'signature_transaction_list' %}active{% endif %}" href="{% url 'deals:signature_transaction_list' %}">
+            <i class="bi bi-pen"></i>Signature transactions
           </a>
         </li>
         <li class="nav-item">
