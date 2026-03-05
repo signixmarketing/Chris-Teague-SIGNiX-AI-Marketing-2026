@@ -177,10 +177,12 @@ def build_document_context(deal, mapping, request=None):
     context = {}
     if not mapping:
         return context
-    base_url = None
-    if request:
+    # Prefer PDF_IMAGE_BASE_URL so wkhtmltopdf (running locally) can always fetch images,
+    # e.g. when the user triggered generation via ngrok and request would give an ngrok URL.
+    base_url = getattr(settings, "PDF_IMAGE_BASE_URL", "") or None
+    if not base_url and request:
         base_url = request.build_absolute_uri("/")
-    else:
+    if not base_url:
         base_url = getattr(settings, "SITE_URL", "") or ""
 
     for var, entry in mapping.items():
@@ -198,10 +200,10 @@ def build_document_context(deal, mapping, request=None):
                     "Please update the template mapping or restore the image."
                 )
             url = image.file.url if image.file else ""
-            if url and request:
-                value = request.build_absolute_uri(url)
-            elif url and base_url:
+            if url and base_url:
                 value = base_url.rstrip("/") + ("/" + url.lstrip("/") if url.startswith("/") else url)
+            elif url and request:
+                value = request.build_absolute_uri(url)
             else:
                 value = url
             _set_nested(context, var, value)

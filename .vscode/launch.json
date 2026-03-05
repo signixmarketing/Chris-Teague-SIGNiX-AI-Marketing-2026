@@ -13,6 +13,24 @@
         "DJANGO_SETTINGS_MODULE": "config.settings"
       },
       "justMyCode": false
+    },
+    {
+      "name": "Ngrok: tunnel to port 8000",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/run_ngrok.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NGROK_DOMAIN": "unreproachable-draftily-shanelle.ngrok-free.dev",
+        "NGROK_PORT": "8000"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Django with ngrok",
+      "configurations": ["Ngrok: tunnel to port 8000", "Django: runserver"]
     }
   ]
 }

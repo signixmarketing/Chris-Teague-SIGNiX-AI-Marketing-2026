@@ -24,6 +24,7 @@ from apps.deals.views import signix_config_edit
 
 urlpatterns = [
     path("", users_views.root_redirect, name="root"),
+    path("health/", users_views.health, name="health"),
     path("accounts/", include("django.contrib.auth.urls")),
     path("", include("apps.users.urls")),
     path("vehicles/", include("apps.vehicles.urls")),

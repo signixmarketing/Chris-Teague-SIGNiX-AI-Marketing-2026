@@ -4,14 +4,21 @@ Profile and auth-related views for lease officers.
 - root_redirect: send / to /profile/ or login.
 - profile_view: read-only profile (with Edit button).
 - profile_edit: form to update profile; redirects to profile_view on success.
+- health: simple 200 + JSON for tunnel/sanity checks (e.g. scripts/verify_ngrok.sh).
 """
 
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib import messages
 
 from .forms import LeaseOfficerProfileEditForm
 from .models import LeaseOfficerProfile
+
+
+def health(request):
+    """Return 200 and {"status": "ok"} for tunnel/sanity checks (no auth required)."""
+    return JsonResponse({"status": "ok"})
 
 
 def root_redirect(request):

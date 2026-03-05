@@ -25,7 +25,27 @@ SECRET_KEY = 'django-insecure-43i3ipdw_!i2@hafc%h7ko&%j%@60+vt)9!ui0s^k4m0k3)mlt
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    ".ngrok-free.app",
+    ".ngrok-free.dev",
+    ".ngrok.io",
+]
+
+# Required when using ngrok (or other HTTPS proxy): login and other POSTs send Origin
+# matching the tunnel URL; Django's CSRF check requires it to be trusted.
+# Replace with your ngrok domain if you use a different account/machine (see PLAN-NGROK.md).
+CSRF_TRUSTED_ORIGINS = [
+    "https://unreproachable-draftily-shanelle.ngrok-free.dev",
+    "http://unreproachable-draftily-shanelle.ngrok-free.dev",
+]
+
+# Base URL used for image URLs when generating PDFs (dynamic templates). wkhtmltopdf
+# runs on the server and must fetch image URLs; if the user triggers generation via
+# ngrok, request.build_absolute_uri() would give an ngrok URL that wkhtmltopdf may
+# not reach reliably. Use a local URL so the generated PDF always has working images.
+PDF_IMAGE_BASE_URL = "http://127.0.0.1:8000"
 
 
 # Application definition

@@ -54,6 +54,14 @@ This document defines the order in which to implement all PLANs to build (or reb
 
 ---
 
+## Setup: wkhtmltopdf (before Document Features)
+
+**Purpose:** Dynamic document generation (PLAN-DOCS-MASTER, plan 4 — Document Sets) requires **wkhtmltopdf** on the system and **pdfkit** in the Python environment. Do this setup **after** plans 1–6 and **before** starting PLAN-DOCS-MASTER so that when you implement PLAN-ADD-DOCUMENT-SETS, the HTML-to-PDF pipeline is ready.
+
+**Implement:** Follow **SETUP-WKHTMLTOPDF.md**: run the “already installed” check (Section 4.0); if wkhtmltopdf is not installed, run Batches 1–2 (install wkhtmltopdf, then ensure pdfkit is present and `manage.py check` passes). Do not duplicate steps that are already covered by PLAN-ADD-DOCUMENT-SETS (e.g. pip install of requirements). See SETUP-WKHTMLTOPDF.md for when to skip each batch.
+
+---
+
 ## Summary Table
 
 | Order | Plan                 | App         | Key deliverables                                                |
@@ -65,11 +73,13 @@ This document defines the order in which to implement all PLANs to build (or reb
 | 5     | PLAN-ADD-IMAGES.md   | apps.images | Image upload, list with URL, edit with replacement              |
 | 6     | PLAN-DATA-INTERFACE.md | apps.schema | Schema viewer, Debug Data page, get_schema/get_paths/get_deal_data |
 
+*Then:* **SETUP-WKHTMLTOPDF.md** (wkhtmltopdf + pdfkit for dynamic document generation) — before Document Features.
+
 ---
 
 ## Next Steps: Document Features
 
-Once plans 1–6 above are completed, proceed to **PLAN-DOCS-MASTER.md** for document-related features (Static Document Templates, Dynamic Document Templates, Document Set Templates, Document Sets with Generate/Regenerate and Send for Signature stub). See PLAN-DOCS-MASTER.md for the implementation sequence. PLAN-DOCS-MASTER item 5 (SIGNiX integration) is superseded by the next step.
+Once plans 1–6 above are completed, complete **SETUP-WKHTMLTOPDF.md** (if not already done) so wkhtmltopdf and pdfkit are available for dynamic document generation. Then proceed to **PLAN-DOCS-MASTER.md** for document-related features (Static Document Templates, Dynamic Document Templates, Document Set Templates, Document Sets with Generate/Regenerate and Send for Signature stub). See PLAN-DOCS-MASTER.md for the implementation sequence. PLAN-DOCS-MASTER item 5 (SIGNiX integration) is superseded by the next step.
 
 ---
 
@@ -79,4 +89,10 @@ Once PLAN-DOCS-MASTER plans 1–4 are completed (Document Sets includes the Send
 
 ---
 
-*To recreate this app from scratch: implement plans 1–6 in order, following each plan's implementation order and verification steps. Then implement the plans in PLAN-DOCS-MASTER.md (plans 1–4). Then implement the plans in PLAN-SIGNiX-SUBMIT-MASTER.md (plans 1–9).*
+## When ready: ngrok for push notifications
+
+When you are ready to implement SIGNiX **push notifications** (webhooks), follow **PLAN-NGROK.md**. That plan covers installing ngrok (if needed), claiming or using your ngrok domain, and **all codebase changes** required for the app to work through the tunnel (ALLOWED_HOSTS, CSRF_TRUSTED_ORIGINS, PDF_IMAGE_BASE_URL, health endpoint, launch config, scripts). Use it for from-scratch builds as well: a different developer on a different machine substitutes their ngrok domain and authtoken; the code changes stay the same.
+
+---
+
+*To recreate this app from scratch: implement plans 1–6 in order, following each plan's implementation order and verification steps. Then complete SETUP-WKHTMLTOPDF.md (wkhtmltopdf + pdfkit) so dynamic document generation is ready. Then implement the plans in PLAN-DOCS-MASTER.md (plans 1–4). Then implement the plans in PLAN-SIGNiX-SUBMIT-MASTER.md (plans 1–9). When you are ready to implement SIGNiX push notifications, follow PLAN-NGROK.md (ngrok tunnel and codebase changes).*
