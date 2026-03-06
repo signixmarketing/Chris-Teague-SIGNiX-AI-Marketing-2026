@@ -8,14 +8,16 @@ This document summarizes SIGNiX and the SIGNiX Flex API (Flex API) for use when 
 **Key terms and API calls**
 
 > **This application’s submit design**  
-> For the lease app’s submit flow (SubmitDocument, signer identification, configuration, data sourcing), see **DESIGN-SIGNiX-SUBMIT.md**. That design defines where every SubmitDocument field comes from and how the first signer’s link is used (separate window).
+> For the lease app’s submit flow (SubmitDocument, signer identification, configuration, data sourcing), see **DESIGN-SIGNiX-SUBMIT.md**. That design defines where every SubmitDocument field comes from and how the first signer’s link is used (separate window).  
+> For push notifications, dashboard status updates, and downloading signed documents when transactions complete, see **DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md**.
 
 - **Transaction** — In the Flex API, a *transaction* is the set of documents and parties sent in one SubmitDocument call. SIGNiX returns a **DocumentSetID**; the client may also send a **TransactionID** (client-chosen) to identify the set.
 - **SubmitDocument** — Creates and starts a transaction; sends documents, signers, authentication, and field assignments to SIGNiX.
-- **DownloadDocument** — Retrieves completed, signed PDFs and the audit trail after a transaction is complete.
+- **DownloadDocument** — Retrieves completed, signed PDFs and the audit trail (and optionally a certificate-of-completion PDF) after a transaction is complete.
 - **ConfirmDownload** — Confirms receipt; required for retention policies (e.g. when using DelDocsAfter). Call after successfully storing documents.
 - **GetAccessLink** — Returns a short-lived or permanent URL for the submitter (wizard) or a **signer** (signing experience). Commonly used to obtain the **first signer’s** signing URL so the integrating application can open it in a **separate window** (e.g. `window.open`), avoiding iframe limitations (e.g. on iOS) while keeping the user in the app.
-- **Push notifications** — Webhooks from SIGNiX to your system for events such as Send, partyComplete, complete, suspend, cancel, expire.
+- **Push notifications** — Webhooks from SIGNiX to your system for events such as Send, partyComplete, complete, suspend, cancel, expire. The push **endpoint URL** can be configured at the account level (provide Base URL to your SIGNiX rep; see [Push Notifications](https://www.signix.com/pndocumentation)) or **per transaction** via two client preferences (see *Per-transaction push notification endpoint* below). For request/response format, actions, and server requirements, see the Push Notifications documentation.
+- **Client preferences (CPs)** — Service configuration parameters that can be overridden per transaction via the **ClientPreference** request element (e.g. AllowSignatureGraphic, DateSignedFormat, NextPartyLink, notification schedule). Two CPs—**UseClientNotifyVersion2** and **TransactionClientNotifyURL**—allow a per-transaction push notification endpoint (see below). For the full list and allowed values, see the [Flex API documentation](https://www.signix.com/apidocumentation) → Additional Information → **Client Preference Overrides**.
 
 ---
 
@@ -78,7 +80,7 @@ All B2B requests use the **same endpoint URL** and **same transport**; the **met
 ### SubmitDocument — Response XML
 
 - **Status:** `Status` with `StatusCode` (0 = success; non-zero = error) and `StatusDesc`. Always check StatusCode before using other elements.
-- **DocumentSetID:** Present on success; use for GetAccessLink, DownloadDocument, etc.
+- **DocumentSetID:** Present on success; use for GetAccessLink, DownloadDocument, etc. **Store it** (e.g. in a `signix_document_set_id` field on your transaction record) so you can correlate incoming push notifications—the push sends this same value as the **id** query parameter.
 - **First-party pickup link:** On success, the response may include a pickup link for the first party (URL to the first signer's signing experience). Exact element names are in the Flex API schema; parse for the URL when StatusCode is 0. If present, use as `first_signing_url`; otherwise call GetAccessLink for the first signer.
 
 ### GetAccessLink — Signer (first signer URL)
@@ -88,6 +90,17 @@ All B2B requests use the **same endpoint URL** and **same transport**; the **met
 - **Response:** On StatusCode 0, response contains the signer URL; exact element name per schema. Use as `first_signing_url`.
 
 Request only one GetAccessLink at a time; use MemberInfoNumber=1 for the first signer when the SubmitDocument response does not include the first-party link.
+
+### DownloadDocument and ConfirmDownload
+
+When a transaction is **complete** (e.g. after push **action=complete**), retrieve the signed documents, audit trail, and (optionally) certificate of completion, then confirm receipt.
+
+- **Same endpoint and transport** as SubmitDocument and GetAccessLink (POST, `method` and `request` parameters; CustInfo for credentials). Use the same endpoint URL (Webtest or Production) and credentials as for submit.
+- **DownloadDocument — Request:** CustInfo (same credentials as SubmitDocument) and **DocumentSetID** (the transaction’s signix_document_set_id). Request can include **IncludeAuditData** (true) and **AuditTrailFormat** (e.g. `pdf`) so the response includes the audit trail as a PDF. Optionally include the element for **certificate of completion** to receive a summary PDF in addition to the full audit trail (see [Flex API — DownloadDocument](https://www.signix.com/apidocumentation)). Exact request XML structure is in the [Flex API documentation](https://www.signix.com/apidocumentation).
+- **DownloadDocument — Response:** Signed PDFs plus, when requested, the **audit trail as a PDF** (and optionally a **certificate of completion** PDF). The Flex API states: “The DownloadDocument method allows for the pickup/downloading of all the completed documents for a Transaction along with its accompanying Audit Trail PDF”; the certificate of completion is “a summary … that includes a subset of the larger audit trail’s data” and is optional. The response structure (**order** of documents, and whether each document has an identifier such as **RefID**) is defined in the Flex API documentation. Use **order** or **RefID** to map each returned document to your application’s document instances (e.g. the same order as the Forms you sent in SubmitDocument, or match by RefID if the API returns it per document). Store the signed PDFs in your document repository (e.g. as new DocumentInstanceVersions with status Final). Store the audit trail and certificate of completion per your design (e.g. on the signature transaction).
+- **ConfirmDownload** — Call **after** you have successfully stored all documents from DownloadDocument. Request includes DocumentSetID (and credentials per Flex API). **Required** when using retention options such as DelDocsAfter in SubmitDocument; see the Flex API documentation for the exact request structure.
+
+For the full request/response XML and element names, see the [Flex API documentation](https://www.signix.com/apidocumentation) (DownloadDocument, ConfirmDownload).
 
 ---
 
@@ -103,9 +116,60 @@ Request only one GetAccessLink at a time; use MemberInfoNumber=1 for the first s
 **SubmitDocument** transfers the full transaction to SIGNiX:
 
 - **Sent in the request:** signer info, PDF document(s), and tasks to complete (a task is usually “get signer to complete this field”).
-- **Returned in the response:** a SIGNiX **DocumentSetID** (used in future API calls) and a link to the first signing experience.
+- **Returned in the response:** a SIGNiX **DocumentSetID** (used in future API calls and sent as **id** in push notifications) and a link to the first signing experience. Store the DocumentSetID so you can match push notifications to your transaction record.
 - **After a successful call:** a **push notification** (“Send”) is sent to the integrating system indicating the transaction was sent, and SIGNiX automatically sends an email to the first signer with an invitation to the signing session.
 
+### Per-transaction push notification endpoint (client preferences)
+
+A feature using **two client preferences together** lets you specify the push notification destination **per transaction** in the SubmitDocument request. That avoids relying on account-level configuration (e.g. SIGNiX support setting a Base URL for your account). Relevant for this project when implementing push: the app can send its listening endpoint (e.g. the ngrok URL) in each SubmitDocument so SIGNiX posts webhooks to that URL for that transaction.
+
+Include these **ClientPreference** elements in the request **inside `<Data>`, immediately after `<SuspendOnStart>` and before the first `<MemberInfo>`**. Example order: TransactionID, DocSetDescription, FileName (if used), SubmitterEmail, SubmitterName, ContactInfo, DeliveryType, SuspendOnStart, then **ClientPreference** (UseClientNotifyVersion2 and TransactionClientNotifyURL), then optional NotificationSchedule (e.g. `{1,2,3,4,5}minutes`), then MemberInfo, then Form(s). The Flex API doc does not always state this explicitly; use this order to match a working SubmitDocument example.
+
+- **UseClientNotifyVersion2** — Set to `yes` to enable the per-transaction URL behavior.
+- **TransactionClientNotifyURL** — The URL of the application’s listening endpoint (e.g. `https://your-ngrok-domain.ngrok-free.dev/signix/push/`). SIGNiX will send push notifications for this transaction to this URL.
+
+Example (conceptual; substitute your actual URL and ensure structure matches the Flex API):
+
+```xml
+<ClientPreference name="UseClientNotifyVersion2">yes</ClientPreference>
+<ClientPreference name="TransactionClientNotifyURL">https://your-app.example.com/signix/push/</ClientPreference>
+```
+
+When building the SubmitDocument payload (e.g. from a template), pass in the app’s current push endpoint (e.g. from settings or the request) so each transaction targets the correct listener. **In this application:** the push base URL is derived from the current HTTP request when submit is triggered from a view (e.g. request.build_absolute_uri), so no manual configuration is needed in the typical case; a stored value (SignixConfig or settings) is used only as an override. When using NGROK_DOMAIN or a similar setting, if the value does not include a scheme (does not start with "http"), the application prepends "https://" so the callback URL is valid. See DESIGN-SIGNiX-DASHBOARD-AND-SYNC Section 5 (get_push_base_url). See [Push Notifications](https://www.signix.com/pndocumentation) for full request/response details and server requirements; the same response rules (e.g. 200 OK with body "OK") apply.
+
+### Push notification request format (what you receive)
+
+The [Push Notifications](https://www.signix.com/pndocumentation) documentation defines what your endpoint receives. Summary:
+
+- **Method:** SIGNiX sends a **GET** request to your URL (no POST body).
+- **All information is in the URL:** The request has no message body. Your Base URL (or TransactionClientNotifyURL) is called with **query parameters** only.
+
+**Identifying the transaction and the event:**
+
+| Parameter | Meaning | Use |
+|-----------|--------|-----|
+| **action** | The event type. Case-sensitive. | Tells you **what happened**: e.g. `Send`, `partyComplete`, `complete`, `suspend`, `cancel`, `expire`, `partyOptedOut`, `partyNotificationFailed`. |
+| **id** | SIGNiX Document Set ID for the transaction. | Identifies the **transaction in SIGNiX** (e.g. `1495076a37d:-6cb8:-4f127ef3:2x3f39`). Use this to correlate with your stored `signix_document_set_id` and to call DownloadDocument/QueryTransactionStatus. |
+| **extid** | Client Transaction ID (the value you sent in SubmitDocument as TransactionID). | Identifies the **transaction in your system**. Use this to find your local record (e.g. `SignatureTransaction` or deal/document set). Can be turned off by SIGNiX on request. |
+
+**Other parameters (when present):**
+
+- **pid** — Ordinal ID of the party that caused the event (e.g. `P01`, `P02`). Present only for party-related actions (e.g. `partyComplete`).
+- **refid** — RefId of that party (if you sent it in MemberInfo for that party). Present only for some party-related events. Best practice: use **refid** and ignore **pid** when both are present.
+- **ts** — Time the event occurred; format `yyyy-MM-dd'T'HH:mm:ss` (default Eastern time zone; other time zones can be requested via your SIGNiX rep).
+
+**Example URL:**  
+`https://your-app.example.com/signix/push/?action=complete&id=1495076a37d:-6cb8:-4f127ef3:2x3f39&extid=00012345&ts=2014-10-27T04:57:52`
+
+**Response:** You must return **HTTP 200 OK** with response body exactly **"OK"** (no other content). Any other status or body is treated as failure and may trigger retries. **Always return 200 OK** for every request—including when required parameters (action, id, extid) are missing or when the transaction is not found—so SIGNiX does not retry. Respond within a few hundred milliseconds; do any heavy processing (e.g. DownloadDocument) asynchronously after responding.
+
+**Updating transaction status from push (dashboard):** Use the push endpoint to look up your transaction by **id** (stored `signix_document_set_id`) or **extid** (client TransactionID), then update your status field from **action**. Typical mapping: `Send` → leave as Submitted (or set “Sent”); `partyComplete` → In Progress; `complete` → Complete; `suspend` → Suspended; `cancel` → Cancelled; `expire` → use a **dedicated Expired status** in this app (distinct from Cancelled; see DESIGN-SIGNiX-DASHBOARD-AND-SYNC). Set **status_last_updated** to the event time (push `ts` or server time) whenever you update status or signer progress, so the dashboard can show when the current status was last updated (e.g. when the most recent signer completed, when the transaction was completed). Treat complete, cancel, suspend, and expire as **terminal** so later retries or out-of-order pushes do not overwrite them—make updates idempotent (e.g. only move forward in a state machine or ignore if already terminal). For **partyComplete**, store the set of **refids** (or pids) already counted so retries do not double-count; when **action=complete**, set completed count = total signer count if not already equal so the dashboard shows e.g. 2/2 even if a partyComplete was missed. The dashboard displays **Signers** (e.g. 0/2, 1/2, 2/2) and **Status updated** (formatted date/time) via **get_signers_display(transaction)** and **get_status_updated_display(transaction)** (see DESIGN-SIGNiX-DASHBOARD-AND-SYNC Section 3.4). SIGNiX may send the same event more than once on failure/retry; the [Push Notifications](https://www.signix.com/pndocumentation) documentation describes retry behavior. For polling or reconciling status instead of (or in addition to) push, use **QueryTransactionStatus** with the DocumentSetID—see the [Flex API documentation](https://www.signix.com/apidocumentation). When introducing push-driven status for the first time, existing transaction records can be backfilled as **complete with all signers signed** (see DESIGN-SIGNiX-DASHBOARD-AND-SYNC Section 3.2 and Plan 1) so the dashboard shows a consistent state.
+
+**Event history and signature transaction detail (this application):** The app records each push and the initial submit as **SignatureTransactionEvent** rows (DESIGN-SIGNiX-DASHBOARD-AND-SYNC Section 7.5): event_type values **submitted** (when the transaction is created), **send**, **party_complete**, **complete**, **suspend**, **cancel**, **expire** (from push action). Each event has **occurred_at** (from push `ts` or server time), and **refid**/**pid** when present. The **signature transaction detail page** (DESIGN Section 8) uses this timeline to show a chronological list of events and to derive "when each signer signed" from **party_complete** events. The detail page also shows header (Transaction ID, Deal link, document set type, status, last status updated), signers table (with signed at), documents as sent vs signed, and links to the audit trail and certificate of completion PDFs (stored on the transaction when the transaction completes via DownloadDocument). See DESIGN-SIGNiX-DASHBOARD-AND-SYNC and PLAN-SIGNiX-DASHBOARD-SYNC-MASTER for implementation order.
+
+For the full parameter list, optional parameters per action, and failure/retry behavior, see [Push Notifications](https://www.signix.com/pndocumentation).
+
+---
 ```mermaid
 flowchart TB
     R[SubmitDocumentRq]
@@ -364,9 +428,13 @@ The following SIGNiX resources contain relevant and useful information for integ
 | Resource | Description |
 |----------|-------------|
 | **DESIGN-SIGNiX-SUBMIT.md** (this repo) | This application’s submit flow design: SubmitDocument data sourcing, SignixConfig, signer identification, first signer in separate window. |
+| **DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md** (this repo) | Push listener, status updates from push, per-signer progress, SubmitDocument with push URL, DownloadDocument and ConfirmDownload when transaction completes. |
 | [Getting Started (Dev Community)](https://www.signix.com/development-community-getting-started) | Integrating with SIGNiX: common terms, integration timeline, how SIGNiX works with your business, what you need (XML, web services, Base64, tagging), push notifications, go-live requirements, and best practices. |
-| [Push Notifications](https://www.signix.com/pndocumentation) | Push notification (webhook) setup: subscribing, request/response format, actions (Send, partyComplete, complete, suspend, cancel, expire, etc.), failure and retries, server setup, TLS, and implementation process. |
+| [Push Notifications](https://www.signix.com/pndocumentation) | **Push notifications:** subscribing (account-level Base URL via SIGNiX rep), or **per-transaction endpoint** via client preferences UseClientNotifyVersion2 + TransactionClientNotifyURL (see this knowledge doc). Request/response format, actions, failure and retries, server setup, TLS, implementation process. |
+| [Flex API — Client Preference Overrides](https://www.signix.com/apidocumentation) | **Client preferences (CPs):** per-transaction overrides via ClientPreference element. Includes **UseClientNotifyVersion2** and **TransactionClientNotifyURL** for per-transaction push URL. See Additional Information → Client Preference Overrides for the full list (AllowSignatureGraphic, DateSignedFormat, etc.) and allowed values. |
 | [Flex API — SubmitDocument](https://www.signix.com/apidocumentation#SubmitDocument:~:text=SubmitDocument%20%2D%20Request%20XML) | SubmitDocument request XML structure and options: CustInfo, Data, MemberInfo, Form, SignatureLine/View, transport, and related capabilities. |
+| [Flex API — DownloadDocument / ConfirmDownload](https://www.signix.com/apidocumentation) | After a transaction is complete: DownloadDocument (request with DocumentSetID; response has signed PDFs and audit trail—map to your document instances by order or RefID per API). ConfirmDownload after storing documents; required for DelDocsAfter. |
+| [Flex API — QueryTransactionStatus](https://www.signix.com/apidocumentation) | Poll or reconcile transaction status by DocumentSetID when not relying solely on push; response indicates current state. |
 | [Text Tagging (Flex API)](https://www.signix.com/api-text-tagging) | Using text anchors (tags) in PDFs to place signature, date, text, checkbox, and notary seal fields without AcroForm fields; coordinate system and sample SubmitDocument snippets. |
 | [Digital Billboard (Flex API)](https://www.signix.com/apidocumentation#digitalbillboard) | Post-signing call-to-action: image, hover image, alt text, and link per signer on the Thank You for Signing page; placement and sizing options. |
 | [Authentication / Service Types](https://www.signix.com/apidocumentation) | Per-signer authentication options: SelectOneClick, SMSNoIntent, SMSNoPassword, IDVerifyBiometric, KBA-ID (notary), etc. See Flex API documentation → Additional Information → Authentication / Service Types. |

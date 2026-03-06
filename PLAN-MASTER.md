@@ -95,4 +95,10 @@ When you are ready to implement SIGNiX **push notifications** (webhooks), follow
 
 ---
 
-*To recreate this app from scratch: implement plans 1–6 in order, following each plan's implementation order and verification steps. Then complete SETUP-WKHTMLTOPDF.md (wkhtmltopdf + pdfkit) so dynamic document generation is ready. Then implement the plans in PLAN-DOCS-MASTER.md (plans 1–4). Then implement the plans in PLAN-SIGNiX-SUBMIT-MASTER.md (plans 1–9). When you are ready to implement SIGNiX push notifications, follow PLAN-NGROK.md (ngrok tunnel and codebase changes).*
+## Next Steps: Dashboard, Sync, and Download
+
+Once **PLAN-SIGNiX-SUBMIT-MASTER** (plans 1–9) and **PLAN-NGROK** are complete, proceed to **PLAN-SIGNiX-DASHBOARD-SYNC-MASTER.md** for push-driven status, the push listener, including the push URL in SubmitDocument, the Signers column on the dashboard and Deal View, downloading signed documents plus audit trail and certificate when transactions complete, and the signature transaction detail page (viewing artifacts). Implement the six plans (PLAN-SIGNiX-SYNC-MODEL through PLAN-SIGNiX-TRANSACTION-DETAIL) in the order defined in PLAN-SIGNiX-DASHBOARD-SYNC-MASTER.md.
+
+---
+
+*To recreate this app from scratch: implement plans 1–6 in order, following each plan's implementation order and verification steps. Then complete SETUP-WKHTMLTOPDF.md (wkhtmltopdf + pdfkit) so dynamic document generation is ready. Then implement the plans in PLAN-DOCS-MASTER.md (plans 1–4). Then implement the plans in PLAN-SIGNiX-SUBMIT-MASTER.md (plans 1–9). When you are ready to implement SIGNiX push notifications, follow PLAN-NGROK.md (ngrok tunnel and codebase changes). Then implement the plans in PLAN-SIGNiX-DASHBOARD-SYNC-MASTER.md (plans 1–6) for push-driven status, the push listener, push URL in SubmitDocument, Signers column, download on complete (including audit trail and certificate), and signature transaction detail page (viewing artifacts).*
