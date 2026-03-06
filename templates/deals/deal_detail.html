@@ -229,6 +229,7 @@
             <th>Status</th>
             <th>Signers</th>
             <th>Status updated</th>
+            <th class="text-end">View</th>
             <th class="text-end">Open signing</th>
           </tr>
         </thead>
@@ -240,6 +241,9 @@
             <td>{{ t.status }}</td>
             <td>{{ t.signers_display }}</td>
             <td>{{ t.status_updated_display }}</td>
+            <td class="text-end">
+              <a href="{% url 'deals:signature_transaction_detail' t.pk %}" class="btn btn-sm btn-outline-secondary">View</a>
+            </td>
             <td class="text-end">
               {% if t.first_signing_url %}
                 {% if t.status == "Submitted" or t.status == "In Progress" %}

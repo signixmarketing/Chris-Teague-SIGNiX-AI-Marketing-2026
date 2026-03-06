@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Signature transaction {{ transaction_identifier }} — Vehicle Leasing{% endblock %}
+{% block content_header %}Signature transaction {{ transaction_identifier }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <div class="text-muted small mb-1">Living SIGNiX transaction record</div>
+    <h5 class="mb-1">{{ transaction_identifier }}</h5>
+    <div class="small">
+      Deal:
+      <a href="{% url 'deals:deal_detail' transaction.deal_id %}">Deal #{{ transaction.deal_id }}</a>
+    </div>
+  </div>
+  <div class="text-end">
+    <div><span class="badge text-bg-primary">{{ transaction.status }}</span></div>
+    <div class="text-muted small mt-2">Last status update: {{ status_updated_display }}</div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="text-muted mb-3">Transaction summary</h6>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="small text-muted">Client transaction ID</div>
+        <div>{{ transaction.transaction_id|default:"—" }}</div>
+      </div>
+      <div class="col-md-4">
+        <div class="small text-muted">SIGNiX DocumentSetID</div>
+        <div>{{ transaction.signix_document_set_id|default:"—" }}</div>
+      </div>
+      <div class="col-md-4">
+        <div class="small text-muted">Document set type</div>
+        <div>{{ document_set_type }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="text-muted mb-3">Signers</h6>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Order</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Authentication</th>
+            <th>Signed</th>
+            <th>Signed at</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for signer in signers %}
+          <tr>
+            <td>{{ signer.order }}</td>
+            <td>{{ signer.name }}</td>
+            <td>{{ signer.email }}</td>
+            <td>{{ signer.authentication }}</td>
+            <td>{% if signer.signed %}Yes{% else %}No{% endif %}</td>
+            <td>
+              {% if signer.signed_at %}
+                {{ signer.signed_at|date:"M j, Y g:i A" }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-3">No signer details available.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="text-muted mb-3">Documents</h6>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Document</th>
+            <th>As sent</th>
+            <th>Signed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for document in documents %}
+          <tr>
+            <td>{{ document.label }}</td>
+            <td>
+              {% if document.as_sent_version and document.as_sent_version.file %}
+                <a href="{% url 'documents:document_version_view' document.as_sent_version.pk %}" target="_blank" rel="noopener noreferrer">
+                  v{{ document.as_sent_version.version_number }} · {{ document.as_sent_version.status }}
+                </a>
+              {% elif document.as_sent_version %}
+                v{{ document.as_sent_version.version_number }} · {{ document.as_sent_version.status }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if document.signed_version and document.signed_version.file %}
+                <a href="{% url 'documents:document_version_view' document.signed_version.pk %}" target="_blank" rel="noopener noreferrer">
+                  v{{ document.signed_version.version_number }} · {{ document.signed_version.status }}
+                </a>
+              {% elif document.signed_version %}
+                v{{ document.signed_version.version_number }} · {{ document.signed_version.status }}
+              {% else %}
+                <span class="text-muted">Pending</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" class="text-center text-muted py-3">No documents found for this transaction.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="text-muted mb-3">Events</h6>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Date/time</th>
+            <th>Event</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in events %}
+          <tr>
+            <td>{{ item.event.occurred_at|date:"M j, Y g:i A" }}</td>
+            <td>{{ item.label }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="2" class="text-center text-muted py-3">No events recorded yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <h6 class="text-muted mb-3">Artifacts</h6>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="small text-muted">Audit trail</div>
+        {% if has_audit_trail %}
+          <div>
+            <a href="{% url 'deals:signature_transaction_audit_trail' transaction.pk %}" target="_blank" rel="noopener noreferrer">View audit trail</a>
+          </div>
+        {% else %}
+          <div class="text-muted">Not available</div>
+        {% endif %}
+      </div>
+      <div class="col-md-6">
+        <div class="small text-muted">Certificate of completion</div>
+        {% if has_certificate %}
+          <div>
+            <a href="{% url 'deals:signature_transaction_certificate' transaction.pk %}" target="_blank" rel="noopener noreferrer">View certificate</a>
+          </div>
+        {% else %}
+          <div class="text-muted">Not available</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

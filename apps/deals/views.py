@@ -7,10 +7,11 @@ Delete uses GET for confirmation page and POST to perform delete.
 
 import logging
 import threading
+import os
 
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_exempt
 
@@ -27,8 +28,10 @@ from .forms import DealForm, SignixConfigForm
 from .models import Deal, DealType, SignixConfig, SignatureTransaction
 from .signix import (
     get_signix_config,
+    get_event_type_display,
     get_push_base_url,
     get_signers_display,
+    get_signers_detail_for_transaction,
     get_signature_transaction_for_push,
     get_signer_order_for_deal,
     get_status_updated_display,
@@ -45,6 +48,7 @@ from .signix import (
     SignixApiError,
     AUTH_SELECT_ONE_CLICK,
     AUTH_SMS_ONE_CLICK,
+    VERSION_STATUS_SUBMITTED_TO_SIGNIX,
 )
 from .models import SignatureTransactionEvent
 
@@ -80,6 +84,71 @@ def _build_signers_list(deal, document_set_template):
             "auth": auth,
         })
     return signers
+
+
+def _document_label_for_instance(instance):
+    """Return a readable label for a document instance in tables."""
+    template = getattr(instance, "source_document_template", None)
+    if template is None:
+        return "—"
+    return (
+        getattr(template, "ref_id", None)
+        or getattr(template, "description", None)
+        or f"Document {getattr(instance, 'order', '')}".strip()
+        or "—"
+    )
+
+
+def _signature_transaction_detail_context(transaction):
+    """Build the detail-page context for a signature transaction."""
+    instances = list(transaction.document_set.instances.all()) if transaction.document_set_id else []
+    documents = []
+    for instance in instances:
+        documents.append(
+            {
+                "instance": instance,
+                "label": _document_label_for_instance(instance),
+                "as_sent_version": instance.versions.filter(
+                    status=VERSION_STATUS_SUBMITTED_TO_SIGNIX
+                ).first(),
+                "signed_version": instance.versions.filter(status="Final").first(),
+            }
+        )
+
+    events = [
+        {
+            "event": event,
+            "label": get_event_type_display(event.event_type),
+        }
+        for event in transaction.events.order_by("occurred_at", "pk")
+    ]
+
+    template = getattr(transaction.document_set, "document_set_template", None)
+    return {
+        "transaction": transaction,
+        "transaction_identifier": transaction.transaction_id or transaction.signix_document_set_id or "—",
+        "document_set_type": getattr(template, "name", None) or "—",
+        "status_updated_display": get_status_updated_display(transaction),
+        "signers": get_signers_detail_for_transaction(transaction),
+        "documents": documents,
+        "events": events,
+        "has_audit_trail": bool(transaction.audit_trail_file),
+        "has_certificate": bool(transaction.certificate_of_completion_file),
+    }
+
+
+def _signature_transaction_pdf_response(file_field, default_filename):
+    """Return an inline PDF response for a stored transaction artifact."""
+    if not file_field:
+        raise Http404("This file is not available.")
+    filename = os.path.basename(file_field.name) if getattr(file_field, "name", "") else default_filename
+    response = FileResponse(
+        file_field.open("rb"),
+        content_type="application/pdf",
+        as_attachment=False,
+    )
+    response["Content-Disposition"] = f'inline; filename="{filename}"'
+    return response
 
 
 def _deal_detail_context(
@@ -292,6 +361,54 @@ def signature_transaction_list(request):
         request,
         "deals/signature_transaction_list.html",
         {"signature_transaction_list": transactions},
+    )
+
+
+@login_required
+def signature_transaction_detail(request, pk):
+    """Show one signature transaction with signer, document, and event details."""
+    transaction = get_object_or_404(
+        SignatureTransaction.objects.select_related(
+            "deal",
+            "document_set",
+            "document_set__document_set_template",
+        ).prefetch_related(
+            "deal__contacts",
+            "events",
+            "document_set__instances__versions",
+        ),
+        pk=pk,
+    )
+    return render(
+        request,
+        "deals/signature_transaction_detail.html",
+        _signature_transaction_detail_context(transaction),
+    )
+
+
+@login_required
+def signature_transaction_audit_trail(request, pk):
+    """Serve the stored SIGNiX audit trail PDF inline."""
+    transaction = get_object_or_404(
+        SignatureTransaction.objects.select_related("deal"),
+        pk=pk,
+    )
+    return _signature_transaction_pdf_response(
+        transaction.audit_trail_file,
+        "audit_trail.pdf",
+    )
+
+
+@login_required
+def signature_transaction_certificate(request, pk):
+    """Serve the stored SIGNiX certificate of completion PDF inline."""
+    transaction = get_object_or_404(
+        SignatureTransaction.objects.select_related("deal"),
+        pk=pk,
+    )
+    return _signature_transaction_pdf_response(
+        transaction.certificate_of_completion_file,
+        "certificate_of_completion.pdf",
     )
 
 

@@ -21,6 +21,9 @@ urlpatterns = [
     path("<int:pk>/signatures/delete-all/", views.deal_signature_transaction_delete_all, name="deal_signature_transaction_delete_all"),
     path("signatures/delete-all/", views.signature_transaction_delete_all, name="signature_transaction_delete_all"),
     path("signatures/", views.signature_transaction_list, name="signature_transaction_list"),
+    path("signatures/<int:pk>/", views.signature_transaction_detail, name="signature_transaction_detail"),
+    path("signatures/<int:pk>/audit-trail/", views.signature_transaction_audit_trail, name="signature_transaction_audit_trail"),
+    path("signatures/<int:pk>/certificate/", views.signature_transaction_certificate, name="signature_transaction_certificate"),
     path("<int:pk>/signers/update-auth/", views.deal_signers_update_auth, name="deal_signers_update_auth"),
     path("<int:pk>/signers/reorder/", views.deal_signers_reorder, name="deal_signers_reorder"),
 ]

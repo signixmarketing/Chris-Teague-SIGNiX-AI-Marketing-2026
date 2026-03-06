@@ -116,6 +116,111 @@ def get_status_updated_display(transaction, fallback_to_submitted_at: bool = Fal
     return date_format(value, "M j, Y g:i A", use_l10n=False)
 
 
+def get_event_type_display(event_type: str) -> str:
+    """Return a human-readable label for a transaction event type."""
+    mapping = {
+        "submitted": "Transaction submitted",
+        "send": "Sent",
+        "party_complete": "Signer completed",
+        "complete": "Transaction completed",
+        "suspend": "Suspended",
+        "cancel": "Cancelled",
+        "expire": "Expired",
+    }
+    return mapping.get((event_type or "").strip().lower(), (event_type or "Unknown").strip() or "Unknown")
+
+
+def _signer_display_name(person) -> str:
+    """Return a readable signer name, or — when no person is resolved."""
+    if person is None:
+        return "—"
+    parts = [
+        (getattr(person, "first_name", "") or "").strip(),
+        (getattr(person, "middle_name", "") or "").strip(),
+        (getattr(person, "last_name", "") or "").strip(),
+    ]
+    full_name = " ".join(part for part in parts if part)
+    return full_name or "—"
+
+
+def _normalized_signer_match_values(slot_number, order_index, person):
+    """Collect candidate values that may match SIGNiX push refid/pid values."""
+    values = {str(slot_number), str(order_index)}
+    if person is not None:
+        for raw in (
+            getattr(person, "email", ""),
+            _signer_display_name(person),
+        ):
+            value = (raw or "").strip().lower()
+            if value and value != "—":
+                values.add(value)
+    return values
+
+
+def get_signers_detail_for_transaction(transaction):
+    """
+    Return signer rows for the transaction detail page in signing order.
+
+    SIGNiX push events do not always provide stable signer identifiers that map
+    directly to our local signer slots, so we first try to match by refid/pid
+    using a few reasonable local identifiers and then fall back to event order.
+    """
+    document_set = getattr(transaction, "document_set", None)
+    template = getattr(document_set, "document_set_template", None)
+    deal = getattr(transaction, "deal", None)
+    if template is None or deal is None:
+        return []
+
+    events = list(
+        transaction.events.filter(event_type="party_complete").order_by("occurred_at", "pk")
+    )
+    completed_values = {
+        (value or "").strip().lower()
+        for value in (getattr(transaction, "signers_completed_refids", None) or [])
+        if (value or "").strip()
+    }
+    matched_event_ids = set()
+    rows = []
+
+    for order_index, slot in enumerate(get_signer_order_for_deal(deal, template), start=1):
+        person = resolve_signer_slot(deal, slot)
+        match_values = _normalized_signer_match_values(slot, order_index, person)
+        matched_event = next(
+            (
+                event
+                for event in events
+                if event.pk not in matched_event_ids
+                and (
+                    ((event.refid or "").strip().lower() in match_values)
+                    or ((event.pid or "").strip().lower() in match_values)
+                )
+            ),
+            None,
+        )
+        if matched_event is None:
+            matched_event = next(
+                (event for event in events if event.pk not in matched_event_ids),
+                None,
+            )
+        if matched_event is not None:
+            matched_event_ids.add(matched_event.pk)
+
+        signed = matched_event is not None or bool(completed_values.intersection(match_values))
+        rows.append(
+            {
+                "slot": slot,
+                "order": order_index,
+                "name": _signer_display_name(person),
+                "email": (getattr(person, "email", "") or "").strip() or "—",
+                "authentication": get_signer_authentication_for_slot(deal, slot),
+                "signed": signed,
+                "signed_at": getattr(matched_event, "occurred_at", None),
+            }
+        )
+
+    return rows
+
+
 def get_signature_transaction_for_push(signix_document_set_id=None, transaction_id=None):
     """
     Return the SignatureTransaction matching SIGNiX id or client transaction_id.

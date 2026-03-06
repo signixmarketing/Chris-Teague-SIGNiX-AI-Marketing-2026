@@ -262,7 +262,7 @@ When a push with **action=complete** is received and the transaction is updated 
 - **Purpose:** Provide a **living representation** of the transaction on the signature transaction detail page: an ordered list of events from "Transaction submitted" (when the app sent the transaction to SIGNiX) through each push notification (Send, partyComplete, complete, suspend, cancel, expire), ending with "Transaction completed." Event history also supports showing **when each signer signed** (from the partyComplete event’s timestamp and refid/pid).
 - **Model:** **SignatureTransactionEvent** — **signature_transaction** (ForeignKey to SignatureTransaction, related_name="events"); **event_type** (CharField: `submitted`, `send`, `party_complete`, `complete`, `suspend`, `cancel`, `expire`); **occurred_at** (DateTimeField); **refid** (CharField, blank=True); **pid** (CharField, blank=True). Ordering: by occurred_at ascending so the detail page displays chronological order. **submitted** is created when the transaction is created (submit flow); all other types are created when the push listener processes the corresponding push (Section 4.2).
 - **Idempotency:** SIGNiX may send the same push more than once. Options: (a) create an event row for every push we process (duplicate events possible but simple); (b) deduplicate by (transaction, event_type, refid, occurred_at) so retries do not create duplicate rows. Design leaves the choice to the implementation plan; the detail page displays events in order and duplicate "party_complete" entries for the same refid may be acceptable or deduped in the query.
-- **Data sourcing for detail page:** Signer "signed at" = the **occurred_at** of the **party_complete** event whose refid (or pid) matches that signer’s refid/pid in the signing order. If refids were not stored per signer at submit, matching can be by position (e.g. first party_complete by time = first signer) or by refid when the push sends it and the deal/signer list can be correlated (implementation plan defines the mapping).
+- **Data sourcing for detail page:** Signer "signed at" = the **occurred_at** of the **party_complete** event whose refid (or pid) can be correlated to that signer using values the app already knows locally (for example email address, slot number, or order index). If push identifiers do not correlate cleanly, matching falls back to the next unmatched **party_complete** event by chronological order (e.g. first unmatched party_complete = first unmatched signer). The implementation plan defines the exact helper, but the design expectation is "best explicit match first, then stable positional fallback."
 
 ---
 
@@ -294,25 +294,25 @@ This section defines the **signature transaction detail page** as a **living rep
 - **Email** — From the same resolution (email address).
 - **Authentication method** — From **get_signer_authentication_for_slot(deal, slot_number)** or the deal's signer_authentication (e.g. SelectOneClick, SMSOneClick).
 - **Signed** — Yes if this signer has completed (e.g. refid or pid for this position is in **signers_completed_refids**, or derived from event history).
-- **Signed at** — The **occurred_at** of the **party_complete** event that corresponds to this signer (Section 7.5). When refid/pid is stored on the event, match by refid/pid to the signer; otherwise match by order of party_complete events. When not yet signed or no event, show "—".
+- **Signed at** — The **occurred_at** of the **party_complete** event that corresponds to this signer (Section 7.5). When refid/pid is stored on the event, first try to match it to locally-known signer values; otherwise match by order of unmatched party_complete events. When not yet signed or no event, show "—".
 
 **Documents table (below signers)**
 
-- **Document** — Name or identifier of each document in the transaction's **document_set** (instances in order).
+- **Document** — Name or identifier of each document in the transaction's **document_set** (instances in order). In practice, prefer the source template **ref_id**, then template **description**, then a neutral fallback such as "—" if the source template is gone.
 - **As sent** — Link to the **document as sent** in the SubmitDocument call: the **DocumentInstanceVersion** for that instance with status **"Submitted to SIGNiX"** (per DESIGN-DOCS and DESIGN-SIGNiX-SUBMIT step 7; marked when the transaction is created). When no such version exists (edge case), show "—" or "Not available."
 - **Signed** — Link to the **signed document** when available: the **DocumentInstanceVersion** with status **"Final"** for that instance (populated by the download-on-complete flow). When not yet downloaded, show "Pending" or "Not yet downloaded."
 
 **Events table (below documents)**
 
-- **Chronological list** of events for this transaction (from **SignatureTransactionEvent**, ordered by **occurred_at** ascending).
+- **Chronological list** of events for this transaction (from **SignatureTransactionEvent**, ordered by **occurred_at** ascending, with **pk** as a deterministic tie-breaker when timestamps are equal).
 - **Initial event:** **Transaction submitted** — When the application sent the transaction to SIGNiX (event_type **submitted**, occurred_at = transaction.submitted_at or the event's occurred_at).
 - **Subsequent events:** Each push notification received (event_type **send**, **party_complete**, **complete**, **suspend**, **cancel**, **expire**) with **occurred_at** and optional party info (refid/pid). Display with human-readable labels (e.g. "Sent", "Signer completed", "Transaction completed", "Suspended", "Cancelled", "Expired").
 - **Goal:** The table reads as a timeline from "Transaction submitted" through to "Transaction completed" (or terminal state), so the user sees a living representation of what happened.
 
 **Audit trail and certificate of completion (below events)**
 
-- **Audit trail** — When **audit_trail_file** is set: link or button "View audit trail" / "Download audit trail" that opens or downloads the PDF. When not set: show "Audit trail not available" or hide the row.
-- **Certificate of completion** — When **certificate_of_completion_file** is set: link or button "View certificate" / "Download certificate." When not set: show "Certificate not available" or hide the row.
+- **Audit trail** — When **audit_trail_file** is set: expose a "View audit trail" link on the detail page that opens the stored PDF inline. When not set: show "Audit trail not available" or hide the row.
+- **Certificate of completion** — When **certificate_of_completion_file** is set: expose a "View certificate" link on the detail page that opens the stored PDF inline. When not set: show "Certificate not available" or hide the row.
 
 **Empty / edge cases**
 
@@ -325,7 +325,7 @@ This section defines the **signature transaction detail page** as a **living rep
 
 ### 8.4 Serving the files
 
-- **Audit trail and certificate PDFs** — Served via a view that checks authentication and (optionally) that the user has access to the transaction (e.g. same permission as deal detail). URL pattern could be e.g. `/deals/signatures/<pk>/audit-trail/` and `/deals/signatures/<pk>/certificate/` returning the file (Content-Disposition: inline or attachment). Alternatively, use Django’s FileField.url with access control (e.g. view that redirects or streams the file after permission check). Design leaves the exact pattern to the implementation plan.
+- **Audit trail and certificate PDFs** — Served via authenticated views at `/deals/signatures/<pk>/audit-trail/` and `/deals/signatures/<pk>/certificate/`. In this app, the working pattern is the same as existing document PDF views: `login_required`, `404` when the file field is empty, and `FileResponse(..., content_type="application/pdf", as_attachment=False)` so the PDF opens inline. Preserve the stored filename in `Content-Disposition` when available.
 
 ---
 

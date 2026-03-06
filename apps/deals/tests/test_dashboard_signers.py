@@ -138,7 +138,7 @@ class SignatureTransactionListSignersTests(DashboardSignersBase):
     def test_list_empty_state_colspan(self):
         response = self.client.get(reverse("deals:signature_transaction_list"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'colspan="8"', html=False)
+        self.assertContains(response, 'colspan="9"', html=False)
 
     def test_list_legacy_signer_count_none_shows_dash(self):
         SignatureTransaction.objects.create(
