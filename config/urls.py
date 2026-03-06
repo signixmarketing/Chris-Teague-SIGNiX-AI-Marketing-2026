@@ -20,7 +20,7 @@ from django.contrib import admin
 from django.urls import path, include
 
 from apps.users import views as users_views
-from apps.deals.views import signix_config_edit
+from apps.deals.views import signix_config_edit, signix_push
 
 urlpatterns = [
     path("", users_views.root_redirect, name="root"),
@@ -35,6 +35,7 @@ urlpatterns = [
     path("images/", include("apps.images.urls")),
     path("document-templates/", include("apps.doctemplates.urls")),
     path("signix/config/", signix_config_edit, name="signix_config"),
+    path("signix/push/", signix_push, name="signix_push"),
     path("admin/", admin.site.urls),
 ]
 

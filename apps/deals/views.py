@@ -5,9 +5,14 @@ All views require login. Lease officer defaults to request.user on create.
 Delete uses GET for confirmation page and POST to perform delete.
 """
 
+import logging
+import threading
+
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.csrf import csrf_exempt
 
 from apps.documents.exceptions import DocumentGenerationError
 from apps.documents.services import (
@@ -22,18 +27,25 @@ from .forms import DealForm, SignixConfigForm
 from .models import Deal, DealType, SignixConfig, SignatureTransaction
 from .signix import (
     get_signix_config,
+    get_signature_transaction_for_push,
     get_signer_order_for_deal,
     get_signer_authentication_for_slot,
     get_role_label_for_slot,
     resolve_signer_slot,
     validate_submit_preconditions,
     submit_document_set_for_signature,
+    apply_push_action,
+    push_action_to_event_type,
+    get_event_time_for_push,
+    download_signed_documents_on_complete,
     SignixValidationError,
     SignixApiError,
     AUTH_SELECT_ONE_CLICK,
     AUTH_SMS_ONE_CLICK,
 )
+from .models import SignatureTransactionEvent
 
+logger = logging.getLogger(__name__)
 
 def _document_set_template_for_deal(deal, document_set):
     """Return the document set template for the deal: from document_set if present, else from deal_type."""
@@ -352,6 +364,69 @@ def deal_signers_reorder(request, pk):
             deal.save(update_fields=["signer_order"])
             messages.success(request, "Signer order updated.")
     return redirect("deals:deal_detail", pk=pk)
+
+
+@csrf_exempt
+def signix_push(request):
+    """Public SIGNiX push listener: apply status updates and record an event."""
+    try:
+        action = (request.GET.get("action") or "").strip()
+        signix_document_set_id = (request.GET.get("id") or "").strip()
+        transaction_id = (request.GET.get("extid") or "").strip()
+        pid = (request.GET.get("pid") or "").strip()
+        refid = (request.GET.get("refid") or "").strip()
+        ts = (request.GET.get("ts") or "").strip()
+
+        if not action or not signix_document_set_id or not transaction_id:
+            logger.warning(
+                "Push request missing required parameter (action=%r, id=%r, extid=%r)",
+                action,
+                signix_document_set_id,
+                transaction_id,
+            )
+            return HttpResponse("OK", status=200, content_type="text/plain")
+
+        transaction = get_signature_transaction_for_push(
+            signix_document_set_id=signix_document_set_id,
+            transaction_id=transaction_id,
+        )
+        if transaction is None:
+            logger.warning(
+                "Push request transaction not found (id=%s, extid=%s)",
+                signix_document_set_id,
+                transaction_id,
+            )
+            return HttpResponse("OK", status=200, content_type="text/plain")
+
+        apply_push_action(transaction, action, refid=refid, pid=pid, ts=ts)
+        transaction.save(
+            update_fields=[
+                "status",
+                "completed_at",
+                "status_last_updated",
+                "signers_completed_refids",
+                "signers_completed_count",
+            ]
+        )
+
+        SignatureTransactionEvent.objects.create(
+            signature_transaction=transaction,
+            event_type=push_action_to_event_type(action),
+            occurred_at=get_event_time_for_push(ts),
+            refid=refid,
+            pid=pid,
+        )
+
+        if action == "complete":
+            thread = threading.Thread(
+                target=download_signed_documents_on_complete,
+                args=(transaction,),
+                daemon=True,
+            )
+            thread.start()
+    except Exception:
+        logger.exception("Unhandled error while processing SIGNiX push")
+    return HttpResponse("OK", status=200, content_type="text/plain")
 
 
 @login_required

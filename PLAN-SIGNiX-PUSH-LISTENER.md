@@ -130,6 +130,7 @@ This plan implements the **push notification listener** that SIGNiX calls when e
 
 5. **Wire URL and CSRF exempt**
    - In `config/urls.py`, add path `signix/push/`, view (with @csrf_exempt if needed). Ensure the view is not behind login_required.
+   - **Codebase note:** In this repo, the listener should live at the **project root URLconf** (`config/urls.py`), not `apps.deals.urls`, because the required public path is exactly `/signix/push/` (matching the callback URL sent to SIGNiX) rather than `/deals/...`.
 
 ### Batch 2 — Async trigger and verification (steps 6–8)
 
@@ -138,6 +139,7 @@ This plan implements the **push notification listener** that SIGNiX calls when e
 
 7. **Verification (Batch 1–2)**
    - Run `python manage.py check`. **Primary:** Run unit tests (Section 6): `python manage.py test apps.deals.tests.test_push_listener` — all pass. Treat this as sufficient for Batch 1–2 verification.
+   - **No schema change in Batch 1:** No migration should be required for the helper/view/URL work in this batch; `python manage.py migrate` should report no new migrations to apply.
    - **Optional (manual):** Create a SignatureTransaction in shell, then GET /signix/push/?action=complete&id=<signix_document_set_id>&extid=<transaction_id>; assert 200 and body "OK"; reload transaction and assert status is Complete and completed_at is set.
 
 8. **Idempotency check**
@@ -156,12 +158,13 @@ Implement in **two batches**. After each batch, run the verification steps and t
 **How to test after Batch 1:**
 
 1. **Django check:** `python manage.py check` — no issues.
-2. **Unit tests (primary):** `python manage.py test apps.deals.tests.test_push_listener` — all tests pass. This is sufficient to verify Batch 1 logic locally; ngrok is not required for these tests.
-3. **Real callback verification requirement:** If you want to verify the listener with **actual SIGNiX push notifications**, keep **`python manage.py runserver` and ngrok running in parallel** and ensure SIGNiX is configured to call the current ngrok URL for `/signix/push/`. Without the active tunnel, the application will not receive the push notifications.
-4. **Optional — local 200 and body:** From browser or curl: `GET /signix/push/?action=complete&id=unknown&extid=unknown`. Expect HTTP 200 and response body exactly "OK". Check logs for warning about unknown id/extid.
-5. **Optional — local known transaction:** In Django shell create a SignatureTransaction (e.g. deal, document_set, signix_document_set_id="DS-PUSH-1", transaction_id="tx-001", status=STATUS_SUBMITTED). Then request `GET /signix/push/?action=complete&id=DS-PUSH-1&extid=tx-001`. Expect 200 OK. Reload the transaction; assert status == STATUS_COMPLETE, completed_at is not None, **status_last_updated is not None**.
-6. **Optional — local partyComplete:** Create a transaction with signer_count=2, signers_completed_refids=[], signers_completed_count=0. GET with action=partyComplete&id=...&extid=...&refid=P01. Reload; assert signers_completed_refids contains "P01", signers_completed_count == 1, status == In Progress. Send again with same refid=P01; assert count still 1 (idempotent).
-7. **Optional — local terminal not overwritten:** Transaction in Complete. Send GET with action=partyComplete&id=...&extid=.... Reload; assert status still Complete.
+2. **Migrate:** `python manage.py migrate` — no new migrations to apply for this batch.
+3. **Unit tests (primary):** `python manage.py test apps.deals.tests.test_push_listener` — all tests pass. This is sufficient to verify Batch 1 logic locally; ngrok is not required for these tests.
+4. **Real callback verification requirement:** If you want to verify the listener with **actual SIGNiX push notifications**, keep **`python manage.py runserver` and ngrok running in parallel** and ensure SIGNiX is configured to call the current ngrok URL for `/signix/push/`. Without the active tunnel, the application will not receive the push notifications.
+5. **Optional — local 200 and body:** From browser or curl: `GET /signix/push/?action=complete&id=unknown&extid=unknown`. Expect HTTP 200 and response body exactly "OK". Check logs for warning about unknown id/extid.
+6. **Optional — local known transaction:** In Django shell create a SignatureTransaction (e.g. deal, document_set, signix_document_set_id="DS-PUSH-1", transaction_id="tx-001", status=STATUS_SUBMITTED). Then request `GET /signix/push/?action=complete&id=DS-PUSH-1&extid=tx-001`. Expect 200 OK. Reload the transaction; assert status == STATUS_COMPLETE, completed_at is not None, **status_last_updated is not None**.
+7. **Optional — local partyComplete:** Create a transaction with signer_count=2, signers_completed_refids=[], signers_completed_count=0. GET with action=partyComplete&id=...&extid=...&refid=P01. Reload; assert signers_completed_refids contains "P01", signers_completed_count == 1, status == In Progress. Send again with same refid=P01; assert count still 1 (idempotent).
+8. **Optional — local terminal not overwritten:** Transaction in Complete. Send GET with action=partyComplete&id=...&extid=.... Reload; assert status still Complete.
 
 ### Batch 2 — Async and edge cases
 
@@ -169,7 +172,7 @@ Implement in **two batches**. After each batch, run the verification steps and t
 
 **How to test after Batch 2:**
 
-1. **Async stub called:** For action=complete, after request, check logs for stub message (or add a test that mocks the stub and asserts it was called).
+1. **Async thread started:** Prefer a unit test that patches `apps.deals.views.threading.Thread` and asserts it was constructed with `target=download_signed_documents_on_complete`, `args=(transaction,)`, and `daemon=True`, then that `start()` was called exactly once. This is a stronger Batch 2 verification than relying only on the stub log line.
 2. **Duplicate complete:** Send two complete pushes for the same transaction; both return 200; transaction remains Complete; no exception.
 3. **Expire:** GET with action=expire&id=...&extid=... for a Submitted transaction; assert status becomes Expired.
 4. **Real SIGNiX verification:** If you verify with actual SIGNiX callbacks rather than direct local GETs, Django and ngrok must both be running. Submit or configure the callback against the active ngrok domain and confirm requests appear in ngrok before diagnosing listener logic.
@@ -213,11 +216,12 @@ Create **apps/deals/tests/test_push_listener.py** with the following. Use the sa
 ### 6.4 Push view (integration)
 
 - **test_push_view_returns_200_and_ok_body** — Client GET to /signix/push/?action=complete&id=unknown&extid=unknown. Assert response.status_code == 200, response.content == b"OK".
-- **test_push_view_updates_transaction_and_returns_200** — Create transaction with signix_document_set_id="DS-V1", transaction_id="ext-v1", status=STATUS_SUBMITTED. GET /signix/push/?action=complete&id=DS-V1&extid=ext-v1. Assert response.status_code == 200, response.content == b"OK". Reload transaction; assert status == STATUS_COMPLETE, completed_at is not None, **status_last_updated is not None**. Assert **transaction.events.filter(event_type="complete").exists()** (one event created for this push).
+- **test_push_view_updates_transaction_and_returns_200** — Create transaction with signix_document_set_id="DS-V1", transaction_id="ext-v1", status=STATUS_SUBMITTED. Patch `apps.deals.views.threading.Thread`. GET /signix/push/?action=complete&id=DS-V1&extid=ext-v1. Assert response.status_code == 200, response.content == b"OK". Reload transaction; assert status == STATUS_COMPLETE, completed_at is not None, **status_last_updated is not None**. Assert **transaction.events.filter(event_type="complete").exists()** (one event created for this push). Also assert the thread was created with `target=download_signed_documents_on_complete`, `args=(transaction,)`, and `daemon=True`, and that `start()` was called.
 - **test_push_view_creates_party_complete_event_with_refid** — Create transaction. GET with action=partyComplete&id=...&extid=...&refid=P01. Assert transaction.events.count() >= 1; one event has event_type="party_complete" and refid="P01".
 - **test_push_view_unknown_id_logs_and_returns_200** — Use a logger mock or caplog; GET with unknown id/extid; assert 200 and that a warning was logged.
 - **test_push_view_csrf_exempt** — If the test client enforces CSRF, ensure the push view does not require CSRF token for GET (no 403).
 - **test_push_view_complete_idempotent** — Create a transaction with signix_document_set_id and transaction_id, status=STATUS_SUBMITTED. GET /signix/push/?action=complete&id=...&extid=... twice. Assert both responses are 200 with body "OK". Reload transaction; assert status is still STATUS_COMPLETE, completed_at and status_last_updated are set, and no duplicate or erroneous state (e.g. events may have two "complete" events from retries; transaction state must remain idempotent).
+- **test_push_view_expire_updates_transaction** — Create transaction with signix_document_set_id and transaction_id, status=STATUS_SUBMITTED. GET /signix/push/?action=expire&id=...&extid=.... Assert response is 200 with body "OK". Reload transaction; assert status == STATUS_EXPIRED, **status_last_updated is not None**, and **transaction.events.filter(event_type="expire").exists()**.
 
 ---
 
@@ -255,6 +259,7 @@ All of the following are **decided** for this plan; implement as specified in th
 - **refid/pid for partyComplete:** Use refid if present and non-empty string, else pid. Normalize to string (e.g. str(pid)) so list membership works. Only append if the chosen key is not already in signers_completed_refids.
 - **Stub:** download_signed_documents_on_complete(transaction) logs at info: e.g. logger.info("download_signed_documents_on_complete called (stub), transaction_id=%s", transaction.pk).
 - **URL placement:** The design says `/signix/push/`. The project has signix config at `signix/config/`. Adding `signix/push/` at the project root keeps push separate from the config UI and matches the design.
+- **No migration expected for Batch 1:** This batch adds helpers, a view, URL routing, and tests only. If `makemigrations` suggests a schema change, double-check that you did not accidentally modify models while implementing the listener.
 - **Missing params in view:** If request.GET has missing or empty action, id, or extid, log a warning (e.g. "Push request missing required parameter") and return HttpResponse("OK", status=200) without calling get_signature_transaction_for_push.
 
 ---

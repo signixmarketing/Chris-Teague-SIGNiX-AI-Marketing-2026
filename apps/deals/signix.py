@@ -8,10 +8,13 @@ import logging
 import uuid
 import xml.etree.ElementTree as ET
 import xml.sax.saxutils as saxutils
+from datetime import datetime
 from dataclasses import dataclass
 
 import requests
+from django.db.models import Q
 from django.template.loader import get_template
+from django.utils import timezone
 
 from apps.deals.models import SignixConfig, SignatureTransaction
 from apps.deals.models import DEFAULT_SIGNIX_EMAIL_CONTENT
@@ -63,6 +66,125 @@ def get_signix_config() -> SignixConfig:
         },
     )
     return config
+
+
+def get_signature_transaction_for_push(signix_document_set_id=None, transaction_id=None):
+    """
+    Return the SignatureTransaction matching SIGNiX id or client transaction_id.
+    Returns None when both inputs are empty or no row matches.
+    """
+    signix_document_set_id = (signix_document_set_id or "").strip()
+    transaction_id = (transaction_id or "").strip()
+    if not signix_document_set_id and not transaction_id:
+        return None
+    if signix_document_set_id and transaction_id:
+        return SignatureTransaction.objects.filter(
+            Q(signix_document_set_id=signix_document_set_id) | Q(transaction_id=transaction_id)
+        ).first()
+    if signix_document_set_id:
+        return SignatureTransaction.objects.filter(
+            signix_document_set_id=signix_document_set_id
+        ).first()
+    return SignatureTransaction.objects.filter(transaction_id=transaction_id).first()
+
+
+def push_action_to_event_type(action) -> str:
+    """Map SIGNiX push action to SignatureTransactionEvent.event_type."""
+    mapping = {
+        "Send": "send",
+        "partyComplete": "party_complete",
+        "complete": "complete",
+        "suspend": "suspend",
+        "cancel": "cancel",
+        "expire": "expire",
+    }
+    return mapping.get(action, (action or "unknown").strip().lower() or "unknown")
+
+
+def get_event_time_for_push(ts=None):
+    """
+    Parse SIGNiX ts (yyyy-mm-ddTHH:MM:SS) or return timezone.now().
+    Returns a timezone-aware datetime when USE_TZ is enabled.
+    """
+    if ts:
+        try:
+            parsed = datetime.strptime(ts, "%Y-%m-%dT%H:%M:%S")
+            if timezone.is_naive(parsed) and timezone.is_aware(timezone.now()):
+                return timezone.make_aware(parsed, timezone.get_current_timezone())
+            return parsed
+        except ValueError:
+            pass
+    return timezone.now()
+
+
+def apply_push_action(transaction, action, refid=None, pid=None, ts=None):
+    """
+    Apply a SIGNiX push action to a transaction in-memory.
+    Mutates status, completed_at, status_last_updated, and signer progress.
+    """
+    event_time = get_event_time_for_push(ts)
+    terminal_statuses = {
+        SignatureTransaction.STATUS_COMPLETE,
+        SignatureTransaction.STATUS_SUSPENDED,
+        SignatureTransaction.STATUS_CANCELLED,
+        SignatureTransaction.STATUS_EXPIRED,
+    }
+    known_actions = {"Send", "partyComplete", "complete", "suspend", "cancel", "expire"}
+    if action not in known_actions:
+        logger.debug("Unknown push action: %s", action)
+        return
+    if transaction.status in terminal_statuses:
+        return
+
+    if action == "Send":
+        return
+
+    if action == "partyComplete":
+        key = (refid or pid or "").strip()
+        changed = False
+        refids = list(getattr(transaction, "signers_completed_refids", None) or [])
+        if key and key not in refids:
+            refids.append(key)
+            transaction.signers_completed_refids = refids
+            transaction.signers_completed_count = len(refids)
+            changed = True
+        if transaction.status != SignatureTransaction.STATUS_IN_PROGRESS:
+            transaction.status = SignatureTransaction.STATUS_IN_PROGRESS
+            changed = True
+        if changed:
+            transaction.status_last_updated = event_time
+        return
+
+    if action == "complete":
+        transaction.status = SignatureTransaction.STATUS_COMPLETE
+        transaction.completed_at = event_time
+        if transaction.signer_count is not None:
+            transaction.signers_completed_count = transaction.signer_count
+        transaction.status_last_updated = event_time
+        return
+
+    if action == "suspend":
+        transaction.status = SignatureTransaction.STATUS_SUSPENDED
+        transaction.status_last_updated = event_time
+        return
+
+    if action == "cancel":
+        transaction.status = SignatureTransaction.STATUS_CANCELLED
+        transaction.status_last_updated = event_time
+        return
+
+    if action == "expire":
+        transaction.status = SignatureTransaction.STATUS_EXPIRED
+        transaction.status_last_updated = event_time
+        return
+
+
+def download_signed_documents_on_complete(transaction):
+    """Plan 2 stub; Plan 5 replaces this with the real download flow."""
+    logger.info(
+        "download_signed_documents_on_complete called (stub), transaction_id=%s",
+        transaction.pk,
+    )
 
 
 def get_signers_for_document_set_template(document_set_template) -> list:
