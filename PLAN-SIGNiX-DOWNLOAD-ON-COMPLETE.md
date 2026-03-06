@@ -4,7 +4,7 @@ When a push with **action=complete** is received, the app runs the download flow
 
 **Design reference:** DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md — Section 6 (Download on Completion), Section 6.5a (Store audit trail and certificate on SignatureTransaction), Section 7.4 (audit_trail_file, certificate_of_completion_file). KNOWLEDGE-SIGNiX.md — DownloadDocument request/response (signed PDFs, audit trail, certificate of completion). PLAN-SIGNiX-DASHBOARD-SYNC-MASTER.md — Plan 5 deliverables.
 
-**Prerequisites:** Plan 1 (PLAN-SIGNiX-SYNC-MODEL) is implemented: SignatureTransaction has audit_trail_file and certificate_of_completion_file. Plan 2 (push listener) triggers download_signed_documents_on_complete on action=complete. DocumentInstanceVersion and document_set.instances exist (PLAN-ADD-DOCUMENT-SETS or equivalent).
+**Prerequisites:** Plan 1 (PLAN-SIGNiX-SYNC-MODEL) is implemented: SignatureTransaction has audit_trail_file and certificate_of_completion_file. Plan 2 (push listener) triggers download_signed_documents_on_complete on action=complete. DocumentInstanceVersion and document_set.instances exist (PLAN-ADD-DOCUMENT-SETS or equivalent). **For real end-to-end verification driven by SIGNiX completion pushes, Django and ngrok must be running in parallel** so the `complete` callback reaches the local app.
 
 **Review this plan before implementation.** Implementation order is in **Section 5**; **Section 5a** defines batches and verification.
 
@@ -81,7 +81,7 @@ Exact element names and structure per [Flex API — DownloadDocument](https://ww
 
 8. **download_signed_documents_on_complete(transaction)** — Implement full flow: idempotency check, steps 2–7. Replace Plan 2 stub. Ensure async invocation from push view (Plan 2) is already in place.
 
-9. **Verification (Batch 2)** — Integration test or manual: trigger action=complete for a completed transaction (or call download_signed_documents_on_complete directly with a transaction that has signix_document_set_id and document_set); assert DocumentInstanceVersions created with status Final, transaction.audit_trail_file and transaction.certificate_of_completion_file are set when response contains them, ConfirmDownload was called.
+9. **Verification (Batch 2)** — Integration test or manual: trigger action=complete for a completed transaction (or call download_signed_documents_on_complete directly with a transaction that has signix_document_set_id and document_set); assert DocumentInstanceVersions created with status Final, transaction.audit_trail_file and transaction.certificate_of_completion_file are set when response contains them, ConfirmDownload was called. **If this verification depends on a real SIGNiX `complete` push, keep Django and ngrok running in parallel for the full callback/download flow.**
 
 ---
 
@@ -97,7 +97,7 @@ Exact element names and structure per [Flex API — DownloadDocument](https://ww
 
 **Includes:** Map response docs to document_set.instances; create DocumentInstanceVersion per instance; save audit_trail_file and certificate_of_completion_file on transaction; ConfirmDownload call; download_signed_documents_on_complete(transaction) implementing full flow; Plan 2 stub replaced.
 
-**How to test:** With a transaction and document_set (and mocked or real DownloadDocument response), call download_signed_documents_on_complete(transaction); assert versions created, transaction.audit_trail_file and certificate_of_completion_file set when present in response, ConfirmDownload invoked.
+**How to test:** With a transaction and document_set (and mocked or real DownloadDocument response), call download_signed_documents_on_complete(transaction); assert versions created, transaction.audit_trail_file and certificate_of_completion_file set when present in response, ConfirmDownload invoked. Mocked tests do not require ngrok. Real end-to-end verification through SIGNiX does require Django and ngrok running in parallel so the `complete` callback reaches Plan 2’s listener and triggers this flow.
 
 ---
 

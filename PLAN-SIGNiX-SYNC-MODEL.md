@@ -120,6 +120,7 @@ New model for the **event timeline** on the signature transaction detail page (D
 4. **Verification (Batch 1)**
    - `python manage.py check` passes.
    - **Primary:** Run the unit tests for this plan (Section 5a / Section 6): `python manage.py test apps.deals.tests.test_sync_model.SignatureTransactionSyncFieldsTests` and `SignatureTransactionDataMigrationTests` (data migration backfill test). All must pass.
+   - **Batch-scoped tests:** If `apps/deals/tests/test_sync_model.py` already contains Batch 2 or Batch 3 tests, keep Batch 1 verification clean by either (a) splitting the tests by batch/class and running only the Batch 1 classes, or (b) temporarily skipping future-batch test classes until their fields/models exist. Do not let a not-yet-implemented Batch 2/3 test block Batch 1 completion.
    - **Optional (shell):** Create a SignatureTransaction with the same args as today (deal, document_set, signix_document_set_id, status=STATUS_SUBMITTED). Assert `signer_count` is None, `signers_completed_refids == []`, `signers_completed_count == 0`, `status_last_updated` is None. Create another with `signer_count=2`, etc.; save and reload; assert values persist.
    - **Data migration:** For any existing SignatureTransaction rows that were present before the schema migration, after running migrations they should have **status** = Complete, **signer_count** = 2, **signers_completed_count** = 2, **signers_completed_refids** = [], **completed_at** set (to original completed_at or submitted_at), and **status_last_updated** set. Verify in shell or via the data-migration unit test (Section 6).
 
@@ -138,7 +139,7 @@ New model for the **event timeline** on the signature transaction detail page (D
    - `python manage.py check` passes.
    - Run the unit tests for SignixConfig: `python manage.py test apps.deals.tests.test_sync_model.SignixConfigPushBaseUrlTests` (includes **test_signix_config_page_loads** when the config URL is available).
    - In shell: `from apps.deals.signix import get_signix_config; c = get_signix_config(); assert c.push_base_url == ""`. Set `c.push_base_url = "https://example.ngrok-free.dev"; c.save(); c.refresh_from_db(); assert c.push_base_url == "https://example.ngrok-free.dev"`.
-   - **Optional:** Open SIGNiX Configuration in the browser (staff user). Page loads without error. The unit test can assert GET config URL returns 200 for an authenticated staff user.
+   - **Optional:** Open SIGNiX Configuration in the browser (staff user). Page loads without error. In this codebase the existing route name is `signix_config`; the unit test can assert `GET reverse("signix_config")` returns 200 for an authenticated staff user.
 
 ### Batch 3 — SignatureTransactionEvent (steps 8–11)
 
@@ -152,6 +153,7 @@ New model for the **event timeline** on the signature transaction detail page (D
 10. **Verification (Batch 3)**
    - `python manage.py check` passes.
    - Run unit tests: `python manage.py test apps.deals.tests.test_sync_model.SignatureTransactionEventTests` — all pass (Section 6).
+   - **Broader regression check (recommended):** Because Batch 3 is additive in this codebase and no existing view/service depends on `transaction.events` yet, it is reasonable to run the broader existing suite (e.g. `python manage.py test apps.deals.tests` or the full project suite) after the migration to confirm the new model does not regress existing dashboard/send flows.
    - **Optional (shell):** Create a SignatureTransaction, then create a SignatureTransactionEvent(transaction, event_type="submitted", occurred_at=timezone.now()); save; assert transaction.events.count() == 1 and transaction.events.first().event_type == "submitted".
 
 11. **No event backfill in Plan 1** — Existing transactions are not backfilled with events; the detail page (Plan 6) will show events only for transactions that receive the submitted event (Plan 3) and push events (Plan 2). Legacy rows will have an empty events list.
@@ -171,10 +173,11 @@ Implement in **three batches**. After each batch, run the verification steps and
 1. **Django check:** `python manage.py check` — no issues.
 2. **Migrate:** `python manage.py migrate` — new deals migration applied.
 3. **Unit tests (primary):** `python manage.py test apps.deals.tests.test_sync_model.SignatureTransactionSyncFieldsTests apps.deals.tests.test_sync_model.SignatureTransactionDataMigrationTests` — all tests pass.
-4. **Optional — Shell, defaults:** Create a `SignatureTransaction` with only the required fields (deal, document_set, signix_document_set_id, status=SignatureTransaction.STATUS_SUBMITTED). Assert `tx.signer_count is None`, `tx.signers_completed_refids == []`, `tx.signers_completed_count == 0`, `tx.status_last_updated is None`.
-5. **Optional — Shell, Expired:** Set `tx.status = SignatureTransaction.STATUS_EXPIRED` and `tx.save()`. Reload; assert `tx.status == SignatureTransaction.STATUS_EXPIRED`. Confirm STATUS_EXPIRED is in `SignatureTransaction.STATUS_CHOICES`.
-6. **Optional — Shell, optional fields set:** Create a transaction with `signer_count=2`, `signers_completed_refids=["P01"]`, `signers_completed_count=1`, `status_last_updated=timezone.now()`. Save, reload from DB; assert values persist.
-7. **Data migration verification:** Run the unit test **test_backfill_sets_complete_and_signer_counts** (Section 6). If the database had existing SignatureTransaction rows before the schema migration, after running migrations those rows should have **status** = Complete, signer_count=2, signers_completed_count=2, signers_completed_refids=[], completed_at set, status_last_updated set. The test verifies the backfill logic; production verification can be done in shell or DB.
+4. **Batch-scoped test hygiene:** If the same module already includes Batch 2 (`SignixConfigPushBaseUrlTests`) or Batch 3 (`SignatureTransactionEventTests`) tests, run only the Batch 1 classes above or skip the future-batch classes until their implementation lands.
+5. **Optional — Shell, defaults:** Create a `SignatureTransaction` with only the required fields (deal, document_set, signix_document_set_id, status=SignatureTransaction.STATUS_SUBMITTED). Assert `tx.signer_count is None`, `tx.signers_completed_refids == []`, `tx.signers_completed_count == 0`, `tx.status_last_updated is None`.
+6. **Optional — Shell, Expired:** Set `tx.status = SignatureTransaction.STATUS_EXPIRED` and `tx.save()`. Reload; assert `tx.status == SignatureTransaction.STATUS_EXPIRED`. Confirm STATUS_EXPIRED is in `SignatureTransaction.STATUS_CHOICES`.
+7. **Optional — Shell, optional fields set:** Create a transaction with `signer_count=2`, `signers_completed_refids=["P01"]`, `signers_completed_count=1`, `status_last_updated=timezone.now()`. Save, reload from DB; assert values persist.
+8. **Data migration verification:** Run the unit test **test_backfill_sets_complete_and_signer_counts** (Section 6). If the database had existing SignatureTransaction rows before the schema migration, after running migrations those rows should have **status** = Complete, signer_count=2, signers_completed_count=2, signers_completed_refids=[], completed_at set, status_last_updated set. The test verifies the backfill logic; production verification can be done in shell or DB.
 
 ### Batch 1 is complete when the above pass.
 
@@ -201,7 +204,8 @@ Batch 2 is complete when the above pass.
 1. **Django check:** `python manage.py check` — no issues.
 2. **Migrate:** `python manage.py migrate` — migration applied.
 3. **Unit tests:** `python manage.py test apps.deals.tests.test_sync_model.SignatureTransactionEventTests` — all pass (Section 6).
-4. **Optional (shell):** Create a SignatureTransaction (or use existing). Create SignatureTransactionEvent(signature_transaction=tx, event_type="submitted", occurred_at=timezone.now()). Save. Assert tx.events.count() == 1, tx.events.first().event_type == "submitted".
+4. **Broader regression check (recommended):** Run `python manage.py test apps.deals.tests` (or the full suite) to confirm the additive model change does not affect existing dashboard/send flows.
+5. **Optional (shell):** Create a SignatureTransaction (or use existing). Create SignatureTransactionEvent(signature_transaction=tx, event_type="submitted", occurred_at=timezone.now()). Save. Assert tx.events.count() == 1, tx.events.first().event_type == "submitted".
 
 Batch 3 is complete when the above pass.
 
@@ -223,7 +227,7 @@ Create **apps/deals/tests/test_sync_model.py** with the following test classes. 
 
 - **test_push_base_url_default_blank** — get_signix_config(); assert config.push_base_url == "" (or None if you used null=True).
 - **test_push_base_url_persists** — get_signix_config(); set push_base_url to a test URL; save(); refresh_from_db(); assert push_base_url equals the test URL.
-- **test_signix_config_page_loads** — (Optional, requires config URL.) As an authenticated staff user, GET the SIGNiX Configuration page URL (e.g. reverse('deals:signix_config_edit') or equivalent). Assert response.status_code == 200 and that the response contains push_base_url or the config form (so the page renders after Batch 2).
+- **test_signix_config_page_loads** — (Optional, requires config URL.) As an authenticated staff user, GET the SIGNiX Configuration page URL (in this codebase: `reverse("signix_config")`). Assert response.status_code == 200 and that the response contains the config form or "SIGNiX Configuration" so the page renders after Batch 2.
 
 **SignatureTransactionDataMigrationTests:**
 
@@ -236,6 +240,8 @@ Create **apps/deals/tests/test_sync_model.py** with the following test classes. 
 - **test_event_type_submitted** — Create event with event_type="submitted". Assert event.event_type == "submitted" and event.signature_transaction_id == tx.pk.
 
 Use the same test setup as other deals tests (e.g. create Deal, DocumentSet, User as needed). For SignixConfig tests, use get_signix_config() from apps.deals.signix so the singleton exists.
+
+**Batch-scoped test organization:** Because this plan is implemented in three batches, it is acceptable to keep all test classes in one module **only if** future-batch classes are skipped until their implementation exists. Alternatively, split them into separate modules (`test_sync_model_batch1.py`, `test_sync_model_batch2.py`, etc.). The important rule is that **Batch 1 can be verified cleanly on its own** without being blocked by Batch 2/3 expectations.
 
 ---
 
@@ -255,8 +261,10 @@ Use the same test setup as other deals tests (e.g. create Deal, DocumentSet, Use
 - **push_base_url: null vs blank:** Design says “nullable”; this plan allows either `null=True, blank=True` or `blank=True, default=""`. Using a non-null default (`default=""`) avoids NULL in the database and keeps the type a string. Plan 3 will check `if config.push_base_url:` (or `if getattr(config, 'push_base_url', None):`) before adding ClientPreference elements. **Decided:** Use `blank=True, default=""` so the column is NOT NULL; no migration data backfill needed.
 - **JSONField default=list:** Django’s JSONField with `default=list` is safe: each new instance gets a new list. Do not use a module-level list as default.
 - **Admin:** Optional. If SignatureTransaction or SignixConfig is registered in admin, the new fields will appear automatically. **push_base_url** need not be in the SignixConfig admin form for typical use: the app will use get_push_base_url(request) (Plan 3; DESIGN Section 5.4) for both submit and the config form display. Add push_base_url to the admin only as an optional override. When the config form is shown, pass get_push_base_url(request) to the template and display it next to the field (e.g. “When blank, app will use: &lt;derived&gt;/signix/push/”) so the user sees the effective default.
+- **Existing config page behavior:** In this codebase, the SIGNiX config page already exists and uses `SignixConfigForm` with an explicit `Meta.fields` list. That means adding `push_base_url` to the model in **Batch 2** does **not** expose it on the page automatically, which is desirable for this batch: the page continues to render unchanged, and **Plan 3** must intentionally add `push_base_url` to the form and template when the UI is ready.
 - **Order of migrations:** Batch 1, Batch 2, and **Batch 3 are kept separate** so you can verify SignatureTransaction first, then SignixConfig, then SignatureTransactionEvent. Optionally combine into fewer migrations if you prefer; the plan describes three batches for clear verification steps. **Decided:** Implement as three batches; do not combine Batch 3 with Batch 1 for the initial implementation.
 - **Existing transactions = complete, all signers signed:** When we introduce push-driven status and per-signer progress (Plan 1), any transaction that already exists in the database is treated as **complete** with **all signers having signed**. The data migration sets status=STATUS_COMPLETE, signer_count=2, signers_completed_count=2, signers_completed_refids=[], completed_at (to existing completed_at or submitted_at), and **status_last_updated = submitted_at**. Using **submitted_at** as the “last status update” for migrated rows is the intended design (we have no push history for those transactions), so the dashboard Status updated column shows a consistent, logical value. **Decided:** Implement as specified in Section 2.1 (Conventions) and the data migration steps above.
+- **Batch 3 impact on existing code:** In this codebase, `SignatureTransactionEvent` is a clean additive model change: existing dashboard, deal-detail, and SIGNiX submit flows do not reference `transaction.events` yet. That makes Batch 3 a good point to run the broader existing test suite after the migration, even before Plans 2/3 start creating event rows.
 
 ---
 

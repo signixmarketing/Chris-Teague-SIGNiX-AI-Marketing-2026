@@ -4,7 +4,7 @@ This plan implements the **push notification listener** that SIGNiX calls when e
 
 **Design reference:** DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md — Section 4 (Push Notification Listener), Section 4.2 (record event), Section 4.4 (helpers), Section 7.5 (SignatureTransactionEvent); Section 3.1 (status values), Section 3.4 (per-signer progress). KNOWLEDGE-SIGNiX.md — push request format, action→status mapping, idempotency.
 
-**Prerequisites:** Plan 1 (PLAN-SIGNiX-SYNC-MODEL) is implemented: SignatureTransaction has signer_count, signers_completed_refids, signers_completed_count, **status_last_updated**, and STATUS_EXPIRED; **SignatureTransactionEvent** model exists; migrations applied.
+**Prerequisites:** Plan 1 (PLAN-SIGNiX-SYNC-MODEL) is implemented: SignatureTransaction has signer_count, signers_completed_refids, signers_completed_count, **status_last_updated**, and STATUS_EXPIRED; **SignatureTransactionEvent** model exists; migrations applied. **For real end-to-end testing with SIGNiX callbacks, PLAN-NGROK must also be active and both Django and ngrok must be running in parallel** so SIGNiX can reach `/signix/push/`.
 
 **Review this plan before implementation.** Implementation order is in **Section 5**; **Section 5a** defines batches and verification.
 
@@ -156,11 +156,12 @@ Implement in **two batches**. After each batch, run the verification steps and t
 **How to test after Batch 1:**
 
 1. **Django check:** `python manage.py check` — no issues.
-2. **Unit tests (primary):** `python manage.py test apps.deals.tests.test_push_listener` — all tests pass. This is sufficient to verify Batch 1; manual steps below are optional.
-3. **Optional — 200 and body:** From browser or curl: `GET /signix/push/?action=complete&id=unknown&extid=unknown`. Expect HTTP 200 and response body exactly "OK". Check logs for warning about unknown id/extid.
-4. **Optional — known transaction:** In Django shell create a SignatureTransaction (e.g. deal, document_set, signix_document_set_id="DS-PUSH-1", transaction_id="tx-001", status=STATUS_SUBMITTED). Then request `GET /signix/push/?action=complete&id=DS-PUSH-1&extid=tx-001`. Expect 200 OK. Reload the transaction; assert status == STATUS_COMPLETE, completed_at is not None, **status_last_updated is not None**.
-5. **Optional — partyComplete:** Create a transaction with signer_count=2, signers_completed_refids=[], signers_completed_count=0. GET with action=partyComplete&id=...&extid=...&refid=P01. Reload; assert signers_completed_refids contains "P01", signers_completed_count == 1, status == In Progress. Send again with same refid=P01; assert count still 1 (idempotent).
-6. **Optional — terminal not overwritten:** Transaction in Complete. Send GET with action=partyComplete&id=...&extid=.... Reload; assert status still Complete.
+2. **Unit tests (primary):** `python manage.py test apps.deals.tests.test_push_listener` — all tests pass. This is sufficient to verify Batch 1 logic locally; ngrok is not required for these tests.
+3. **Real callback verification requirement:** If you want to verify the listener with **actual SIGNiX push notifications**, keep **`python manage.py runserver` and ngrok running in parallel** and ensure SIGNiX is configured to call the current ngrok URL for `/signix/push/`. Without the active tunnel, the application will not receive the push notifications.
+4. **Optional — local 200 and body:** From browser or curl: `GET /signix/push/?action=complete&id=unknown&extid=unknown`. Expect HTTP 200 and response body exactly "OK". Check logs for warning about unknown id/extid.
+5. **Optional — local known transaction:** In Django shell create a SignatureTransaction (e.g. deal, document_set, signix_document_set_id="DS-PUSH-1", transaction_id="tx-001", status=STATUS_SUBMITTED). Then request `GET /signix/push/?action=complete&id=DS-PUSH-1&extid=tx-001`. Expect 200 OK. Reload the transaction; assert status == STATUS_COMPLETE, completed_at is not None, **status_last_updated is not None**.
+6. **Optional — local partyComplete:** Create a transaction with signer_count=2, signers_completed_refids=[], signers_completed_count=0. GET with action=partyComplete&id=...&extid=...&refid=P01. Reload; assert signers_completed_refids contains "P01", signers_completed_count == 1, status == In Progress. Send again with same refid=P01; assert count still 1 (idempotent).
+7. **Optional — local terminal not overwritten:** Transaction in Complete. Send GET with action=partyComplete&id=...&extid=.... Reload; assert status still Complete.
 
 ### Batch 2 — Async and edge cases
 
@@ -171,6 +172,7 @@ Implement in **two batches**. After each batch, run the verification steps and t
 1. **Async stub called:** For action=complete, after request, check logs for stub message (or add a test that mocks the stub and asserts it was called).
 2. **Duplicate complete:** Send two complete pushes for the same transaction; both return 200; transaction remains Complete; no exception.
 3. **Expire:** GET with action=expire&id=...&extid=... for a Submitted transaction; assert status becomes Expired.
+4. **Real SIGNiX verification:** If you verify with actual SIGNiX callbacks rather than direct local GETs, Django and ngrok must both be running. Submit or configure the callback against the active ngrok domain and confirm requests appear in ngrok before diagnosing listener logic.
 
 Batch 2 is complete when the above pass.
 
@@ -259,7 +261,7 @@ All of the following are **decided** for this plan; implement as specified in th
 
 ## 10. Manual Testing (Details)
 
-Use the following to verify the listener without SIGNiX. Run the dev server (`python manage.py runserver`) and use curl or a browser.
+Use the following to verify the listener without SIGNiX. Run the dev server (`python manage.py runserver`) and use curl or a browser. For **real** push verification with SIGNiX, also run **ngrok in parallel** and use the active ngrok callback URL; otherwise SIGNiX cannot reach the local app.
 
 **1. Unknown transaction (must return 200 OK)**  
 ```bash
@@ -298,7 +300,7 @@ Reload tx: signers_completed_refids should contain "P01", signers_completed_coun
 **5. Expire**  
 For a Submitted tx: `curl -i "http://127.0.0.1:8000/signix/push/?action=expire&id=<id>&extid=<extid>"`. Reload; status should be Expired.
 
-Use your runserver URL (or ngrok URL for production-like testing) in place of `http://127.0.0.1:8000` if different.
+Use your runserver URL (or ngrok URL for production-like testing) in place of `http://127.0.0.1:8000` if different. When testing with SIGNiX itself, prefer the ngrok URL and keep both the tunnel and Django server running for the full test.
 
 ---
 

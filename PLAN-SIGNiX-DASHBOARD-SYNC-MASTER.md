@@ -2,7 +2,7 @@
 
 This document defines the order in which to implement the **dashboard, event sync, download, and transaction artifact viewing** features from **DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md**: model changes for push and per-signer progress (including fields for storing the audit trail and certificate of completion), the push notification listener, including the push URL in SubmitDocument (and setting signer_count at create), the Signers column on the dashboard and Deal View, **proactively** downloading signed documents plus the audit trail and certificate when transactions complete and storing them on the transaction, and a **signature transaction detail page** (with row action from the tables) so users can view signed documents, the audit trail, and the certificate of completion. Each plan builds on the previous so that status updates and per-signer progress work before the download flow, and the download flow stores all artifacts before the detail page serves them.
 
-**Usage:** Implement each plan below in sequence. Within each plan, follow its Implementation Order and Batches/Verification. Do not skip ahead—later plans depend on earlier ones.
+**Usage:** Implement each plan below in sequence. Within each plan, follow its Implementation Order and Batches/Verification. Do not skip ahead—later plans depend on earlier ones. **Testing note:** unit tests and mocked integration tests can run without ngrok, but any manual or end-to-end verification that depends on **real SIGNiX push notifications** requires the Django app and **ngrok to be running in parallel** so the submitted callback URL is reachable from SIGNiX.
 
 **Source of truth:** DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md. Refer to it for status values, action→status mapping, idempotency rules, push handler behavior, SubmitDocument client preferences, download mapping (including audit trail and certificate storage), data model (Section 7.4, 7.5), and signature transaction detail page (Section 8). KNOWLEDGE-SIGNiX.md for push format, DownloadDocument/ConfirmDownload, and Flex API details.
 
@@ -14,6 +14,7 @@ This document defines the order in which to implement the **dashboard, event syn
 
 - **PLAN-SIGNiX-SUBMIT-MASTER** plans 1–9 are implemented: SignixConfig, SignatureTransaction model, signer service, Signers table, build body, send and persist, Send for Signature button, signature transactions dashboard (list view), and related transactions on Deal View. The dashboard and Deal View tables exist but do not yet show live status from push or the Signers column.
 - **PLAN-NGROK** has been applied so the app is reachable at an HTTPS URL (e.g. ngrok tunnel). The push listener will be called by SIGNiX at that URL.
+- **Implementation testing requirement:** when running any verification that expects **real** SIGNiX callbacks (for example, sending a transaction and waiting for SIGNiX to call `/signix/push/`), keep **Django and ngrok running in parallel**. Without the active tunnel, the application will not receive the push notifications. Pure unit tests and mocked tests do not require ngrok.
 
 ---
 
@@ -49,7 +50,7 @@ This document defines the order in which to implement the **dashboard, event syn
 
 **Dependencies:** Plan 1 (model fields exist).
 
-**Implement:** Batches: (1) add **get_signature_transaction_for_push**, **get_event_time_for_push**, **push_action_to_event_type**, and **apply_push_action** (DESIGN 4.4), push view that parses params, calls them, saves, **creates SignatureTransactionEvent per push**, returns 200 OK; (2) CSRF exempt, async call to download_signed_documents_on_complete (stub until Plan 5). Verification: GET with action=complete&id=...&extid=... updates transaction and returns 200 OK; duplicate push does not overwrite terminal status; event created for push.
+**Implement:** Batches: (1) add **get_signature_transaction_for_push**, **get_event_time_for_push**, **push_action_to_event_type**, and **apply_push_action** (DESIGN 4.4), push view that parses params, calls them, saves, **creates SignatureTransactionEvent per push**, returns 200 OK; (2) CSRF exempt, async call to download_signed_documents_on_complete (stub until Plan 5). Verification: GET with action=complete&id=...&extid=... updates transaction and returns 200 OK; duplicate push does not overwrite terminal status; event created for push. **For any end-to-end verification with real SIGNiX pushes, Django and ngrok must both be running and the callback URL must point at the active ngrok domain.**
 
 ---
 
@@ -63,9 +64,9 @@ This document defines the order in which to implement the **dashboard, event syn
 - **Orchestrator** (or view that calls the packager) — Call get_push_base_url(request) and pass the result into build_submit_document_body (helper in DESIGN Section 5.4). When creating SignatureTransaction, set **signer_count** to the number of signers (e.g. len(signer_order) or number of MemberInfo elements). **Create the initial SignatureTransactionEvent** (event_type=**submitted**, occurred_at=submitted_at). **Ensure** the latest DocumentInstanceVersion per instance is marked status **"Submitted to SIGNiX"** (so the detail page can link to "document as sent"); this is already done in the existing orchestrator per PLAN-SIGNiX-SEND-AND-PERSIST.
 - Tests: with push_base_url set, built XML contains the two ClientPreference elements; new SignatureTransaction has signer_count set; transaction has one "submitted" event.
 
-**Dependencies:** Plan 1 (SignixConfig.push_base_url, SignatureTransaction.signer_count). Plan 2 should be deployed so that when new transactions are submitted with the URL, SIGNiX can call the listener.
+**Dependencies:** Plan 1 (SignixConfig.push_base_url, SignatureTransaction.signer_count). Plan 2 should be deployed so that when new transactions are submitted with the URL, SIGNiX can call the listener. For real callback verification during implementation, the listener must be reachable through an **active ngrok tunnel**.
 
-**Implement:** Batches: (1) add get_push_base_url(request=None) helper (DESIGN 5.4) and body builder accepts push_base_url, adds ClientPreference elements; (2) orchestrator and config form call get_push_base_url(request), sets signer_count on create, creates submitted event, ensures versions "Submitted to SIGNiX". Verification: submit creates transaction with signer_count and one submitted event; built body includes TransactionClientNotifyURL when push_base_url is set.
+**Implement:** Batches: (1) add get_push_base_url(request=None) helper (DESIGN 5.4) and body builder accepts push_base_url, adds ClientPreference elements; (2) orchestrator and config form call get_push_base_url(request), sets signer_count on create, creates submitted event, ensures versions "Submitted to SIGNiX". Verification: submit creates transaction with signer_count and one submitted event; built body includes TransactionClientNotifyURL when push_base_url is set. **If verification includes SIGNiX actually calling back after submit, run Django and ngrok in parallel and submit an ngrok-backed callback URL.**
 
 ---
 
@@ -96,7 +97,7 @@ This document defines the order in which to implement the **dashboard, event syn
 
 **Dependencies:** Plan 1 (SignatureTransaction, including audit_trail_file and certificate_of_completion_file; document_set relation). Plan 2 (listener triggers the task on action=complete). DocumentInstanceVersion model and document_set.instances exist from PLAN-ADD-DOCUMENT-SETS.
 
-**Implement:** Batches: (1) DownloadDocument client call (include audit trail and certificate in request) and response parsing (signed docs + audit trail + certificate); (2) mapping to instances, create DocumentInstanceVersions, save audit_trail_file and certificate_of_completion_file on transaction, ConfirmDownload; (3) **download_signed_documents_on_complete(transaction)** that does all of the above with idempotency check, wire from push listener; (4) async execution (thread or fire-and-forget). Verification: on action=complete, signed documents are stored as new versions with status Final, audit trail and certificate are stored on the transaction when present in the response, and ConfirmDownload is called.
+**Implement:** Batches: (1) DownloadDocument client call (include audit trail and certificate in request) and response parsing (signed docs + audit trail + certificate); (2) mapping to instances, create DocumentInstanceVersions, save audit_trail_file and certificate_of_completion_file on transaction, ConfirmDownload; (3) **download_signed_documents_on_complete(transaction)** that does all of the above with idempotency check, wire from push listener; (4) async execution (thread or fire-and-forget). Verification: on action=complete, signed documents are stored as new versions with status Final, audit trail and certificate are stored on the transaction when present in the response, and ConfirmDownload is called. **When verifying this flow via real SIGNiX completion pushes, Django and ngrok must both be running so the `complete` callback reaches `/signix/push/`.**
 
 ---
 
@@ -158,7 +159,7 @@ Plan 2 must be implemented before Plan 3 so that when new transactions are submi
 
 ---
 
-*To implement dashboard, sync, download, and transaction artifact viewing: ensure PLAN-SIGNiX-SUBMIT-MASTER plans 1–9 and PLAN-NGROK are complete, then implement plans 1–6 above in order, following each plan’s batches and verification.*
+*To implement dashboard, sync, download, and transaction artifact viewing: ensure PLAN-SIGNiX-SUBMIT-MASTER plans 1–9 and PLAN-NGROK are complete, then implement plans 1–6 above in order, following each plan’s batches and verification. Keep Django and ngrok running in parallel whenever your verification depends on real SIGNiX push notifications reaching the local app.*
 
 
 ## Open Issues and Recommendations (by Plan)

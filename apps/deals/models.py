@@ -118,6 +118,7 @@ class SignixConfig(models.Model):
     submitter_last_name = models.CharField(max_length=150, blank=True)
     submitter_email = models.EmailField(max_length=254, blank=True)
     submitter_phone = models.CharField(max_length=30, blank=True)
+    push_base_url = models.CharField(max_length=512, blank=True, default="")
 
     class Meta:
         verbose_name = "SIGNiX configuration"
@@ -141,6 +142,7 @@ class SignatureTransaction(models.Model):
     STATUS_SUSPENDED = "Suspended"
     STATUS_COMPLETE = "Complete"
     STATUS_CANCELLED = "Cancelled"
+    STATUS_EXPIRED = "Expired"
 
     STATUS_CHOICES = [
         (STATUS_SUBMITTED, STATUS_SUBMITTED),
@@ -148,6 +150,7 @@ class SignatureTransaction(models.Model):
         (STATUS_SUSPENDED, STATUS_SUSPENDED),
         (STATUS_COMPLETE, STATUS_COMPLETE),
         (STATUS_CANCELLED, STATUS_CANCELLED),
+        (STATUS_EXPIRED, STATUS_EXPIRED),
     ]
 
     deal = models.ForeignKey(
@@ -169,6 +172,18 @@ class SignatureTransaction(models.Model):
     first_signing_url = models.URLField(max_length=512, blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    signer_count = models.PositiveSmallIntegerField(null=True, blank=True)
+    signers_completed_refids = models.JSONField(default=list)
+    signers_completed_count = models.PositiveSmallIntegerField(default=0)
+    status_last_updated = models.DateTimeField(null=True, blank=True)
+    audit_trail_file = models.FileField(
+        upload_to="signature_transactions/%Y/%m/",
+        blank=True,
+    )
+    certificate_of_completion_file = models.FileField(
+        upload_to="signature_transactions/%Y/%m/",
+        blank=True,
+    )
 
     class Meta:
         verbose_name = "Signature transaction"
@@ -177,3 +192,28 @@ class SignatureTransaction(models.Model):
 
     def __str__(self):
         return f"Deal #{self.deal_id} — {self.signix_document_set_id} — {self.status}"
+
+
+class SignatureTransactionEvent(models.Model):
+    """
+    Event history for a SignatureTransaction. Used by later plans to show a
+    chronological timeline (submitted, push events, completion).
+    """
+
+    signature_transaction = models.ForeignKey(
+        SignatureTransaction,
+        on_delete=models.CASCADE,
+        related_name="events",
+    )
+    event_type = models.CharField(max_length=50)
+    occurred_at = models.DateTimeField()
+    refid = models.CharField(max_length=100, blank=True)
+    pid = models.CharField(max_length=100, blank=True)
+
+    class Meta:
+        verbose_name = "Signature transaction event"
+        verbose_name_plural = "Signature transaction events"
+        ordering = ["occurred_at"]
+
+    def __str__(self):
+        return f"SignatureTransactionEvent({self.signature_transaction_id}, {self.event_type})"
