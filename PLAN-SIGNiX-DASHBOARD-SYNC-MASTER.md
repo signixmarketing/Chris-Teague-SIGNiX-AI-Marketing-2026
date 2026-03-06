@@ -2,6 +2,8 @@
 
 This document defines the order in which to implement the **dashboard, event sync, download, and transaction artifact viewing** features from **DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md**: model changes for push and per-signer progress (including fields for storing the audit trail and certificate of completion), the push notification listener, including the push URL in SubmitDocument (and setting signer_count at create), the Signers column on the dashboard and Deal View, **proactively** downloading signed documents plus the audit trail and certificate when transactions complete and storing them on the transaction, and a **signature transaction detail page** (with row action from the tables) so users can view signed documents, the audit trail, and the certificate of completion. Each plan builds on the previous so that status updates and per-signer progress work before the download flow, and the download flow stores all artifacts before the detail page serves them.
 
+**Status:** Complete. Plans 1–6 in this master have been implemented, tested, and documented.
+
 **Usage:** Implement each plan below in sequence. Within each plan, follow its Implementation Order and Batches/Verification. Do not skip ahead—later plans depend on earlier ones. **Testing note:** unit tests and mocked integration tests can run without ngrok, but any manual or end-to-end verification that depends on **real SIGNiX push notifications** requires the Django app and **ngrok to be running in parallel** so the submitted callback URL is reachable from SIGNiX.
 
 **Source of truth:** DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md. Refer to it for status values, action→status mapping, idempotency rules, push handler behavior, SubmitDocument client preferences, download mapping (including audit trail and certificate storage), data model (Section 7.4, 7.5), and signature transaction detail page (Section 8). KNOWLEDGE-SIGNiX.md for push format, DownloadDocument/ConfirmDownload, and Flex API details.
@@ -155,7 +157,7 @@ Plan 2 must be implemented before Plan 3 so that when new transactions are submi
 ## Relation to PLAN-SIGNiX-SUBMIT-MASTER and PLAN-MASTER
 
 - **PLAN-SIGNiX-SUBMIT-MASTER** delivers the submit flow and the dashboard/Deal View tables (without push-driven status or Signers column). This master extends that: same dashboard and tables, now with live status from push, Signers column, push URL in SubmitDocument, and download on complete.
-- **PLAN-MASTER** should link to this document as the next step after PLAN-SIGNiX-SUBMIT-MASTER and PLAN-NGROK (see PLAN-MASTER.md “Next Steps” or “When ready: dashboard and sync”).
+- **PLAN-MASTER** should record this document as completed after PLAN-SIGNiX-SUBMIT-MASTER and PLAN-NGROK, rather than listing it as a remaining next step.
 
 ---
 
@@ -172,16 +174,16 @@ Plan 2 must be implemented before Plan 3 so that when new transactions are submi
 Also preserve request-derived callback correctness behind ngrok/proxy: emitted URL should remain `https://.../signix/push` (no trailing slash) in the working integration.
 
 **Plan 4 (DASHBOARD-SIGNERS)**
-- **Open:** None specific to the enhanced detail page; Plan 4 remains column-only.
-- **Recommendation:** No change; implement as written.
+- **Open:** None. Implemented.
+- **Recommendation:** No further action required for the current design scope.
 
 **Plan 5 (DOWNLOAD-ON-COMPLETE)**
-- **Open:** None introduced by the design/plan updates; audit trail and certificate storage already in design.
-- **Recommendation:** Preserve the live SIGNiX findings in the plan and tests: request uses `AuditDataFormat` before `UseConfirmDownload`, response parsing should accept `<Form>` / `<AuditReport>` in addition to any canned generic shapes, and idempotency must be transaction-aware because document instances are reused across multiple SIGNiX transactions.
+- **Open:** None. Implemented with the live SIGNiX request/response findings reflected in code, tests, and documentation.
+- **Recommendation:** No further action required for the current design scope.
 
 **Plan 6 (TRANSACTION-DETAIL)**
-- **Open:** (1) Signed-at matching when refid/pid is absent or multiple party_complete events—match by order of events vs signer order. (2) Content-Disposition for audit/certificate (inline vs attachment). (3) Permission: same as list vs restrict to deal access.
-- **Recommendation:** Implement signed_at by order of party_complete events when refid/pid not present; document the rule in code. Choose inline for audit/certificate for consistency with "View"; document in view. Use same permission as signature_transaction_list unless product requires stricter deal-based access.
+- **Open:** None for the current design scope. Signed-at fallback, inline artifact viewing, and `login_required` permissions have been implemented and documented.
+- **Recommendation:** No further action required for the current design scope.
 
 **Overall**
-- Design and plans are consistent: event history (SignatureTransactionEvent), "document as sent" (versions "Submitted to SIGNiX"), and the full detail page (header, signers, documents, events, audit/certificate) are retrofitted into the flow. Implement plans 1–6 in order; address Plan 2 dedupe and Plan 6 open issues during implementation as needed.
+- Design and plans are consistent, and the full dashboard/sync track is now complete: event history (SignatureTransactionEvent), "document as sent" (versions "Submitted to SIGNiX"), download-on-complete artifact storage, and the full detail page (header, signers, documents, events, audit/certificate) are all implemented.
