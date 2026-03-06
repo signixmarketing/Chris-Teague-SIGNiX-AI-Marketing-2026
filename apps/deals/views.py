@@ -27,8 +27,11 @@ from .forms import DealForm, SignixConfigForm
 from .models import Deal, DealType, SignixConfig, SignatureTransaction
 from .signix import (
     get_signix_config,
+    get_push_base_url,
+    get_signers_display,
     get_signature_transaction_for_push,
     get_signer_order_for_deal,
+    get_status_updated_display,
     get_signer_authentication_for_slot,
     get_role_label_for_slot,
     resolve_signer_slot,
@@ -88,6 +91,10 @@ def _deal_detail_context(
     """Build context for deal detail template. Optionally pass can_send overrides for re-render after validation error."""
     document_set_template = _document_set_template_for_deal(deal, document_set)
     signers = _build_signers_list(deal, document_set_template) if document_set_template else []
+    signature_transactions = list(deal.signature_transactions.order_by("-submitted_at"))
+    for transaction in signature_transactions:
+        transaction.signers_display = get_signers_display(transaction)
+        transaction.status_updated_display = get_status_updated_display(transaction)
     if document_set is None:
         can_send = False
         cannot_send_reason = None
@@ -114,7 +121,9 @@ def _deal_detail_context(
             (AUTH_SELECT_ONE_CLICK, AUTH_SELECT_ONE_CLICK),
             (AUTH_SMS_ONE_CLICK, AUTH_SMS_ONE_CLICK),
         ],
-        "signature_transactions": deal.signature_transactions.order_by("-submitted_at"),
+        "signature_transactions": signature_transactions,
+        "get_signers_display": get_signers_display,
+        "get_status_updated_display": get_status_updated_display,
     }
     if open_signing_url is not None:
         ctx["open_signing_url"] = open_signing_url
@@ -236,7 +245,11 @@ def deal_send_for_signature(request, pk):
         messages.error(request, "No document set to send.")
         return redirect("deals:deal_detail", pk=pk)
     try:
-        _tx, first_signing_url = submit_document_set_for_signature(deal, document_set)
+        _tx, first_signing_url = submit_document_set_for_signature(
+            deal,
+            document_set,
+            request=request,
+        )
     except SignixValidationError as e:
         reason = "; ".join(e.errors) if e.errors else "Validation failed."
         messages.error(request, reason)
@@ -267,11 +280,14 @@ def deal_send_for_signature(request, pk):
 @login_required
 def signature_transaction_list(request):
     """List all signature transactions (Plan 8 dashboard)."""
-    transactions = (
+    transactions = list(
         SignatureTransaction.objects.all()
         .order_by("-submitted_at")
         .select_related("deal", "deal__deal_type", "document_set", "document_set__document_set_template")
     )
+    for transaction in transactions:
+        transaction.signers_display = get_signers_display(transaction)
+        transaction.status_updated_display = get_status_updated_display(transaction)
     return render(
         request,
         "deals/signature_transaction_list.html",
@@ -507,4 +523,11 @@ def signix_config_edit(request):
             return redirect("signix_config")
     else:
         form = SignixConfigForm(instance=config)
-    return render(request, "deals/signix_config_form.html", {"form": form})
+    return render(
+        request,
+        "deals/signix_config_form.html",
+        {
+            "form": form,
+            "derived_push_base_url": get_push_base_url(request),
+        },
+    )

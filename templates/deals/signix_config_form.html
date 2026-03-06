@@ -93,6 +93,25 @@
         {{ form.default_email_content }}
       </div>
 
+      <h6 class="mt-4 mb-2">Push notifications</h6>
+      <p class="text-muted small">Optional callback override for SIGNiX push notifications.</p>
+      <div class="mb-3">
+        <label for="id_push_base_url" class="form-label">Push base URL</label>
+        {{ form.push_base_url }}
+        {% if form.push_base_url.help_text %}<div class="form-text">{{ form.push_base_url.help_text }}</div>{% endif %}
+        {% if form.push_base_url.errors %}<div class="invalid-feedback d-block">{{ form.push_base_url.errors }}</div>{% endif %}
+        {% if derived_push_base_url %}
+        <div class="form-text">
+          When blank, app will use:
+          <strong>{{ derived_push_base_url }}/signix/push</strong>
+        </div>
+        {% else %}
+        <div class="form-text">
+          When blank, no push URL is sent unless SIGNIX_PUSH_BASE_URL or NGROK_DOMAIN is set.
+        </div>
+        {% endif %}
+      </div>
+
       <button type="submit" class="btn btn-primary">Save configuration</button>
     </form>
   </div>

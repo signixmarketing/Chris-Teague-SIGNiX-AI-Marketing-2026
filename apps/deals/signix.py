@@ -5,6 +5,7 @@ transaction packager, etc. Plan 1 adds get_signix_config(); Plan 3 adds signer s
 
 import base64
 import logging
+import os
 import uuid
 import xml.etree.ElementTree as ET
 import xml.sax.saxutils as saxutils
@@ -12,13 +13,17 @@ from datetime import datetime
 from dataclasses import dataclass
 
 import requests
-from django.db.models import Q
+from django.conf import settings
+from django.core.files.base import ContentFile
+from django.db.models import Max, Q
+from django.utils.formats import date_format
 from django.template.loader import get_template
 from django.utils import timezone
 
-from apps.deals.models import SignixConfig, SignatureTransaction
+from apps.deals.models import SignixConfig, SignatureTransaction, SignatureTransactionEvent
 from apps.deals.models import DEFAULT_SIGNIX_EMAIL_CONTENT
 from apps.doctemplates.models import DynamicDocumentTemplate
+from apps.documents.models import DocumentInstanceVersion
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +71,49 @@ def get_signix_config() -> SignixConfig:
         },
     )
     return config
+
+
+def get_push_base_url(request=None) -> str:
+    """
+    Resolve the base URL for SIGNiX push callbacks with no trailing slash.
+    Priority: SignixConfig.push_base_url, then request, then settings, then "".
+    """
+    config = get_signix_config()
+    configured = str(getattr(config, "push_base_url", "") or "").strip()
+    if configured:
+        return configured.rstrip("/")
+    if request is not None:
+        return request.build_absolute_uri("/").rstrip("/")
+    settings_push_url = str(getattr(settings, "SIGNIX_PUSH_BASE_URL", "") or "").strip()
+    if settings_push_url:
+        return settings_push_url.rstrip("/")
+    ngrok_domain = str(getattr(settings, "NGROK_DOMAIN", "") or "").strip()
+    if ngrok_domain:
+        if ngrok_domain.startswith(("http://", "https://")):
+            return ngrok_domain.rstrip("/")
+        return f"https://{ngrok_domain.rstrip('/')}"
+    return ""
+
+
+def get_signers_display(transaction) -> str:
+    """Return signer progress for dashboard display, e.g. 1/2 or —."""
+    total = getattr(transaction, "signer_count", None)
+    if total is None:
+        return "—"
+    completed = getattr(transaction, "signers_completed_count", 0) or 0
+    return f"{completed}/{total}"
+
+
+def get_status_updated_display(transaction, fallback_to_submitted_at: bool = False) -> str:
+    """Return formatted status-updated timestamp for dashboard display, or —."""
+    value = getattr(transaction, "status_last_updated", None)
+    if value is None and fallback_to_submitted_at:
+        value = getattr(transaction, "submitted_at", None)
+    if value is None:
+        return "—"
+    if timezone.is_aware(value):
+        value = timezone.localtime(value)
+    return date_format(value, "M j, Y g:i A", use_l10n=False)
 
 
 def get_signature_transaction_for_push(signix_document_set_id=None, transaction_id=None):
@@ -180,11 +228,88 @@ def apply_push_action(transaction, action, refid=None, pid=None, ts=None):
 
 
 def download_signed_documents_on_complete(transaction):
-    """Plan 2 stub; Plan 5 replaces this with the real download flow."""
-    logger.info(
-        "download_signed_documents_on_complete called (stub), transaction_id=%s",
-        transaction.pk,
-    )
+    """Download signed documents, store artifacts, and confirm receipt (Plan 5)."""
+    try:
+        document_set = getattr(transaction, "document_set", None)
+        if document_set is None:
+            logger.warning(
+                "download_signed_documents_on_complete missing document_set (transaction_id=%s)",
+                transaction.pk,
+            )
+            return
+        instances = list(document_set.instances.order_by("order"))
+        if instances and all(
+            _document_instance_already_downloaded_for_transaction(instance, transaction)
+            for instance in instances
+        ):
+            logger.info(
+                "Skipping download for transaction %s; Final versions already exist.",
+                transaction.pk,
+            )
+            return
+        if not getattr(transaction, "signix_document_set_id", ""):
+            logger.warning(
+                "download_signed_documents_on_complete missing signix_document_set_id (transaction_id=%s)",
+                transaction.pk,
+            )
+            return
+
+        config = get_signix_config()
+        result = download_document(transaction.signix_document_set_id, config)
+        if len(result.documents) != len(instances):
+            logger.warning(
+                "DownloadDocument count mismatch for transaction %s (documents=%s, instances=%s)",
+                transaction.pk,
+                len(result.documents),
+                len(instances),
+            )
+
+        for instance, document in zip(instances, result.documents):
+            _save_signed_document_version(instance, document)
+
+        update_fields = []
+        if result.audit_trail_bytes:
+            try:
+                _save_transaction_artifact(
+                    transaction.audit_trail_file,
+                    "audit_trail.pdf",
+                    result.audit_trail_bytes,
+                )
+                update_fields.append("audit_trail_file")
+            except Exception:
+                logger.exception(
+                    "Failed to save audit trail for transaction %s",
+                    transaction.pk,
+                )
+        if result.certificate_bytes:
+            try:
+                _save_transaction_artifact(
+                    transaction.certificate_of_completion_file,
+                    "certificate_of_completion.pdf",
+                    result.certificate_bytes,
+                )
+                update_fields.append("certificate_of_completion_file")
+            except Exception:
+                logger.exception(
+                    "Failed to save certificate of completion for transaction %s",
+                    transaction.pk,
+                )
+        if update_fields:
+            transaction.save(update_fields=update_fields)
+
+        try:
+            confirm_download(transaction.signix_document_set_id, config)
+        except SignixApiError as e:
+            logger.error(
+                "ConfirmDownload failed for transaction %s: %s",
+                transaction.pk,
+                e.message,
+            )
+    except Exception:
+        logger.exception(
+            "download_signed_documents_on_complete failed for transaction %s",
+            getattr(transaction, "pk", None),
+        )
 
 
 def get_signers_for_document_set_template(document_set_template) -> list:
@@ -553,7 +678,7 @@ def _build_form_xml_fragment_acroform(instance, template, ref_id, filename, b64,
     )
 
 
-def build_submit_document_body(deal, document_set):
+def build_submit_document_body(deal, document_set, push_base_url=None):
     """
     Build the full SubmitDocument request XML and metadata (Plan 5).
     Returns (xml_string, metadata) with metadata["transaction_id"].
@@ -573,6 +698,9 @@ def build_submit_document_body(deal, document_set):
         "name": data["transaction_data"]["submitter_name"],
         "phone": data["transaction_data"]["submitter_phone"],
     }
+    if push_base_url is None:
+        push_base_url = get_push_base_url(None)
+    data["push_base_url"] = (push_base_url or "").strip().rstrip("/")
     template = get_template("signix/submit_document_request.xml")
     body = template.render({"data": data})
     return body, {"transaction_id": data["transaction_id"]}
@@ -599,6 +727,25 @@ class SendSubmitDocumentResult:
     first_signing_url: str | None
 
 
+@dataclass(frozen=True)
+class DownloadedDocument:
+    """One signed document returned by DownloadDocument (Plan 5)."""
+
+    content: bytes
+    ref_id: str | None = None
+    filename: str | None = None
+    content_type: str | None = None
+
+
+@dataclass(frozen=True)
+class DownloadDocumentResult:
+    """Parsed result of DownloadDocument (Plan 5 Batch 1)."""
+
+    documents: list[DownloadedDocument]
+    audit_trail_bytes: bytes | None
+    certificate_bytes: bytes | None
+
+
 def _find_text_in_element_tree(root, tag_local_name: str):
     """Find first element with given local tag name (namespace-agnostic); return its text or None."""
     for elem in root.iter():
@@ -618,6 +765,285 @@ def _find_first_signing_url(root):
         if text and (text.startswith("http://") or text.startswith("https://")):
             return text
     return None
+
+
+def _find_child_text(element, tag_local_name: str):
+    """Find direct/descendant child text for a local tag name within an element."""
+    for child in element.iter():
+        if child.tag.split("}")[-1] == tag_local_name:
+            return (child.text or "").strip() or None
+    return None
+
+
+def _decode_base64_payload(data: str | None, label: str) -> bytes | None:
+    """Decode a Base64 payload or return None when empty."""
+    if not data:
+        return None
+    try:
+        return base64.b64decode(data)
+    except (ValueError, TypeError) as e:
+        raise SignixApiError(f"Invalid Base64 in SIGNiX {label}: {e!s}")
+
+
+def _build_download_document_request_xml(
+    document_set_id: str,
+    config,
+    include_certificate: bool = True,
+) -> str:
+    """Build DownloadDocument request XML per Flex API guidance (Plan 5 Batch 1)."""
+    ns = "urn:com:signix:schema:sdddc-1-1"
+    doc_set_id_esc = saxutils.escape(document_set_id)
+    sponsor = saxutils.escape(getattr(config, "sponsor", None) or "")
+    client = saxutils.escape(getattr(config, "client", None) or "")
+    user_id = saxutils.escape(getattr(config, "user_id", None) or "")
+    pswd = saxutils.escape(getattr(config, "password", None) or "")
+    workgroup = saxutils.escape(getattr(config, "workgroup", None) or "")
+    certificate_block = ""
+    if include_certificate:
+        certificate_block = "<IncludeCertificateOfCompletion>true</IncludeCertificateOfCompletion>"
+    return (
+        f'<?xml version="1.0"?>'
+        f'<DownloadDocumentRq xmlns="{ns}">'
+        f"<CustInfo>"
+        f"<Sponsor>{sponsor}</Sponsor>"
+        f"<Client>{client}</Client>"
+        f"<UserId>{user_id}</UserId>"
+        f"<Pswd>{pswd}</Pswd>"
+        f"<Workgroup>{workgroup}</Workgroup>"
+        f"</CustInfo>"
+        f"<Data>"
+        f"<DocumentSetID>{doc_set_id_esc}</DocumentSetID>"
+        f"<IncludeAuditData>true</IncludeAuditData>"
+        f"<AuditDataFormat>pdf</AuditDataFormat>"
+        f"<UseConfirmDownload>true</UseConfirmDownload>"
+        f"{certificate_block}"
+        f"</Data>"
+        f"</DownloadDocumentRq>"
+    )
+
+
+def parse_download_document_response(response_text: str) -> DownloadDocumentResult:
+    """Parse DownloadDocument response XML into signed docs, audit trail, and certificate."""
+    try:
+        root = ET.fromstring(response_text)
+    except ET.ParseError as e:
+        raise SignixApiError(
+            f"Invalid XML response from SIGNiX: {e!s}",
+            http_status=200,
+            response_text=response_text[:500] if response_text else None,
+        )
+
+    status_code_el = _find_text_in_element_tree(root, "StatusCode")
+    status_code = 0
+    if status_code_el is not None:
+        try:
+            status_code = int(status_code_el)
+        except (TypeError, ValueError):
+            pass
+    if status_code != 0:
+        status_desc = _find_text_in_element_tree(root, "StatusDesc") or "Unknown error"
+        raise SignixApiError(
+            f"SIGNiX error: {status_desc}",
+            http_status=200,
+            response_text=response_text[:500] if response_text else None,
+        )
+
+    documents = []
+    audit_trail_bytes = None
+    certificate_bytes = None
+    for elem in root.iter():
+        tag_name = elem.tag.split("}")[-1]
+        if tag_name in {"AuditTrail", "AuditData", "AuditReport"} and audit_trail_bytes is None:
+            audit_trail_bytes = _decode_base64_payload(
+                _find_child_text(elem, "Data"),
+                "audit trail",
+            )
+            continue
+        if tag_name in {"CertificateOfCompletion", "Certificate"} and certificate_bytes is None:
+            certificate_bytes = _decode_base64_payload(
+                _find_child_text(elem, "Data"),
+                "certificate of completion",
+            )
+            continue
+        if tag_name not in {"Document", "SignedDocument", "Form"}:
+            continue
+        payload = _decode_base64_payload(_find_child_text(elem, "Data"), "signed document")
+        if payload is None:
+            continue
+        documents.append(
+            DownloadedDocument(
+                content=payload,
+                ref_id=_find_child_text(elem, "RefID"),
+                filename=_find_child_text(elem, "FileName"),
+                content_type=_find_child_text(elem, "MimeType"),
+            )
+        )
+    return DownloadDocumentResult(
+        documents=documents,
+        audit_trail_bytes=audit_trail_bytes,
+        certificate_bytes=certificate_bytes,
+    )
+
+
+def download_document(document_set_id: str, config) -> DownloadDocumentResult:
+    """Call DownloadDocument and parse the response (Plan 5 Batch 1)."""
+    endpoint_url = get_signix_submit_endpoint(config)
+    body = _build_download_document_request_xml(document_set_id, config)
+    payload = {"method": "DownloadDocument", "request": body}
+    try:
+        resp = requests.post(
+            endpoint_url,
+            data=payload,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=60,
+        )
+    except requests.RequestException as e:
+        raise SignixApiError(
+            f"DownloadDocument failed: {e!s}",
+            http_status=None,
+            response_text=None,
+        )
+    response_text = resp.text or ""
+    if resp.status_code >= 400:
+        raise SignixApiError(
+            f"DownloadDocument returned HTTP {resp.status_code}",
+            http_status=resp.status_code,
+            response_text=response_text[:500] if response_text else None,
+        )
+    return parse_download_document_response(response_text)
+
+
+def _build_confirm_download_request_xml(document_set_id: str, config) -> str:
+    """Build ConfirmDownload request XML (Plan 5 Batch 2)."""
+    ns = "urn:com:signix:schema:sdddc-1-1"
+    doc_set_id_esc = saxutils.escape(document_set_id)
+    sponsor = saxutils.escape(getattr(config, "sponsor", None) or "")
+    client = saxutils.escape(getattr(config, "client", None) or "")
+    user_id = saxutils.escape(getattr(config, "user_id", None) or "")
+    pswd = saxutils.escape(getattr(config, "password", None) or "")
+    workgroup = saxutils.escape(getattr(config, "workgroup", None) or "")
+    return (
+        f'<?xml version="1.0"?>'
+        f'<ConfirmDownloadRq xmlns="{ns}">'
+        f"<CustInfo>"
+        f"<Sponsor>{sponsor}</Sponsor>"
+        f"<Client>{client}</Client>"
+        f"<UserId>{user_id}</UserId>"
+        f"<Pswd>{pswd}</Pswd>"
+        f"<Workgroup>{workgroup}</Workgroup>"
+        f"</CustInfo>"
+        f"<Data>"
+        f"<DocumentSetID>{doc_set_id_esc}</DocumentSetID>"
+        f"</Data>"
+        f"</ConfirmDownloadRq>"
+    )
+
+
+def confirm_download(document_set_id: str, config) -> None:
+    """Call ConfirmDownload and raise SignixApiError on transport/API failure."""
+    endpoint_url = get_signix_submit_endpoint(config)
+    body = _build_confirm_download_request_xml(document_set_id, config)
+    payload = {"method": "ConfirmDownload", "request": body}
+    try:
+        resp = requests.post(
+            endpoint_url,
+            data=payload,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=30,
+        )
+    except requests.RequestException as e:
+        raise SignixApiError(
+            f"ConfirmDownload failed: {e!s}",
+            http_status=None,
+            response_text=None,
+        )
+    response_text = resp.text or ""
+    if resp.status_code >= 400:
+        raise SignixApiError(
+            f"ConfirmDownload returned HTTP {resp.status_code}",
+            http_status=resp.status_code,
+            response_text=response_text[:500] if response_text else None,
+        )
+    try:
+        root = ET.fromstring(response_text)
+    except ET.ParseError as e:
+        raise SignixApiError(
+            f"ConfirmDownload invalid XML: {e!s}",
+            http_status=resp.status_code,
+            response_text=response_text[:500] if response_text else None,
+        )
+    status_code_el = _find_text_in_element_tree(root, "StatusCode")
+    status_code = 0
+    if status_code_el is not None:
+        try:
+            status_code = int(status_code_el)
+        except (TypeError, ValueError):
+            pass
+    if status_code != 0:
+        status_desc = _find_text_in_element_tree(root, "StatusDesc") or "Unknown error"
+        raise SignixApiError(
+            f"ConfirmDownload error: {status_desc}",
+            http_status=resp.status_code,
+            response_text=response_text[:500] if response_text else None,
+        )
+
+
+def _get_next_version_number(document_instance) -> int:
+    """Return next version number for a document instance."""
+    current = document_instance.versions.aggregate(mx=Max("version_number")).get("mx") or 0
+    return current + 1
+
+
+def _get_submitted_version_for_transaction(document_instance, transaction):
+    """
+    Return the version that was current when this transaction was submitted.
+
+    Document instances are reused across multiple SIGNiX transactions for the same
+    deal, so idempotency cannot be based on the existence of any historical Final
+    version. Instead, compare the current latest version to the version that was
+    current at this transaction's submitted_at timestamp.
+    """
+    submitted_at = getattr(transaction, "submitted_at", None)
+    versions = document_instance.versions
+    if submitted_at is not None:
+        submitted_version = versions.filter(created_at__lte=submitted_at).first()
+        if submitted_version is not None:
+            return submitted_version
+    return versions.first()
+
+
+def _document_instance_already_downloaded_for_transaction(document_instance, transaction) -> bool:
+    """
+    Return True when this transaction's signed Final version is already present.
+
+    This is true only when the current latest version is Final and it was created
+    after the version that was current at transaction submission time.
+    """
+    latest = document_instance.versions.first()
+    if latest is None or latest.status != "Final":
+        return False
+    submitted_version = _get_submitted_version_for_transaction(document_instance, transaction)
+    if submitted_version is None:
+        return False
+    return latest.version_number > submitted_version.version_number
+
+
+def _save_signed_document_version(document_instance, document: DownloadedDocument) -> DocumentInstanceVersion:
+    """Create and save a Final DocumentInstanceVersion from downloaded PDF bytes."""
+    version = DocumentInstanceVersion(
+        document_instance=document_instance,
+        version_number=_get_next_version_number(document_instance),
+        status="Final",
+    )
+    version.save()
+    filename = document.filename or f"signed-document-{document_instance.order}.pdf"
+    version.file.save(os.path.basename(filename), ContentFile(document.content), save=True)
+    return version
+
+
+def _save_transaction_artifact(field_file, filename: str, content: bytes) -> None:
+    """Save PDF bytes onto a transaction FileField."""
+    field_file.save(filename, ContentFile(content), save=False)
 
 
 def send_submit_document(body: str, endpoint_url: str, config) -> SendSubmitDocumentResult:
@@ -776,7 +1202,7 @@ def get_access_link_signer(
 VERSION_STATUS_SUBMITTED_TO_SIGNIX = "Submitted to SIGNiX"
 
 
-def submit_document_set_for_signature(deal, document_set):
+def submit_document_set_for_signature(deal, document_set, request=None):
     """
     Orchestrator: validate, build body, send to SIGNiX, GetAccessLink if needed,
     create SignatureTransaction, update version status (Plan 6).
@@ -784,7 +1210,12 @@ def submit_document_set_for_signature(deal, document_set):
     Raises SignixValidationError on validation failure; SignixApiError on API failure.
     """
     validate_submit_preconditions(deal, document_set)
-    body, metadata = build_submit_document_body(deal, document_set)
+    push_base_url = get_push_base_url(request)
+    body, metadata = build_submit_document_body(
+        deal,
+        document_set,
+        push_base_url=push_base_url,
+    )
     config = get_signix_config()
     endpoint_url = get_signix_submit_endpoint(config)
     logger.debug("Submitting document set to SIGNiX (deal_id=%s, document_set_id=%s).", deal.pk, document_set.pk)
@@ -808,6 +1239,7 @@ def submit_document_set_for_signature(deal, document_set):
                 exc_info=True,
             )
             first_signing_url = ""
+    signer_count = len(get_signer_order_for_deal(deal, document_set.document_set_template))
     transaction = SignatureTransaction.objects.create(
         deal=deal,
         document_set=document_set,
@@ -815,6 +1247,12 @@ def submit_document_set_for_signature(deal, document_set):
         transaction_id=metadata.get("transaction_id") or "",
         status=SignatureTransaction.STATUS_SUBMITTED,
         first_signing_url=first_signing_url or "",
+        signer_count=signer_count,
+    )
+    SignatureTransactionEvent.objects.create(
+        signature_transaction=transaction,
+        event_type="submitted",
+        occurred_at=transaction.submitted_at,
     )
     for instance in document_set.instances.all():
         latest = instance.versions.first()

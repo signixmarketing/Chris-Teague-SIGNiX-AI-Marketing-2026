@@ -18,6 +18,8 @@
             <th>Description</th>
             <th>SIGNiX DocumentSetID</th>
             <th>Status</th>
+            <th>Signers</th>
+            <th>Status updated</th>
             <th>Submitted at</th>
             <th class="text-end">Open link</th>
           </tr>
@@ -38,6 +40,8 @@
             </td>
             <td>{{ t.signix_document_set_id }}</td>
             <td>{{ t.status }}</td>
+            <td>{{ t.signers_display }}</td>
+            <td>{{ t.status_updated_display }}</td>
             <td>{{ t.submitted_at|date:"M j, Y g:i A" }}</td>
             <td class="text-end">
               {% if t.first_signing_url %}
@@ -53,7 +57,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="6" class="text-center text-muted py-4">
+            <td colspan="8" class="text-center text-muted py-4">
               No signature transactions yet. Send documents for signature from a Deal detail page.
             </td>
           </tr>

@@ -41,6 +41,10 @@ CSRF_TRUSTED_ORIGINS = [
     "http://unreproachable-draftily-shanelle.ngrok-free.dev",
 ]
 
+# Trust X-Forwarded-Proto from ngrok/HTTPS proxies so request-derived absolute
+# URLs (like the SIGNiX callback URL) keep the external https scheme.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 # Base URL used for image URLs when generating PDFs (dynamic templates). wkhtmltopdf
 # runs on the server and must fetch image URLs; if the user triggers generation via
 # ngrok, request.build_absolute_uri() would give an ngrok URL that wkhtmltopdf may

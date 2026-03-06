@@ -21,6 +21,7 @@ class SignixConfigForm(forms.ModelForm):
             "user_id",
             "password",
             "workgroup",
+            "push_base_url",
             "demo_only",
             "delete_documents_after_days",
             "default_email_content",
@@ -32,6 +33,7 @@ class SignixConfigForm(forms.ModelForm):
         ]
         widgets = {
             "password": forms.PasswordInput(attrs={"autocomplete": "new-password"}, render_value=True),
+            "push_base_url": forms.URLInput(attrs={"placeholder": "https://your-app.example.com"}),
             "default_email_content": forms.Textarea(attrs={"rows": 3}),
         }
 
@@ -46,6 +48,11 @@ class SignixConfigForm(forms.ModelForm):
         if self.instance and self.instance.pk and self.instance.password:
             self.fields["password"].required = False
             self.fields["password"].help_text = "Leave blank to keep existing password."
+        self.fields["push_base_url"].required = False
+        self.fields["push_base_url"].help_text = (
+            "Optional override. When blank, the app uses the current site URL "
+            "or SIGNIX_PUSH_BASE_URL / NGROK_DOMAIN."
+        )
 
     def clean(self):
         cleaned = super().clean()

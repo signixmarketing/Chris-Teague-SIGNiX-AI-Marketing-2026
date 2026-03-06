@@ -227,6 +227,8 @@
             <th>Submitted at</th>
             <th>SIGNiX DocumentSetID</th>
             <th>Status</th>
+            <th>Signers</th>
+            <th>Status updated</th>
             <th class="text-end">Open signing</th>
           </tr>
         </thead>
@@ -236,6 +238,8 @@
             <td>{{ t.submitted_at|date:"M j, Y g:i A" }}</td>
             <td>{{ t.signix_document_set_id }}</td>
             <td>{{ t.status }}</td>
+            <td>{{ t.signers_display }}</td>
+            <td>{{ t.status_updated_display }}</td>
             <td class="text-end">
               {% if t.first_signing_url %}
                 {% if t.status == "Submitted" or t.status == "In Progress" %}

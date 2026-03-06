@@ -18,6 +18,10 @@
         <ContactInfo></ContactInfo>
         <DeliveryType>SDDDC</DeliveryType>
         <SuspendOnStart>{{ data.transaction_data.suspend_on_start }}</SuspendOnStart>
+        {% if data.push_base_url %}
+        <ClientPreference name="UseClientNotifyVersion2">yes</ClientPreference>
+        <ClientPreference name="TransactionClientNotifyURL">{{ data.push_base_url }}/signix/push</ClientPreference>
+        {% endif %}
         {% for signer in data.signers %}
         <MemberInfo>
             <RefID>{{ signer.ref_id }}</RefID>

@@ -12,11 +12,11 @@ This plan adds the **push notification URL** to every SubmitDocument request (so
 
 ## 1. Goals and Scope
 
-- **Push URL in SubmitDocument** — When a push base URL is available (from request, SignixConfig, or settings), include **ClientPreference** UseClientNotifyVersion2=yes and TransactionClientNotifyURL=**push_base_url** + "/signix/push/" in the SubmitDocument request. When the resolved URL is empty, do not add these elements.
-- **Single helper** — **get_push_base_url(request=None)** in `apps.deals.signix` resolves in one place: (1) SignixConfig.push_base_url if set and non-empty; (2) request.build_absolute_uri('/').rstrip('/') when request is provided; (3) settings.SIGNIX_PUSH_BASE_URL or NGROK_DOMAIN; (4) "". No inline derivation in the view or body builder.
+- **Push URL in SubmitDocument** — When a push base URL is available (from request, SignixConfig, or settings), include **ClientPreference** UseClientNotifyVersion2=yes and TransactionClientNotifyURL=**push_base_url** + "/signix/push" in the SubmitDocument request. When the resolved URL is empty, do not add these elements.
+- **Single helper** — **get_push_base_url(request=None)** in `apps.deals.signix` resolves in one place: (1) SignixConfig.push_base_url if set and non-empty; (2) request.build_absolute_uri('/').rstrip('/') when request is provided; (3) settings.SIGNIX_PUSH_BASE_URL or NGROK_DOMAIN; (4) "". No inline derivation in the view or body builder. For request-derived URLs behind ngrok or another HTTPS proxy, Django must trust the forwarded scheme (e.g. `SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")`) so the generated callback stays `https://...` rather than falling back to `http://...`.
 - **Body builder** — **build_submit_document_body(deal, document_set, push_base_url=None)** accepts an optional **push_base_url**. When provided and non-empty, the rendered XML includes the two ClientPreference elements; when empty or None, they are omitted. When None is passed, the builder may call get_push_base_url(None) for fallback (config/settings only).
 - **Orchestrator** — **submit_document_set_for_signature(deal, document_set, request=None)** accepts an optional **request**. It calls get_push_base_url(request), passes the result to build_submit_document_body, and when creating SignatureTransaction sets **signer_count** to the number of signers (e.g. len(get_signer_order_for_deal(deal, template))). **Immediately after creating the SignatureTransaction**, create the initial **SignatureTransactionEvent**: event_type=**submitted**, occurred_at=transaction.submitted_at (so the detail page timeline starts with "Transaction submitted"). **Document set versions:** Ensure the latest DocumentInstanceVersion for each instance in the document set is marked status **"Submitted to SIGNiX"** (constant VERSION_STATUS_SUBMITTED_TO_SIGNIX in apps.deals.signix)—this is already done in the existing orchestrator per PLAN-SIGNiX-SEND-AND-PERSIST; the detail page uses these versions as "document as sent." If the orchestrator was refactored and no longer marks versions, add that step here.
-- **Config form** — Add **push_base_url** to SignixConfigForm as an optional field. When the config page is rendered, pass **get_push_base_url(request)** to the template and display it as read-only text (e.g. “When blank, app will use: &lt;derived&gt;/signix/push/”) so the user sees the effective default without having to set the field.
+- **Config form** — Add **push_base_url** to SignixConfigForm as an optional field. When the config page is rendered, pass **get_push_base_url(request)** to the template and display it as read-only text (e.g. “When blank, app will use: &lt;derived&gt;/signix/push”) so the user sees the effective default without having to set the field.
 - **View** — The Send for Signature view passes **request** into submit_document_set_for_signature so the push URL is derived from the current request in the typical case.
 - **Out of scope this plan:** Dashboard Signers column (Plan 4), real download on complete (Plan 5). No push request validation (secret/token).
 
@@ -33,13 +33,14 @@ This plan adds the **push notification URL** to every SubmitDocument request (so
 | 3 | settings | If settings has SIGNIX_PUSH_BASE_URL, return it (strip trailing slash). Elif settings has NGROK_DOMAIN, return it with https:// if the value has no scheme. |
 | 4 | — | Return "". |
 
-Callers that need the full callback URL append "/signix/push/" (no double slash: helper returns base without trailing slash).
+Callers that need the full callback URL append "/signix/push" (no double slash: helper returns base without trailing slash).
 
 ### 2.2 When ClientPreference elements are added
 
 - **Added when:** Resolved push_base_url (after get_push_base_url) is non-empty.
 - **Omitted when:** Resolved push_base_url is "" (so SIGNiX may use account-level push URL or no push).
-- **XML:** UseClientNotifyVersion2 = **yes**; TransactionClientNotifyURL = **push_base_url + "/signix/push/"** (single slash between base and path).
+- **XML:** UseClientNotifyVersion2 = **yes**; TransactionClientNotifyURL = **push_base_url + "/signix/push"** (single slash between base and path).
+- **Observed working behavior (live verification):** In this app, SIGNiX successfully called the callback when SubmitDocument used the no-trailing-slash URL (`.../signix/push`). Django’s listener route remains `/signix/push/`, and Django redirected the bare-path callback to the slash form during verification.
 
 ### 2.3 Signer count at create
 
@@ -53,7 +54,7 @@ Callers that need the full callback URL append "/signix/push/" (no double slash:
 
 - **Signature:** `(request=None) -> str`
 - **Returns:** The push base URL (no path, no trailing slash), or "" if none available.
-- **Logic:** (1) config = get_signix_config(); if getattr(config, 'push_base_url', None) and str(config.push_base_url).strip(), return that value.rstrip('/'). (2) Elif request is not None, return request.build_absolute_uri('/').rstrip('/'). (3) Elif hasattr(settings, 'SIGNIX_PUSH_BASE_URL') and settings.SIGNIX_PUSH_BASE_URL, return settings.SIGNIX_PUSH_BASE_URL.rstrip('/'). (4) Elif hasattr(settings, 'NGROK_DOMAIN') and settings.NGROK_DOMAIN, val = settings.NGROK_DOMAIN; return val if val.startswith('http') else f"https://{val}". (5) Else return "".
+- **Logic:** (1) config = get_signix_config(); if getattr(config, 'push_base_url', None) and str(config.push_base_url).strip(), return that value.rstrip('/'). (2) Elif request is not None, return request.build_absolute_uri('/').rstrip('/'). (3) Elif hasattr(settings, 'SIGNIX_PUSH_BASE_URL') and settings.SIGNIX_PUSH_BASE_URL, return settings.SIGNIX_PUSH_BASE_URL.rstrip('/'). (4) Elif hasattr(settings, 'NGROK_DOMAIN') and settings.NGROK_DOMAIN, val = settings.NGROK_DOMAIN; return val if val.startswith('http') else f"https://{val}". (5) Else return "". When relying on request.build_absolute_uri behind ngrok, configure Django to trust forwarded HTTPS so the derived callback host keeps the external `https` scheme.
 - **Location:** `apps.deals.signix`.
 
 ### 3.2 build_submit_document_body(deal, document_set, push_base_url=None)
@@ -71,7 +72,7 @@ Callers that need the full callback URL append "/signix/push/" (no double slash:
 
 - **SignixConfigForm:** Add **push_base_url** to the form’s Meta.fields (optional; CharField already on model from Plan 1). Use a URLField or CharField with a short help_text (e.g. “Optional. When blank, the app uses the current site URL or NGROK_DOMAIN.”).
 - **View (signix_config_edit):** When rendering the form (GET or before POST), call **derived_push_base_url = get_push_base_url(request)** and pass it to the template as **derived_push_base_url** (or **push_base_url_derived**). Do not overwrite the form field value—this is read-only display only.
-- **Template (signix_config_form.html):** Add a **Settings** (or “Push notifications”) subsection: the push_base_url form field, and below or next to it a line such as: “When blank, app will use: **&lt;derived_push_base_url&gt;/signix/push/**” (or “Current site URL (used when field is blank): &lt;derived_push_base_url&gt;”). When derived_push_base_url is empty, show e.g. “When blank, no push URL is sent (or use SIGNIX_PUSH_BASE_URL / NGROK_DOMAIN if set).”
+- **Template (signix_config_form.html):** Add a **Settings** (or “Push notifications”) subsection: the push_base_url form field, and below or next to it a line such as: “When blank, app will use: **&lt;derived_push_base_url&gt;/signix/push**” (or “Current site URL (used when field is blank): &lt;derived_push_base_url&gt;”). When derived_push_base_url is empty, show e.g. “When blank, no push URL is sent (or use SIGNIX_PUSH_BASE_URL / NGROK_DOMAIN if set).”
 
 ---
 
@@ -88,7 +89,7 @@ Callers that need the full callback URL append "/signix/push/" (no double slash:
 3. **Update SubmitDocument XML template**
    - In `apps/deals/templates/signix/submit_document_request.xml`, inside `<Data>`, add a conditional block: when data.push_base_url is set, output **immediately after `<SuspendOnStart>` and before the first `<MemberInfo>`**:
      - `<ClientPreference name="UseClientNotifyVersion2">yes</ClientPreference>`
-     - `<ClientPreference name="TransactionClientNotifyURL">{{ data.push_base_url }}/signix/push/</ClientPreference>`
+     - `<ClientPreference name="TransactionClientNotifyURL">{{ data.push_base_url }}/signix/push</ClientPreference>`
    - This order matches the working SubmitDocument example (Section 8).
 
 4. **Orchestrator: pass push_base_url and set signer_count**
@@ -100,6 +101,10 @@ Callers that need the full callback URL append "/signix/push/" (no double slash:
 6. **Update signix_dump_body command**
    - In the management command that dumps the SubmitDocument body, call build_submit_document_body(deal, document_set, push_base_url=get_push_base_url(None)) so the dumped XML includes the ClientPreference elements when config or settings provide a push base URL. Optionally add a --push-url argument to override for testing.
 
+7. **Verification (Batch 1)**
+   - Run `python manage.py check`.
+   - **No schema change in Batch 1:** `python manage.py migrate` should report **no new migrations to apply** for this batch because the work is limited to helper/view/template/orchestrator behavior and tests.
+
 ### Batch 2 — Config form and display (steps 7–10)
 
 7. **Add push_base_url to SignixConfigForm**
@@ -110,10 +115,13 @@ Callers that need the full callback URL append "/signix/push/" (no double slash:
    - In signix_config_edit, when rendering (GET or POST with form errors), derived = get_push_base_url(request). Pass derived_push_base_url=derived (or push_base_url_derived) in the context.
 
 9. **Config template: show derived default**
-   - In signix_config_form.html, add a “Push notifications” or “Push URL” subsection: label for push_base_url, form field, and below it a line “When blank, app will use: &lt;strong&gt;&lt;span&gt;{{ derived_push_base_url|default:"(none)" }}&lt;/span&gt;/signix/push/&lt;/strong&gt;” or “Current site URL (when field is blank): {{ derived_push_base_url|default:"(not set)" }}”. If derived_push_base_url is empty, show “When blank, no push URL is sent unless SIGNIX_PUSH_BASE_URL or NGROK_DOMAIN is set.”
+   - In signix_config_form.html, add a “Push notifications” or “Push URL” subsection: label for push_base_url, form field, and below it a line “When blank, app will use: &lt;strong&gt;&lt;span&gt;{{ derived_push_base_url|default:"(none)" }}&lt;/span&gt;/signix/push&lt;/strong&gt;” or “Current site URL (when field is blank): {{ derived_push_base_url|default:"(not set)" }}”. If derived_push_base_url is empty, show “When blank, no push URL is sent unless SIGNIX_PUSH_BASE_URL or NGROK_DOMAIN is set.”
+   - **Codebase note:** In this repo the config template lives at **`templates/deals/signix_config_form.html`** (project-level template), not under `apps/deals/templates/...`.
 
 10. **Verification (Batch 2)**
-   - Django check passes. Open SIGNiX Configuration as staff; confirm push_base_url field and derived default text. Submit a deal; confirm SignatureTransaction has signer_count set and (if push URL is set) built XML contains the two ClientPreference elements (e.g. via signix_dump_body or a test).
+   - Django check passes.
+   - **No schema change in Batch 2:** `python manage.py migrate` should report **no new migrations to apply** for this batch because the work is limited to form/view/template behavior and tests.
+   - Open SIGNiX Configuration as staff; confirm push_base_url field and derived default text. Submit a deal; confirm SignatureTransaction has signer_count set and (if push URL is set) built XML contains the two ClientPreference elements (e.g. via signix_dump_body or a test).
 
 ---
 
@@ -128,11 +136,12 @@ Implement in **two batches**. After each batch, run the verification steps and t
 **How to test after Batch 1:**
 
 1. **Django check:** `python manage.py check` — no issues.
-2. **Unit tests:** `python manage.py test apps.deals.tests.test_signix_submit_push_url` — all pass (Section 6). These tests do not require ngrok.
-3. **Build body with push URL:** In shell or test: build_submit_document_body(deal, document_set, push_base_url="https://example.ngrok-free.dev"). Assert the returned XML contains UseClientNotifyVersion2 and TransactionClientNotifyURL with /signix/push/.
-4. **Build body without push URL:** build_submit_document_body(deal, document_set, push_base_url=""). Assert the returned XML does not contain ClientPreference or TransactionClientNotifyURL.
-5. **Signer count:** Submit a deal (or call submit_document_set_for_signature in test with mocked send). Reload the created SignatureTransaction; assert signer_count equals the number of signers (e.g. 2 for a two-signer template).
-6. **Real callback verification requirement:** If you verify that SIGNiX actually calls back after submit, keep `python manage.py runserver` and ngrok running in parallel and make sure the generated TransactionClientNotifyURL uses the active ngrok domain. Without the tunnel, the app will not receive the push notifications.
+2. **Migrate:** `python manage.py migrate` — no new migrations to apply for this batch.
+3. **Unit tests:** `python manage.py test apps.deals.tests.test_signix_submit_push_url` — all pass (Section 6). These tests do not require ngrok.
+4. **Build body with push URL:** In shell or test: build_submit_document_body(deal, document_set, push_base_url="https://example.ngrok-free.dev"). Assert the returned XML contains UseClientNotifyVersion2 and TransactionClientNotifyURL with `/signix/push` (no trailing slash).
+5. **Build body without push URL:** build_submit_document_body(deal, document_set, push_base_url=""). Assert the returned XML does not contain ClientPreference or TransactionClientNotifyURL.
+6. **Signer count:** Submit a deal (or call submit_document_set_for_signature in test with mocked send). Reload the created SignatureTransaction; assert signer_count equals the number of signers (e.g. 2 for a two-signer template).
+7. **Real callback verification requirement:** If you verify that SIGNiX actually calls back after submit, keep `python manage.py runserver` and ngrok running in parallel and make sure the generated TransactionClientNotifyURL uses the active ngrok domain. Without the tunnel, the app will not receive the push notifications.
 
 ### Batch 2 — Config form and derived default
 
@@ -140,10 +149,11 @@ Implement in **two batches**. After each batch, run the verification steps and t
 
 **How to test after Batch 2:**
 
-1. **Config form:** Log in as staff, open SIGNiX Configuration. Confirm push_base_url field is present and the derived default line shows (e.g. current request host + /signix/push/ or “(not set)”).
-2. **Save override:** Set push_base_url to https://override.example.com, save. Reload; confirm value persisted. Build body with get_push_base_url(None) (no request); assert resolved URL is the override.
-3. **Manual submit:** From deal detail, click Send for Signature. Confirm transaction is created with signer_count set and (if using ngrok or override) that SIGNiX would receive the push URL in SubmitDocument (optional: inspect dump or logs).
-4. **Real callback verification requirement:** If you are testing the full submit-to-push round trip, keep Django and ngrok running in parallel during the submit and the subsequent SIGNiX callback window. The callback URL in the built XML must point to the currently running ngrok tunnel.
+1. **Migrate:** `python manage.py migrate` — no new migrations to apply for this batch.
+2. **Config form:** Log in as staff, open SIGNiX Configuration. Confirm push_base_url field is present and the derived default line shows (e.g. current request host + `/signix/push` or “(not set)”).
+3. **Save override:** Set push_base_url to https://override.example.com, save. Reload; confirm value persisted. Build body with get_push_base_url(None) (no request); assert resolved URL is the override.
+4. **Manual submit:** From deal detail, click Send for Signature. Confirm transaction is created with signer_count set and (if using ngrok or override) that SIGNiX would receive the push URL in SubmitDocument (optional: inspect dump or logs).
+5. **Real callback verification requirement:** If you are testing the full submit-to-push round trip, keep Django and ngrok running in parallel during the submit and the subsequent SIGNiX callback window. The callback URL in the built XML must point to the currently running ngrok tunnel.
 
 ---
 
@@ -154,15 +164,17 @@ Create **apps/deals/tests/test_signix_submit_push_url.py** (or add to an existin
 ### 6.1 get_push_base_url
 
 - **test_get_push_base_url_uses_config_when_set** — Set SignixConfig.push_base_url = "https://config.example.com"; get_push_base_url(None) returns "https://config.example.com" (or with trailing slash stripped).
-- **test_get_push_base_url_uses_request_when_config_blank** — SignixConfig.push_base_url = "". Mock or use RequestFactory: request with path "/" and get_host() returning "testserver"; get_push_base_url(request) returns the request-derived base (e.g. "http://testserver").
+- **test_get_push_base_url_uses_request_when_config_blank** — SignixConfig.push_base_url = "". Mock or use RequestFactory: request with path "/" and get_host() returning **`testserver`** (or override `ALLOWED_HOSTS` for a custom host); get_push_base_url(request) returns the request-derived base (e.g. "http://testserver").
+- **test_get_push_base_url_uses_forwarded_https_scheme** — With `SECURE_PROXY_SSL_HEADER=("HTTP_X_FORWARDED_PROTO", "https")`, build a RequestFactory request carrying `HTTP_X_FORWARDED_PROTO="https"` and an allowed host. Assert get_push_base_url(request) returns an `https://...` base URL. This covers ngrok/proxy deployment where the browser is on HTTPS but Django is behind a local HTTP hop.
 - **test_get_push_base_url_returns_empty_when_nothing_set** — SignixConfig.push_base_url = "", no request, no settings; get_push_base_url(None) returns "".
 - **test_get_push_base_url_strips_trailing_slash** — Config set to "https://x.com/"; assert get_push_base_url(None) == "https://x.com".
+- **test_get_push_base_url_uses_ngrok_setting_with_https** — With SignixConfig.push_base_url blank and `settings.NGROK_DOMAIN = "my-app.ngrok-free.dev"`, assert get_push_base_url(None) == "https://my-app.ngrok-free.dev".
 
 ### 6.2 build_submit_document_body with push_base_url
 
-- **test_build_body_includes_client_preferences_when_push_base_url_set** — build_submit_document_body(deal, document_set, push_base_url="https://push.example.com"). Assert "UseClientNotifyVersion2" in body and "TransactionClientNotifyURL" in body and "https://push.example.com/signix/push/" in body.
+- **test_build_body_includes_client_preferences_when_push_base_url_set** — build_submit_document_body(deal, document_set, push_base_url="https://push.example.com"). Assert "UseClientNotifyVersion2" in body and "TransactionClientNotifyURL" in body and "https://push.example.com/signix/push" in body.
 - **test_build_body_omits_client_preferences_when_push_base_url_empty** — build_submit_document_body(deal, document_set, push_base_url=""). Assert "TransactionClientNotifyURL" not in body (or ClientPreference block absent).
-- **test_build_body_uses_get_push_base_url_when_push_base_url_none** — With SignixConfig.push_base_url set to "https://fallback.com", build_submit_document_body(deal, document_set, push_base_url=None). Assert body contains "https://fallback.com/signix/push/" (or fallback from config).
+- **test_build_body_uses_get_push_base_url_when_push_base_url_none** — With SignixConfig.push_base_url set to "https://fallback.com", build_submit_document_body(deal, document_set, push_base_url=None). Assert body contains "https://fallback.com/signix/push" (or fallback from config).
 
 ### 6.3 Orchestrator signer_count and document versions
 
@@ -193,10 +205,14 @@ Create **apps/deals/tests/test_signix_submit_push_url.py** (or add to an existin
 
 - **Version status step (document as sent):** Before considering Batch 1 complete, **verify** that submit_document_set_for_signature still contains the step that marks the latest DocumentInstanceVersion for each instance in the document set to VERSION_STATUS_SUBMITTED_TO_SIGNIX. If it is missing (e.g. removed in a refactor), restore it in this plan so the signature transaction detail page "As sent" links work. **Decided:** Implement verification as part of step 4; restore the step if absent.
 - **ClientPreference placement in XML:** Put the two ClientPreference elements **inside `<Data>`, immediately after `<SuspendOnStart>` and before the first `<MemberInfo>`**. Order: … SuspendOnStart → UseClientNotifyVersion2, TransactionClientNotifyURL → (optional NotificationSchedule if used) → MemberInfo → Form(s). This matches the working SubmitDocument example.
+- **Callback path form:** The working integration in this app used **`/signix/push` without a trailing slash** in TransactionClientNotifyURL. Django’s listener route remains `/signix/push/`, and SIGNiX followed Django’s redirect in live verification. **Decided:** keep the emitted SubmitDocument callback URL at `/signix/push` and document the listener route separately in Plan 2.
 - **request in orchestrator:** submit_document_set_for_signature(deal, document_set, request=None) is backward-compatible when called without request (e.g. from management command); get_push_base_url(None) then uses config/settings. **Decided:** Optional request; view passes request so typical use gets request-derived URL.
+- **Request-derived URL tests:** In Django tests that exercise `get_push_base_url(request)` or `submit_document_set_for_signature(..., request=request)`, using a custom host with RequestFactory can trigger `DisallowedHost` unless that host is in `ALLOWED_HOSTS`. **Decided:** Prefer RequestFactory’s default host (`testserver`) in unit tests unless the test is explicitly about host validation.
 - **signer_count when template has no signers:** If get_signer_order_for_deal returns [] (e.g. no template or no slots), signer_count would be 0. **Decided:** Allow 0; dashboard will show "0/0". Validation in validate_submit_preconditions already fails when a slot is unresolved, so a transaction is not normally created with no signers. Do not add extra validation to forbid signer_count=0.
 - **NGROK_DOMAIN format:** Some setups use NGROK_DOMAIN without "https://". **Decided:** If the value does not start with "http", prepend "https://" (Section 3.1).
+- **HTTPS behind ngrok / proxy:** Request-derived callback URLs can incorrectly become `http://...` if Django does not trust the forwarded HTTPS scheme from ngrok. **Decided:** treat proxy HTTPS support as a prerequisite for Plan 3 when relying on request-derived URLs (e.g. `SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")` in settings).
 - **Dump command:** signix_dump_body currently calls build_submit_document_body(deal, document_set) with no push_base_url. **Decided:** Update the command to pass get_push_base_url(None) into build_submit_document_body so dumps include the push URL when config or settings provide one. Optionally support a --push-url flag to override for testing. Include this in the implementation (e.g. Batch 1 or a verification step).
+- **Config template location:** The Batch 2 UI work lands in the project-level template **`templates/deals/signix_config_form.html`**, not an app-local `apps/deals/templates/deals/...` file. **Decided:** Record the exact path in the plan so the template change is made in the correct place.
 
 ---
 
@@ -215,7 +231,7 @@ Use the following to verify the behavior without SIGNiX. If you want SIGNiX itse
 **1. Config form — derived default**  
 Log in as staff. Open **SIGNiX Configuration**. Confirm:
 - A **Push base URL** (or “Push notification URL”) field is present and optional.
-- Below it, text like “When blank, app will use: **&lt;your current host&gt;/signix/push/**” (e.g. http://127.0.0.1:8000/signix/push/ or your ngrok URL).  
+- Below it, text like “When blank, app will use: **&lt;your current host&gt;/signix/push**” (e.g. http://127.0.0.1:8000/signix/push or your ngrok URL).  
 If you open the page via ngrok, the derived URL should show the ngrok host.
 
 **2. Config form — override**  
@@ -226,7 +242,7 @@ Run:
 `python manage.py signix_dump_body <deal_id>`  
 (If the command is updated to pass get_push_base_url(None), ensure config or NGROK_DOMAIN is set.) Open the generated XML and confirm it contains:
 - `<ClientPreference name="UseClientNotifyVersion2">yes</ClientPreference>`
-- `<ClientPreference name="TransactionClientNotifyURL">.../signix/push/</ClientPreference>`
+- `<ClientPreference name="TransactionClientNotifyURL">.../signix/push</ClientPreference>`
 
 **4. Submit and check transaction**  
 From the deal detail page, click **Send for Signature** (with valid config and document set). After success:

@@ -57,8 +57,8 @@ This plan adds the **Signers** column (e.g. "0/2", "1/2", "2/2") and the **Statu
 
 ## 4. View Context
 
-- **signature_transaction_list view** — Pass **get_signers_display** and **get_status_updated_display** (the callables from signix) in the template context so the template can call `get_signers_display(t)` and `get_status_updated_display(t)` for each row. No need to precompute per row in the view.
-- **Deal detail context** — In **_deal_detail_context**, add **get_signers_display** and **get_status_updated_display** to the context dict so deal_detail.html can use them in the signature transactions table. All callers of _deal_detail_context (deal_detail, deal_send_for_signature re-render, etc.) then get the helpers automatically.
+- **signature_transaction_list view** — Use **get_signers_display** and **get_status_updated_display** from `apps.deals.signix`, but keep the template usage **Django-template-safe**. In this repo, the simplest approach is to precompute display strings per row in the view (for example, set `transaction.signers_display` and `transaction.status_updated_display`) and render those attributes in the template. Avoid relying on template-side Python-style function calls like `get_signers_display(t)`, which standard Django templates do not support.
+- **Deal detail context** — In **_deal_detail_context**, use the same template-safe approach as the list view: precompute display strings for each transaction row (for example, `transaction.signers_display` and `transaction.status_updated_display`) before putting the list into context. It is still useful to include **get_signers_display** and **get_status_updated_display** in the context for tests or future reuse, but the template should render the precomputed row attributes rather than Python-style helper calls.
 
 ---
 
@@ -78,6 +78,7 @@ This plan adds the **Signers** column (e.g. "0/2", "1/2", "2/2") and the **Statu
 
 4. **Verification (Batch 1)**
    - Run `python manage.py check`. Run unit tests: `python manage.py test apps.deals.tests.test_dashboard_signers` (Section 6). Manual: open Signature transactions list; confirm Signers and Status updated columns appear; for a transaction with signer_count=2, signers_completed_count=1, expect "1/2"; for null signer_count expect "—".
+   - **No schema change in Batch 1:** `python manage.py migrate` should report **no new migrations to apply** for this batch because the work is limited to helper/view/template behavior and tests.
 
 ### Batch 2 — Deal View table and tests (steps 5–7)
 
@@ -89,6 +90,7 @@ This plan adds the **Signers** column (e.g. "0/2", "1/2", "2/2") and the **Statu
 
 7. **Verification (Batch 2)**
    - Open a Deal detail page that has signature transactions. Confirm the table shows Signers and Status updated columns and values match the list view. Run tests (Section 6) including Deal View tests.
+   - **No schema change in Batch 2:** `python manage.py migrate` should report **no new migrations to apply** for this batch because the work is limited to context/template behavior and tests.
 
 ---
 
@@ -103,9 +105,10 @@ Implement in **two batches**. After each batch, run the verification steps and t
 **How to test after Batch 1:**
 
 1. **Django check:** `python manage.py check` — no issues.
-2. **Unit tests:** `python manage.py test apps.deals.tests.test_dashboard_signers` — all pass (Section 6).
-3. **Dashboard list:** Log in, open **Signature transactions**. Table has columns Signers and Status updated. Create a transaction with signer_count=2, signers_completed_count=0 (or 1); confirm "0/2" or "1/2". Transaction with signer_count=None shows "—" in Signers; null status_last_updated shows "—" in Status updated.
-4. **Existing tests:** `python manage.py test apps.deals.tests.test_signature_transaction_dashboard` — still pass (no regression).
+2. **Migrate:** `python manage.py migrate` — no new migrations to apply for this batch.
+3. **Unit tests:** `python manage.py test apps.deals.tests.test_dashboard_signers` — all pass (Section 6).
+4. **Dashboard list:** Log in, open **Signature transactions**. Table has columns Signers and Status updated. Create a transaction with signer_count=2, signers_completed_count=0 (or 1); confirm "0/2" or "1/2". Transaction with signer_count=None shows "—" in Signers; null status_last_updated shows "—" in Status updated.
+5. **Existing tests:** `python manage.py test apps.deals.tests.test_signature_transaction_dashboard` — still pass (no regression).
 
 ### Batch 2 — Deal View and polish
 
@@ -113,8 +116,9 @@ Implement in **two batches**. After each batch, run the verification steps and t
 
 **How to test after Batch 2:**
 
-1. **Deal detail:** Open a deal that has signature transactions. Table shows Signers and Status updated with same values as on the list view.
-2. **Full test suite:** `python manage.py test apps.deals.tests.test_signature_transaction_dashboard apps.deals.tests.test_deal_view_signature_transactions apps.deals.tests.test_dashboard_signers` — all pass.
+1. **Migrate:** `python manage.py migrate` — no new migrations to apply for this batch.
+2. **Deal detail:** Open a deal that has signature transactions. Table shows Signers and Status updated with same values as on the list view.
+3. **Full test suite:** `python manage.py test apps.deals.tests.test_signature_transaction_dashboard apps.deals.tests.test_deal_view_signature_transactions apps.deals.tests.test_dashboard_signers` — all pass.
 
 ---
 
@@ -159,7 +163,7 @@ Create **apps/deals/tests/test_dashboard_signers.py** (Plan 4: Signers and Statu
 |------|--------|
 | App / module | `apps.deals` (signix.py for helpers; views.py for context) |
 | New helpers | get_signers_display(transaction), get_status_updated_display(transaction, fallback_to_submitted_at=False) in signix.py |
-| Modified view | signature_transaction_list — add get_signers_display, get_status_updated_display to context |
+| Modified view | signature_transaction_list — compute template-safe display values from get_signers_display / get_status_updated_display for each row |
 | Modified context builder | _deal_detail_context — add get_signers_display, get_status_updated_display to context |
 | Templates | signature_transaction_list.html (add Signers, Status updated columns; colspan 8); deal_detail.html (add Signers, Status updated to signature transactions table) |
 | Tests | apps/deals/tests/test_dashboard_signers.py |
@@ -173,6 +177,7 @@ Create **apps/deals/tests/test_dashboard_signers.py** (Plan 4: Signers and Statu
 - **Signers column header label:** Use **"Signers"** (design). Alternative "Progress" or "Signers (X/Y)"; this plan uses "Signers" with cell content "0/2", etc.
 - **Colspan for empty state:** Dashboard list has 8 columns after this plan; the "No signature transactions yet" row must use colspan="8". Deal View table has 6 columns; no empty row in that table (it shows "No signature transactions for this deal" outside the table), so no colspan change there.
 - **Helper location:** Helpers live in **signix.py** (not a separate dashboard module) so all SIGNiX-related display logic stays in one app and can be imported by views without circular imports. If the codebase later splits "signix services" vs "signix display," the helpers can move to a small signix_display or signix_utils module; for now signix.py is acceptable.
+- **Template-safe rendering:** Standard Django templates do not support arbitrary Python-style helper calls with arguments (for example, `get_signers_display(t)`). **Decided for this plan:** keep the formatting logic in helper functions, but for both the dashboard list and the Deal View table precompute display strings in Python and render row attributes like `t.signers_display` / `t.status_updated_display`. This keeps the implementation simple without introducing custom template tags or filters.
 
 ---
 

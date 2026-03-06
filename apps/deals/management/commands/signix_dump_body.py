@@ -13,7 +13,11 @@ Exits with an error if the deal has no document set or validation fails.
 from django.core.management.base import BaseCommand
 
 from apps.deals.models import Deal
-from apps.deals.signix import build_submit_document_body, SignixValidationError
+from apps.deals.signix import (
+    build_submit_document_body,
+    get_push_base_url,
+    SignixValidationError,
+)
 
 
 class Command(BaseCommand):
@@ -52,7 +56,11 @@ class Command(BaseCommand):
             return 1
 
         try:
-            body, metadata = build_submit_document_body(deal, document_set)
+            body, metadata = build_submit_document_body(
+                deal,
+                document_set,
+                push_base_url=get_push_base_url(None),
+            )
         except SignixValidationError as e:
             self.stderr.write(self.style.ERROR("Validation failed:"))
             for err in e.errors:

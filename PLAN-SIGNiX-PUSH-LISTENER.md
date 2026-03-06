@@ -4,7 +4,7 @@ This plan implements the **push notification listener** that SIGNiX calls when e
 
 **Design reference:** DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md — Section 4 (Push Notification Listener), Section 4.2 (record event), Section 4.4 (helpers), Section 7.5 (SignatureTransactionEvent); Section 3.1 (status values), Section 3.4 (per-signer progress). KNOWLEDGE-SIGNiX.md — push request format, action→status mapping, idempotency.
 
-**Prerequisites:** Plan 1 (PLAN-SIGNiX-SYNC-MODEL) is implemented: SignatureTransaction has signer_count, signers_completed_refids, signers_completed_count, **status_last_updated**, and STATUS_EXPIRED; **SignatureTransactionEvent** model exists; migrations applied. **For real end-to-end testing with SIGNiX callbacks, PLAN-NGROK must also be active and both Django and ngrok must be running in parallel** so SIGNiX can reach `/signix/push/`.
+**Prerequisites:** Plan 1 (PLAN-SIGNiX-SYNC-MODEL) is implemented: SignatureTransaction has signer_count, signers_completed_refids, signers_completed_count, **status_last_updated**, and STATUS_EXPIRED; **SignatureTransactionEvent** model exists; migrations applied. **For real end-to-end testing with SIGNiX callbacks, PLAN-NGROK must also be active and both Django and ngrok must be running in parallel** so SIGNiX can reach the callback URL emitted by Plan 3. If Plan 3 derives the callback from the request host behind ngrok, Django must trust the forwarded HTTPS scheme so the generated URL is `https://...`, not `http://...`.
 
 **Review this plan before implementation.** Implementation order is in **Section 5**; **Section 5a** defines batches and verification.
 
@@ -12,7 +12,7 @@ This plan implements the **push notification listener** that SIGNiX calls when e
 
 ## 1. Goals and Scope
 
-- **GET /signix/push/** — Unauthenticated endpoint that SIGNiX calls with query parameters (action, id, extid; optional pid, refid, ts). Parse params, look up transaction via **get_signature_transaction_for_push**, apply updates via **apply_push_action**, save, **create a SignatureTransactionEvent for this push** (event_type from action, occurred_at from ts, refid/pid when present), return HTTP 200 with body `"OK"`. If transaction not found, log and still return 200 OK. **The system listens to push notifications and updates the number of signers who have completed whenever SIGNiX notifies it** (on partyComplete or complete), so the dashboard Signers column (e.g. 1/2, 2/2) stays in sync.
+- **GET /signix/push/** — Unauthenticated endpoint that SIGNiX calls with query parameters (action, id, extid; optional pid, refid, ts). Parse params, look up transaction via **get_signature_transaction_for_push**, apply updates via **apply_push_action**, save, **create a SignatureTransactionEvent for this push** (event_type from action, occurred_at from ts, refid/pid when present), return HTTP 200 with body `"OK"`. If transaction not found, log and still return 200 OK. **The system listens to push notifications and updates the number of signers who have completed whenever SIGNiX notifies it** (on partyComplete or complete), so the dashboard Signers column (e.g. 1/2, 2/2) stays in sync. In this codebase, SubmitDocument emits the callback URL as `/signix/push` (no trailing slash); Django’s listener route remains `/signix/push/`, and live verification showed SIGNiX successfully followed Django’s redirect from the bare path to the slash form.
 - **Helpers** — **get_signature_transaction_for_push(signix_document_set_id=None, transaction_id=None)** returns the SignatureTransaction or None. **apply_push_action(transaction, action, refid=None, pid=None, ts=None)** applies action→status mapping, idempotency (no overwrite of terminal states), **status_last_updated** and completed_at for complete, and per-signer progress for partyComplete/complete. Whenever the helper mutates the transaction (status, completed_at, or signer progress), it sets **status_last_updated** to the event time (ts or now). **For event creation:** use a small helper **push_action_to_event_type(action)** that returns the event_type string (Send→send, partyComplete→party_complete, etc.) so the view does not duplicate the mapping; use **get_event_time_for_push(ts)** (parse ts or return timezone.now()) so the view and apply_push_action share the same event time for consistent occurred_at. All helpers in `apps.deals.signix` (or a dedicated push module) so the view stays thin and logic is testable without HTTP.
 - **Async trigger for complete** — After responding 200 OK, for **action=complete** call **download_signed_documents_on_complete(transaction)** asynchronously (e.g. threading.Thread or fire-and-forget). This plan implements a **stub** that logs and returns; Plan 5 replaces it with the real download flow.
 - **CSRF** — Exempt the push view from CSRF so SIGNiX’s GET requests are not rejected.
@@ -25,6 +25,7 @@ This plan implements the **push notification listener** that SIGNiX calls when e
 ### 2.1 URL and method
 
 - **URL:** `/signix/push/` (trailing slash; register at project root so full URL is e.g. `https://your-domain.com/signix/push/`).
+- **Callback URL note:** Plan 3’s SubmitDocument payload uses the no-trailing-slash form `https://your-domain.com/signix/push`. The listener route in Django can still remain `/signix/push/`; in live verification, requests to the bare path were redirected to the slash form and processed successfully.
 - **Method:** GET only. All payload in query string per SIGNiX.
 
 ### 2.2 Query parameters
@@ -130,7 +131,7 @@ This plan implements the **push notification listener** that SIGNiX calls when e
 
 5. **Wire URL and CSRF exempt**
    - In `config/urls.py`, add path `signix/push/`, view (with @csrf_exempt if needed). Ensure the view is not behind login_required.
-   - **Codebase note:** In this repo, the listener should live at the **project root URLconf** (`config/urls.py`), not `apps.deals.urls`, because the required public path is exactly `/signix/push/` (matching the callback URL sent to SIGNiX) rather than `/deals/...`.
+  - **Codebase note:** In this repo, the listener should live at the **project root URLconf** (`config/urls.py`), not `apps.deals.urls`, because the public callback path is `/signix/push` / `/signix/push/` rather than `/deals/...`.
 
 ### Batch 2 — Async trigger and verification (steps 6–8)
 
@@ -259,6 +260,7 @@ All of the following are **decided** for this plan; implement as specified in th
 - **refid/pid for partyComplete:** Use refid if present and non-empty string, else pid. Normalize to string (e.g. str(pid)) so list membership works. Only append if the chosen key is not already in signers_completed_refids.
 - **Stub:** download_signed_documents_on_complete(transaction) logs at info: e.g. logger.info("download_signed_documents_on_complete called (stub), transaction_id=%s", transaction.pk).
 - **URL placement:** The design says `/signix/push/`. The project has signix config at `signix/config/`. Adding `signix/push/` at the project root keeps push separate from the config UI and matches the design.
+- **Bare-path callback from SIGNiX:** Live verification in this app showed SIGNiX calling `/signix/push` (no trailing slash) when that exact URL was emitted by SubmitDocument. Django redirected that request to `/signix/push/`, and SIGNiX followed it successfully. **Decided:** keep the Django listener at `/signix/push/`, but document that Plan 3 emits `/signix/push` in the SubmitDocument payload.
 - **No migration expected for Batch 1:** This batch adds helpers, a view, URL routing, and tests only. If `makemigrations` suggests a schema change, double-check that you did not accidentally modify models while implementing the listener.
 - **Missing params in view:** If request.GET has missing or empty action, id, or extid, log a warning (e.g. "Push request missing required parameter") and return HttpResponse("OK", status=200) without calling get_signature_transaction_for_push.
 

@@ -5,7 +5,7 @@ Plan 7 Batch 3: view tests for all branches; deal detail context with document s
 
 from decimal import Decimal
 from datetime import date
-from unittest.mock import patch, MagicMock
+from unittest.mock import ANY, patch, MagicMock
 
 from django.test import TestCase, Client
 from django.urls import reverse
@@ -117,6 +117,7 @@ class DealSendForSignatureWithDocumentSetTests(TestCase):
         mock_submit.return_value = (mock_tx, "https://sign.example.com/link")
         url = reverse("deals:deal_send_for_signature", kwargs={"pk": self.deal.pk})
         resp = self.client.post(url)
+        mock_submit.assert_called_once_with(self.deal, self.document_set, request=ANY)
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["Location"], reverse("deals:deal_detail", kwargs={"pk": self.deal.pk}))
         self.assertEqual(self.client.session.get("signix_open_signing_url"), "https://sign.example.com/link")

@@ -76,6 +76,11 @@ These changes are **required** for the app to work when accessed through the ngr
   ]
   ```
   Example: `"https://unreproachable-draftily-shanelle.ngrok-free.dev"` and `"http://unreproachable-draftily-shanelle.ngrok-free.dev"`.
+- **SECURE_PROXY_SSL_HEADER:** When app code derives absolute URLs from the current request (for example, the SIGNiX callback URL in Plan 3), Django must trust ngrok’s forwarded HTTPS scheme or it may incorrectly emit `http://YOUR_NGROK_DOMAIN` even though the browser is on HTTPS. Add:
+  ```python
+  SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+  ```
+  This keeps `request.build_absolute_uri("/")` aligned with the external ngrok URL.
 - **PDF_IMAGE_BASE_URL:** So that document generation (Generate/Regenerate) works when triggered via the ngrok URL, image URLs in the generated HTML must be reachable by wkhtmltopdf on the server. Set:
   ```python
   PDF_IMAGE_BASE_URL = "http://127.0.0.1:8000"
@@ -176,7 +181,7 @@ Then proceed to the batches below (or skip to Batch 3 if you only need to run th
 
 **Goal:** Record the URL SIGNiX will use and any optional config.
 
-1. Write down **your** webhook base URL: `https://YOUR_NGROK_DOMAIN`. The full callback will be that base plus the path you add for push (e.g. `/signix/push/`).
+1. Write down **your** webhook base URL: `https://YOUR_NGROK_DOMAIN`. The full callback will be that base plus the path you add for push (for this project’s working integration: `/signix/push` in SubmitDocument; Django’s listener route remains `/signix/push/`).
 2. Optional: add a named tunnel in `~/.config/ngrok/ngrok.yml` (see [ngrok config](https://ngrok.com/docs/agent/config)) so you can run `ngrok start django` instead of typing the full command.
 3. When you implement the push endpoint, register the full callback URL in SIGNiX’s push notification configuration (per SIGNiX docs).
 
@@ -222,7 +227,7 @@ Then proceed to the batches below (or skip to Batch 3 if you only need to run th
 ## 8. Relation to SIGNiX Push Implementation
 
 - This plan provides the **tunnel** and **codebase changes** so the app accepts requests from the ngrok URL. It does **not** implement the Django endpoint that receives SIGNiX webhooks or register the URL with SIGNiX.
-- When implementing push: add a view/URL for the callback (e.g. `/signix/push/`), validate requests per SIGNiX docs, update `SignatureTransaction` and related state, and register the full callback URL (`https://YOUR_NGROK_DOMAIN/signix/push/`) in SIGNiX’s push notification configuration.
+- When implementing push: add a view/URL for the callback (e.g. `/signix/push/`), validate requests per SIGNiX docs, update `SignatureTransaction` and related state, and register the full callback URL used by SubmitDocument. In this project’s verified integration, that emitted URL is `https://YOUR_NGROK_DOMAIN/signix/push` (no trailing slash), while Django still serves the listener at `/signix/push/`.
 - Development workflow: start Django, start ngrok with your domain, then test; use the ngrok Web Interface (`http://127.0.0.1:4040`) to inspect webhook payloads.
 
 ---
