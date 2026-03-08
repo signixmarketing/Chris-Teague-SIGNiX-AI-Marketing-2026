@@ -2,9 +2,9 @@
 
 This document outlines how to add the **Internal Data Schema** and **Deal Data Retrieval** interface to the Django lease application. The schema provides `get_schema()` and `get_paths()` for discovering and presenting mappable data paths. The deal data interface provides `get_deal_data(deal)` to retrieve the full deal-centric structure for a specific deal. UI includes a Schema viewer page and a Debug Data page (deal list with View JSON modal).
 
-**Design reference:** DESIGN-DATA-INTERFACE.md.
+**Design reference:** DESIGN-DATA-INTERFACE.md. **Knowledge:** KNOWLEDGE-DOCUMENT-CENTRIC-APPS.md (§4 — schema and deal data as single source for documents).
 
-**Prerequisites:** PLAN-MASTER plans 1–5 are implemented (Baseline, Vehicles, Contacts, Deals, Images). The schema depends on Deal, Vehicle, Contact, User, and LeaseOfficerProfile models.
+**Prerequisites:** PLAN-MASTER plans 1–3 are implemented (Baseline, Biz Domain Master, Images). The schema depends on Deal, Vehicle, Contact, User, and LeaseOfficerProfile models.
 
 **Review this plan before implementation.** Implementation order is in **Section 7**; **Section 7a** defines batches and verification.
 

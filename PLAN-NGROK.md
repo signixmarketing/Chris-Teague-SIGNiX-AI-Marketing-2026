@@ -34,7 +34,7 @@ Use the [ngrok pricing and limits](https://ngrok.com/docs/pricing-limits/free-pl
 
 ## 3. Prerequisites
 
-- **Django app** runnable (PLAN-MASTER plans 1–6 at minimum; PLAN-DOCS-MASTER 1–4 if you use document generation through the tunnel). The app does not need a push-notification endpoint yet; this plan only establishes the tunnel and the code changes so that when you add the endpoint, SIGNiX can reach it.
+- **Django app** runnable (PLAN-MASTER plans 1–4 at minimum; PLAN-DOCS-MASTER 1–4 if you use document generation through the tunnel). The app does not need a push-notification endpoint yet; this plan only establishes the tunnel and the code changes so that when you add the endpoint, SIGNiX can reach it.
 - **Your machine:** Linux (WSL2 or native), macOS, or Windows. Commands below are for Linux/WSL2; adjust for your OS.
 - **Network:** Outbound HTTPS to ngrok’s services so the ngrok agent can connect.
 - **ngrok:** May **not** be installed when you start; Batch 1 covers install. If it is already installed and authenticated, Section 4.0 tells you how to skip ahead.

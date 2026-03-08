@@ -4,7 +4,7 @@ This document outlines how to add **Dynamic Document Templates** to the Django l
 
 **Design reference:** DESIGN-DOCS.md — Dynamic Document Templates and Template-to-Data Mapping sections. DESIGN-DATA-INTERFACE.md — schema, `get_paths_grouped_for_mapping()`, `get_deal_data(deal)`, and no-circumvention requirement.
 
-**Prerequisites:** PLAN-ADD-STATIC-DOC-TEMPLATES.md must be implemented (apps.doctemplates exists). PLAN-MASTER plans 1–6 are implemented, including **PLAN-ADD-IMAGES** (Image model for image mapping) and **PLAN-DATA-INTERFACE** (apps.schema: `get_paths_grouped_for_mapping()`, `get_deal_data(deal)`). The mapping UI uses schema paths plus an Images optgroup; the context builder uses `get_deal_data(deal)` for deal data and resolves `image:<uuid>` via the Image model.
+**Prerequisites:** PLAN-ADD-STATIC-DOC-TEMPLATES.md must be implemented (apps.doctemplates exists). PLAN-MASTER plans 1–4 are implemented, including **PLAN-ADD-IMAGES** (Image model for image mapping) and **PLAN-DATA-INTERFACE** (apps.schema: `get_paths_grouped_for_mapping()`, `get_deal_data(deal)`). The mapping UI uses schema paths plus an Images optgroup; the context builder uses `get_deal_data(deal)` for deal data and resolves `image:<uuid>` via the Image model.
 
 **Review this plan before implementation.** Implementation order is in **Section 7**; **Section 7a** defines batches and verification.
 

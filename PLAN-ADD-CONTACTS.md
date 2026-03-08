@@ -4,6 +4,8 @@ This document outlines how to add **contacts** to the existing Django lease appl
 
 **Review this plan before implementation.** Implementation order is in **Section 6**; **Section 6a** defines two batches and how to test each one.
 
+**Part of the business-domain sequence.** See **PLAN-BIZ-DOMAIN-MASTER.md** for implementation order and how this plan relates to Vehicles and Deals. **Design:** **DESIGN-BIZ-DOMAIN.md** (entity model, relationships, UI conventions).
+
 ---
 
 ## 1. Goals and Scope

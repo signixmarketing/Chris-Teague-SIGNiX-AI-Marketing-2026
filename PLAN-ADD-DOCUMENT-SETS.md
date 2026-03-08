@@ -4,7 +4,7 @@ This document outlines how to add **Document Sets**, **Document Instances**, and
 
 **Design reference:** DESIGN-DOCS.md — Document Sets, Document Instances, Document Instance Versions, Creation Flow, Re-generation Flow, Status Flow, User Experience, and Decisions Log. DESIGN-DATA-INTERFACE.md — `get_deal_data(deal)` and no-circumvention requirement for the context builder.
 
-**Prerequisites:** PLAN-ADD-STATIC-DOC-TEMPLATES, PLAN-ADD-DYNAMIC-DOC-TEMPLATES, PLAN-ADD-DOC-SET-TEMPLATES, and PLAN-ADD-DEALS must be implemented. PLAN-MASTER plans 1–6 are implemented, including PLAN-DATA-INTERFACE (apps.schema provides `get_deal_data(deal)` for the context builder). Deal Type is in place; the deal detail page (View/Edit split) exists with Back, Edit, and Delete—list links to detail via View.
+**Prerequisites:** PLAN-ADD-STATIC-DOC-TEMPLATES, PLAN-ADD-DYNAMIC-DOC-TEMPLATES, PLAN-ADD-DOC-SET-TEMPLATES, and PLAN-ADD-DEALS must be implemented. PLAN-MASTER plans 1–4 are implemented, including PLAN-DATA-INTERFACE (apps.schema provides `get_deal_data(deal)` for the context builder). Deal Type is in place; the deal detail page (View/Edit split) exists with Back, Edit, and Delete—list links to detail via View.
 
 **Review this plan before implementation.** Implementation order is in **Section 8**; **Section 7a** defines batches and verification. **All four batches are implemented**; the plan is kept as the single source of truth for behavior and future changes.
 

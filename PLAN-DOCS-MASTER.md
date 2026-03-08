@@ -1,8 +1,10 @@
 # Plan Docs Master — Document Features Implementation Order
 
-This document defines the order in which to implement the document-related features from **DESIGN-DOCS.md**. These plans build on the existing app (PLAN-MASTER plans 1–6: Baseline, Vehicles, Contacts, Deals, Images, Data Interface). Implement the document plans in the sequence below.
+This document defines the order in which to implement the document-related features from **DESIGN-DOCS.md**. These plans build on the existing app (PLAN-MASTER plans 1–4: Baseline, Biz Domain Master, Images, Data Interface). Implement the document plans in the sequence below.
 
 **Usage:** Implement each plan below in order. Within each plan, follow its Implementation Order and Batches/Verification. Do not skip ahead—later plans depend on earlier ones.
+
+**Design:** DESIGN-DOCS.md. **Knowledge:** KNOWLEDGE-DOCUMENT-CENTRIC-APPS.md (document flow in §4–5).
 
 **Source of truth:** DESIGN-DOCS.md. Refer to it for concepts, data structures, and decisions.
 
@@ -26,7 +28,7 @@ This document defines the order in which to implement the document-related featu
 
 ## Prerequisites
 
-- Plans 1–6 from PLAN-MASTER.md are implemented and in place (Baseline, Vehicles, Contacts, Deals, Images, Data Interface). Deals includes Deal Type; the deal detail page has the View/Edit split (list links to detail, Edit and Delete on detail). Data Interface (apps.schema) provides get_schema(), get_paths(), get_deal_data(deal) used by Dynamic templates and the context builder.
+- Plans 1–4 from PLAN-MASTER.md are implemented and in place (Baseline, Biz Domain Master [Vehicles, Contacts, Deals], Images, Data Interface). Deals includes Deal Type; the deal detail page has the View/Edit split (list links to detail, Edit and Delete on detail). Data Interface (apps.schema) provides get_schema(), get_paths(), get_deal_data(deal) used by Dynamic templates and the context builder.
 - DESIGN-DOCS.md describes the full design; these plans focus on implementation steps.
 
 ---
@@ -92,8 +94,8 @@ Items to resolve when creating the corresponding plans:
 | Document Sets | HTML-to-PDF | pdfkit/wkhtmltopdf per DESIGN-DOCS; see PLAN-ADD-DOCUMENT-SETS Section 12 for image URL handling. |
 | SIGNiX | Integration design | **Resolved:** Implemented via PLAN-SIGNiX-SUBMIT-MASTER.md (see PLAN-MASTER.md). |
 
-**Implementation order:** Deal Type is already implemented as part of PLAN-ADD-DEALS (PLAN-MASTER plan 4); Document Set Templates depend on it. Summary table above reflects the document-feature order.
+**Implementation order:** Deal Type is already implemented as part of PLAN-ADD-DEALS (PLAN-MASTER plan 2, PLAN-BIZ-DOMAIN-MASTER); Document Set Templates depend on it. Summary table above reflects the document-feature order.
 
 ---
 
-*To implement document features: PLAN-MASTER plans 1–6 must be complete (they are the current platform; Deals includes Deal Type and the View/Edit split; Data Interface provides schema and deal data for Dynamic templates). Then implement PLAN-DOCS-MASTER plans 1–4 in order. For the SIGNiX submit flow, implement the plans in PLAN-SIGNiX-SUBMIT-MASTER.md per PLAN-MASTER.md.*
+*To implement document features: PLAN-MASTER plans 1–4 must be complete (they are the current platform; Deals includes Deal Type and the View/Edit split; Data Interface provides schema and deal data for Dynamic templates). Then implement PLAN-DOCS-MASTER plans 1–4 in order. For the SIGNiX submit flow, implement the plans in PLAN-SIGNiX-SUBMIT-MASTER.md per PLAN-MASTER.md.*

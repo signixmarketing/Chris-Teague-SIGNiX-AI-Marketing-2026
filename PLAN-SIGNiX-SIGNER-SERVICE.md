@@ -4,7 +4,7 @@ This document outlines how to add the **signer identification** and **slot→per
 
 **Design reference:** DESIGN-SIGNiX-SUBMIT.md — Section 5.3 (Signers derived from document set template), Section 5.1 (Signers MemberInfo example mapping), Section 6.1.1 (MemberInfo data sourcing). PLAN-SIGNiX-SUBMIT-MASTER.md — Plan 3 deliverables.
 
-**Prerequisites:** PLAN-MASTER plans 1–6 and PLAN-DOCS-MASTER plans 1–4 are implemented. The app has Deals, Contacts, Document Set Templates, DocumentSetTemplateItem (GenericForeignKey to Static/Dynamic templates), and both template types with `tagging_data` containing `member_info_number`. LeaseOfficerProfile (User profile) exists per PLAN-BASELINE. No dependency on SignixConfig or SignatureTransaction.
+**Prerequisites:** PLAN-MASTER plans 1–4 and PLAN-DOCS-MASTER plans 1–4 are implemented. The app has Deals, Contacts, Document Set Templates, DocumentSetTemplateItem (GenericForeignKey to Static/Dynamic templates), and both template types with `tagging_data` containing `member_info_number`. LeaseOfficerProfile (User profile) exists per PLAN-BASELINE. No dependency on SignixConfig or SignatureTransaction.
 
 **Review this plan before implementation.** Implementation order is in **Section 5**; **Section 5a** defines batches and verification.
 

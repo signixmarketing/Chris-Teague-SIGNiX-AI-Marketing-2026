@@ -4,7 +4,7 @@ This document outlines how to add the **SignatureTransaction** model and its rel
 
 **Design reference:** DESIGN-SIGNiX-SUBMIT.md — Section 4.1 (Signature transaction record), Section 4.2 (Document Instance Version status). PLAN-SIGNiX-SUBMIT-MASTER.md — Plan 2 deliverables.
 
-**Prerequisites:** PLAN-MASTER plans 1–6 and PLAN-DOCS-MASTER plans 1–4 are implemented. The app has Deals and Document Sets (`apps.deals`, `apps.documents`).
+**Prerequisites:** PLAN-MASTER plans 1–4 and PLAN-DOCS-MASTER plans 1–4 are implemented. The app has Deals and Document Sets (`apps.deals`, `apps.documents`).
 
 **Review this plan before implementation.** Implementation order is in **Section 5**; **Section 5a** defines batches and verification.
 

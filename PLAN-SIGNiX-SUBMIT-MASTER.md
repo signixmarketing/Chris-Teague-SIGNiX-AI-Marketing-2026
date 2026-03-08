@@ -10,7 +10,7 @@ This document defines the order in which to implement the **submit flow** from *
 
 ## Prerequisites
 
-- **PLAN-MASTER** plans 1–6 are implemented (Baseline, Vehicles, Contacts, Deals, Images, Data Interface). Deals includes Deal Type and the deal detail page (View/Edit split). Data Interface provides `get_deal_data(deal)`.
+- **PLAN-MASTER** plans 1–4 are implemented (Baseline, Biz Domain Master, Images, Data Interface). Deals includes Deal Type and the deal detail page (View/Edit split). Data Interface provides `get_deal_data(deal)`.
 - **PLAN-DOCS-MASTER** plans 1–4 are implemented: Static Document Templates, Dynamic Document Templates, Document Set Templates, **Document Sets** (Generate/Regenerate/Delete, Documents section on Deal detail, **Send for Signature stub**). The stub is replaced in Plan 7 below.
 
 ---
@@ -203,4 +203,4 @@ Plans 1 and 2 have no dependencies on each other and can be implemented in eithe
 
 ---
 
-*To implement the SIGNiX submit flow: ensure PLAN-MASTER 1–6 and PLAN-DOCS-MASTER 1–4 are complete, then implement plans 1–9 above in order, following each plan’s batches and verification.*
+*To implement the SIGNiX submit flow: ensure PLAN-MASTER 1–4 and PLAN-DOCS-MASTER 1–4 are complete, then implement plans 1–9 above in order, following each plan’s batches and verification.*

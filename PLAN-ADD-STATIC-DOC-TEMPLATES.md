@@ -4,7 +4,7 @@ This document outlines how to add **Static Document Templates** to the Django le
 
 **Design reference:** DESIGN-DOCS.md — Static Document Templates section.
 
-**Prerequisites:** PLAN-MASTER plans 1–6 are implemented (Baseline, Vehicles, Contacts, Deals, Images, Data Interface). MEDIA_ROOT/MEDIA_URL are configured from Images. Same UI patterns (list, add, edit, delete with confirmation) are in use.
+**Prerequisites:** PLAN-MASTER plans 1–4 are implemented (Baseline, Biz Domain Master, Images, Data Interface). MEDIA_ROOT/MEDIA_URL are configured from Images. Same UI patterns (list, add, edit, delete with confirmation) are in use.
 
 **Review this plan before implementation.** Implementation order is in **Section 7**; **Section 7a** defines batches and verification.
 

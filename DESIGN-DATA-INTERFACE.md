@@ -25,7 +25,7 @@ This design assumes the platform has:
 - **Contacts** — Contact model with first_name, middle_name, last_name, email, phone_number.
 - **Users** — Django User with optional LeaseOfficerProfile (first_name, last_name, phone_number, email, full_name).
 
-Plans 1–5 (PLAN-BASELINE through PLAN-ADD-IMAGES) are implemented.
+Plans 1–3 from PLAN-MASTER (Baseline, Biz Domain Master, Images) are implemented. This design is implemented by PLAN-DATA-INTERFACE (PLAN-MASTER plan 4). The core domain (Deals, Vehicles, Contacts) is designed in **DESIGN-BIZ-DOMAIN.md**.
 
 ---
 

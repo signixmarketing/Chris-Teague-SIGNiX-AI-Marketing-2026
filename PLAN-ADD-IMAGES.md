@@ -4,6 +4,8 @@ This document outlines how to add an **Images** feature to the Django lease appl
 
 **Review this plan before implementation.** Implementation order is in **Section 6**; **Section 6a** defines two batches and how to test each one.
 
+**Design:** **DESIGN-IMAGES.md** (image model, stable URLs, how document features consume images, extension point for DMS). **Knowledge:** **KNOWLEDGE-FILE-ASSETS-MEDIA.md** (file upload and storage without a DMS, stable URLs, when to use a DMS).
+
 ---
 
 ## 1. Goals and Scope

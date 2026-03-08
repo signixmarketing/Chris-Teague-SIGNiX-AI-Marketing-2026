@@ -4,7 +4,7 @@ This document outlines how to add **SignixConfig** (SIGNiX credentials and submi
 
 **Design reference:** DESIGN-SIGNiX-SUBMIT.md — Section 4.4 (SIGNiX configuration), Section 6.2 (Configuration), Section 7.6 (Administrative — SIGNiX configuration). KNOWLEDGE-SIGNiX.md — Flex API credentials and endpoints.
 
-**Prerequisites:** PLAN-MASTER plans 1–6 and PLAN-DOCS-MASTER plans 1–4 are implemented. The app has Deals, Document Sets, and the Send for Signature stub.
+**Prerequisites:** PLAN-MASTER plans 1–4 and PLAN-DOCS-MASTER plans 1–4 are implemented. The app has Deals, Document Sets, and the Send for Signature stub.
 
 **Review this plan before implementation.** Implementation order is in **Section 6**; **Section 6a** defines batches and verification.
 

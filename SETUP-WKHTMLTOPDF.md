@@ -1,44 +1,32 @@
 # Setup: wkhtmltopdf for Dynamic Document Generation
 
-This document is the place for **knowledge about wkhtmltopdf** and a **step-by-step setup plan** so that the Django app can convert rendered HTML (from Dynamic Document Templates) to PDF. When you are ready to set up wkhtmltopdf, **check first if it is already installed** (Section 4.0); if so, you can skip or only run verification. Then follow the batches in order and use the verification steps as a checklist.
+This document is a **step-by-step setup guide** so that the Django app can convert rendered HTML (from Dynamic Document Templates) to PDF. When you are ready to set up wkhtmltopdf, **check first if it is already installed** (Section 3.0); if so, you can skip or only run verification. Then follow the batches in order and use the verification steps as a checklist.
+
+**Knowledge:** For background on HTML-to-PDF in document generation, wkhtmltopdf and pdfkit, constraints (e.g. absolute image URLs, no `--base-url`), and alternatives, see **KNOWLEDGE-HTML-TO-PDF.md**.
 
 **App context:** PLAN-ADD-DOCUMENT-SETS and DESIGN-DOCS specify **pdfkit** (Python) with **wkhtmltopdf** (system binary) for HTML-to-PDF. The app uses this for generating documents from Dynamic templates; see `apps.documents.services.render_dynamic_template_to_pdf` and the Django system check `documents.W001` (wkhtmltopdf availability).
 
-**Usage:** Treat this as a setup guide, not a code plan. Batches are ordered so each step can be verified before moving on. “Tests” are verification steps (CLI, `manage.py check`, optional test conversion) to confirm the tool is available and working. **Do not duplicate steps** that are already part of another plan (e.g. pdfkit is installed when you run `pip install -r requirements.txt` in PLAN-ADD-DOCUMENT-SETS)—see Section 4.0 and the note before Batch 2.
+**Usage:** Treat this as a setup guide, not a code plan. Batches are ordered so each step can be verified before moving on. “Tests” are verification steps (CLI, `manage.py check`, optional test conversion) to confirm the tool is available and working. **Do not duplicate steps** that are already part of another plan (e.g. pdfkit is installed when you run `pip install -r requirements.txt` in PLAN-ADD-DOCUMENT-SETS)—see Section 3.0 and the note before Batch 2.
 
 ---
 
-## 1. What is wkhtmltopdf?
+## 1. Summary: What is wkhtmltopdf and how the app uses it
 
-- **wkhtmltopdf** is a command-line tool that uses WebKit to render HTML and output PDF. It must be installed on the **system** (not via pip); the Python package **pdfkit** is a thin wrapper that invokes the `wkhtmltopdf` binary.
-- This app uses it in the **Document Sets** flow: Dynamic templates are rendered to HTML with Django template logic and deal data; that HTML is then converted to PDF and stored in a `DocumentInstanceVersion`. Without wkhtmltopdf on PATH, dynamic document generation fails; the app raises `DocumentGenerationError` and the Django system check warns.
-- **No account or paid tier** — wkhtmltopdf is open source. Install via your system package manager or the official binaries from [wkhtmltopdf.org](https://wkhtmltopdf.org/).
-
----
-
-## 2. How the App Uses It
-
-| Component | Role |
-|-----------|------|
-| **wkhtmltopdf** | System binary; must be on PATH. The app calls it via pdfkit. |
-| **pdfkit** | Python package (in `requirements.txt`). Use `pip install -r requirements.txt` so pdfkit is installed. |
-| **apps.documents.services** | `check_wkhtmltopdf_available()`, `_require_wkhtmltopdf()`, `render_dynamic_template_to_pdf()`. Before PDF conversion, the app checks that wkhtmltopdf is available and raises a clear error with install hints if not. |
-| **apps.documents.checks** | Django system check `documents.W001`: warns when wkhtmltopdf is missing so `manage.py check` reports it. |
-
-**Version note:** Many system builds (e.g. **0.12.6**) do **not** support the `--base-url` option. The app deliberately does not pass `--base-url` to avoid "Unknown long argument --base-url". Image URLs in the rendered HTML are built as **absolute** URLs (e.g. via `request.build_absolute_uri()` or `SITE_URL`) so wkhtmltopdf can load them without a base URL.
+- **wkhtmltopdf** is a command-line tool (WebKit-based) that renders HTML and outputs PDF; it must be installed on the **system**. **pdfkit** is the Python wrapper that invokes it. This app uses them in the Document Sets flow: Dynamic templates → HTML → PDF → stored in DocumentInstanceVersion. Without wkhtmltopdf on PATH, dynamic document generation fails; the app raises `DocumentGenerationError` and the Django check `documents.W001` warns.
+- **Image URLs** in the HTML must be **absolute**; many wkhtmltopdf builds do not support `--base-url`. The app builds absolute URLs (e.g. `request.build_absolute_uri(image.file.url)` or SITE_URL). See **KNOWLEDGE-HTML-TO-PDF.md** for full detail.
 
 ---
 
-## 3. Prerequisites
+## 2. Prerequisites
 
 - **Python environment** for the project (venv or similar) with the project’s `requirements.txt` installed (so pdfkit is present).
 - **Platform:** Linux (including WSL2), macOS, or Windows. Install commands differ by OS; Batches 1–2 cover common cases.
 
 ---
 
-## 4. Implementation Order and Batches
+## 3. Implementation Order and Batches
 
-### 4.0 Check if wkhtmltopdf is already installed (skip setup if so)
+### 3.0 Check if wkhtmltopdf is already installed (skip setup if so)
 
 Before installing anything, confirm whether the system and environment are already ready:
 
@@ -52,7 +40,7 @@ Before installing anything, confirm whether the system and environment are alrea
    python manage.py check
    ```
    If there is **no** `documents.W001` (or similar) warning about wkhtmltopdf missing, the app considers wkhtmltopdf available. If you also have pdfkit installed (e.g. you've already run `pip install -r requirements.txt` as part of PLAN-ADD-DOCUMENT-SETS or general project setup), you can **skip Batch 2** as well.
-3. **Optional:** Run the Batch 3 shell snippet (Section 4, Batch 3) to confirm end-to-end conversion. If it succeeds, setup is complete and you need not run any batches.
+3. **Optional:** Run the Batch 3 shell snippet (Section 3, Batch 3) to confirm end-to-end conversion. If it succeeds, setup is complete and you need not run any batches.
 
 **If both the version command and `manage.py check` succeed:** You are done; no need to run Batches 1–2. Only run the batches for steps that are not yet in place (e.g. binary missing → Batch 1; pdfkit or check still failing → Batch 2).
 
@@ -149,11 +137,11 @@ Follow the batches below in sequence. After each batch, run the verification ste
 
 ---
 
-## 5. Summary Table
+## 4. Summary Table
 
 | Step | Goal | When to skip |
 |------|------|--------------|
-| 4.0 | Check if already installed | — (always run first) |
+| 3.0 | Check if already installed | — (always run first) |
 | Batch 1 | Install wkhtmltopdf on system | Skip if `wkhtmltopdf --version` already succeeds |
 | Batch 2 | Install pdfkit and verify app sees binary | Skip pip install if requirements already installed (e.g. via PLAN-ADD-DOCUMENT-SETS); run verification only |
 | Batch 3 | Optional end-to-end test | Optional |
@@ -166,7 +154,7 @@ Follow the batches below in sequence. After each batch, run the verification ste
 
 ---
 
-## 6. Implementation Notes (for reference)
+## 5. Implementation Notes (for reference)
 
 - **Do not pass `--base-url`:** Many wkhtmltopdf builds (e.g. 0.12.6) do not support it and exit with "Unknown long argument --base-url". The app omits it; image URLs in the HTML are absolute.
 - **Image URLs:** When generating with a request, the context builder uses `request.build_absolute_uri(image.file.url)` so wkhtmltopdf can load images. When there is no request (e.g. management command), the app uses `settings.SITE_URL` + relative path; if `SITE_URL` is unset, image loading may fail — document that in the plan or config.
@@ -174,8 +162,9 @@ Follow the batches below in sequence. After each batch, run the verification ste
 
 ---
 
-## 7. References
+## 6. References
 
+- **KNOWLEDGE-HTML-TO-PDF.md** — HTML-to-PDF in document generation; wkhtmltopdf and pdfkit; constraints and alternatives.
 - [wkhtmltopdf](https://wkhtmltopdf.org/) — project and downloads
 - [pdfkit (Python)](https://pypi.org/project/pdfkit/) — PyPI package
 - PLAN-ADD-DOCUMENT-SETS.md — Section 6 (implementation), Section 8 (pdfkit/wkhtmltopdf), Section 12 (image URL handling)
@@ -186,4 +175,4 @@ Follow the batches below in sequence. After each batch, run the verification ste
 
 ---
 
-*When you are ready to set up wkhtmltopdf, run the check in Section 4.0 first; if already installed, skip to verification or Batch 3. Otherwise follow Batches 1 and 2 in order (skipping any step already covered by another plan); add Batch 3 if you want an explicit conversion test.*
+*When you are ready to set up wkhtmltopdf, run the check in Section 3.0 first; if already installed, skip to verification or Batch 3. Otherwise follow Batches 1 and 2 in order (skipping any step already covered by another plan); add Batch 3 if you want an explicit conversion test.*

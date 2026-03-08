@@ -20,9 +20,11 @@ This design assumes the platform already has:
 - **Contacts** — Contact model; full CRUD.
 - **Images** — Image model with name, file, stable URL; full CRUD.
 
-Plans 1–6 (PLAN-BASELINE through PLAN-ADD-DATA-INTERFACE) are implemented. This design extends the deal detail page with the Documents section and related features.
+Plans 1–4 from PLAN-MASTER (Baseline, Biz Domain Master, Images, Data Interface) are implemented. This design extends the deal detail page with the Documents section and related features.
 
-**Related design:** The Internal Data Schema and Deal Data Retrieval interface are documented in **DESIGN-DATA-INTERFACE.md**. Dynamic document templates use the schema for mapping and `get_deal_data(deal)` for population. The Debug Data page (deal list with View JSON) is also defined there.
+**Related design:** The Internal Data Schema and Deal Data Retrieval interface are documented in **DESIGN-DATA-INTERFACE.md**. Dynamic document templates use the schema for mapping and `get_deal_data(deal)` for population. The Debug Data page (deal list with View JSON) is also defined there. The core business domain (Deals, Vehicles, Contacts, Deal Type) is designed in **DESIGN-BIZ-DOMAIN.md** and described in **KNOWLEDGE-LEASE-JETPACKS.md**.
+
+**Document generation enablers:** Three capabilities underpin document features (templates, mapping, generation, HTML-to-PDF). Implement them per PLAN-MASTER before starting PLAN-DOCS-MASTER: (1) **Data interface** — schema and `get_deal_data(deal)` (DESIGN-DATA-INTERFACE.md, PLAN-DATA-INTERFACE). (2) **Images** — upload, storage, stable URLs for assets referenced in templates (DESIGN-IMAGES.md, PLAN-ADD-IMAGES; KNOWLEDGE-FILE-ASSETS-MEDIA.md). (3) **HTML-to-PDF** — wkhtmltopdf + pdfkit for converting rendered HTML to PDF (SETUP-WKHTMLTOPDF.md, KNOWLEDGE-HTML-TO-PDF.md).
 
 ---
 
@@ -401,7 +403,7 @@ A **Document Set** is attached to a Deal and contains the documents produced for
 
 **UI pattern:** Use the same pattern as Deals, Vehicles, and Contacts—list, add, edit, delete views with sidebar links.
 
-**Setup order:** Per PLAN-MASTER, plans 1–6 (Baseline, Vehicles, Contacts, Deals, Images, Data Interface) are implemented before document features. The **data interface** (apps.schema: `get_schema()`, `get_paths()`, `get_deal_data(deal)`) per DESIGN-DATA-INTERFACE.md and PLAN-DATA-INTERFACE is in place. For document features:
+**Setup order:** Per PLAN-MASTER, plans 1–4 (Baseline, Biz Domain Master, Images, Data Interface) are implemented before document features. The **data interface** (apps.schema: `get_schema()`, `get_paths()`, `get_deal_data(deal)`) per DESIGN-DATA-INTERFACE.md and PLAN-DATA-INTERFACE is in place. For document features:
 
 1. Create **Static Document Templates** — Upload PDF, add field metadata (ref_id, description, tagging_data).
 2. Create **Dynamic Document Templates** — Upload HTML, configure mapping (uses `get_paths_grouped_for_mapping()` from apps.schema for the Source dropdown) and text tagging; context builder uses `get_deal_data(deal)` from apps.schema.
@@ -574,7 +576,7 @@ Document Templates (Static and Dynamic) and Document Set Templates use the same 
 
 ### Configuration setup order
 
-Per PLAN-MASTER: plans 1–6 (including Data Interface) are implemented first; then document plans in PLAN-DOCS-MASTER order. The data interface (apps.schema: `get_schema()`, `get_paths()`, `get_deal_data(deal)`) per DESIGN-DATA-INTERFACE.md is implemented in PLAN-DATA-INTERFACE before Dynamic Document Templates. Admin creates Static and Dynamic Document Templates, then Document Set Templates that reference them. Deal Type is already implemented as part of Deals (PLAN-ADD-DEALS); no separate setup step.
+Per PLAN-MASTER: plans 1–4 (including Data Interface) are implemented first; then document plans in PLAN-DOCS-MASTER order. The data interface (apps.schema: `get_schema()`, `get_paths()`, `get_deal_data(deal)`) per DESIGN-DATA-INTERFACE.md is implemented in PLAN-DATA-INTERFACE before Dynamic Document Templates. Admin creates Static and Dynamic Document Templates, then Document Set Templates that reference them. Deal Type is already implemented as part of Deals (PLAN-ADD-DEALS); no separate setup step.
 
 ### Document Set Template: all templates required
 
