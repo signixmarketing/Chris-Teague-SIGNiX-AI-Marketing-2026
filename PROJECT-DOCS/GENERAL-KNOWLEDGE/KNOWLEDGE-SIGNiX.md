@@ -8,8 +8,8 @@ This document summarizes SIGNiX and the SIGNiX Flex API (Flex API) for use when 
 **Key terms and API calls**
 
 > **This application’s submit design**  
-> For the lease app’s submit flow (SubmitDocument, signer identification, configuration, data sourcing), see **../07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md**. That design defines where every SubmitDocument field comes from and how the first signer’s link is used (separate window).  
-> For push notifications, dashboard status updates, and downloading signed documents when transactions complete, see **../09-SIGNiX-DASHBOARD-SYNC/DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md**.
+> For the lease app’s submit flow (SubmitDocument, signer identification, configuration, data sourcing), see [07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md](../07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md). That design defines where every SubmitDocument field comes from and how the first signer’s link is used (separate window).  
+> For push notifications, dashboard status updates, and downloading signed documents when transactions complete, see [09-SIGNiX-DASHBOARD-SYNC/DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md](../09-SIGNiX-DASHBOARD-SYNC/DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md).
 
 - **Transaction** — In the Flex API, a *transaction* is the set of documents and parties sent in one SubmitDocument call. SIGNiX returns a **DocumentSetID**; the client may also send a **TransactionID** (client-chosen) to identify the set.
 - **SubmitDocument** — Creates and starts a transaction; sends documents, signers, authentication, and field assignments to SIGNiX.
@@ -427,8 +427,8 @@ The following SIGNiX resources contain relevant and useful information for integ
 
 | Resource | Description |
 |----------|-------------|
-| **../07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md** (this repo) | This application’s submit flow design: SubmitDocument data sourcing, SignixConfig, signer identification, first signer in separate window. |
-| **../09-SIGNiX-DASHBOARD-SYNC/DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md** (this repo) | Push listener, status updates from push, per-signer progress, SubmitDocument with push URL, DownloadDocument and ConfirmDownload when transaction completes. |
+| [07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md](../07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md) (this repo) | This application’s submit flow design: SubmitDocument data sourcing, SignixConfig, signer identification, first signer in separate window. |
+| [09-SIGNiX-DASHBOARD-SYNC/DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md](../09-SIGNiX-DASHBOARD-SYNC/DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md) (this repo) | Push listener, status updates from push, per-signer progress, SubmitDocument with push URL, DownloadDocument and ConfirmDownload when transaction completes. |
 | [Getting Started (Dev Community)](https://www.signix.com/development-community-getting-started) | Integrating with SIGNiX: common terms, integration timeline, how SIGNiX works with your business, what you need (XML, web services, Base64, tagging), push notifications, go-live requirements, and best practices. |
 | [Push Notifications](https://www.signix.com/pndocumentation) | **Push notifications:** subscribing (account-level Base URL via SIGNiX rep), or **per-transaction endpoint** via client preferences UseClientNotifyVersion2 + TransactionClientNotifyURL (see this knowledge doc). Request/response format, actions, failure and retries, server setup, TLS, implementation process. |
 | [Flex API — Client Preference Overrides](https://www.signix.com/apidocumentation) | **Client preferences (CPs):** per-transaction overrides via ClientPreference element. Includes **UseClientNotifyVersion2** and **TransactionClientNotifyURL** for per-transaction push URL. See Additional Information → Client Preference Overrides for the full list (AllowSignatureGraphic, DateSignedFormat, etc.) and allowed values. |

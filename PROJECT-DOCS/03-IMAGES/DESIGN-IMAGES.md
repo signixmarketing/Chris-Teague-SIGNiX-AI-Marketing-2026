@@ -1,10 +1,10 @@
 # Design: Images (File Assets for Document Generation)
 
-This document captures the design for **image** (file asset) upload, storage, and exposure in the lease application. Images are used in document templates (e.g. logos, diagrams); they are stored by the application under a media root and referenced by a **stable URL** or **stable identifier** (e.g. UUID) so that template references survive file replacement. Implementation follows **10-PLAN-ADD-IMAGES.md**.
+This document captures the design for **image** (file asset) upload, storage, and exposure in the lease application. Images are used in document templates (e.g. logos, diagrams); they are stored by the application under a media root and referenced by a **stable URL** or **stable identifier** (e.g. UUID) so that template references survive file replacement. Implementation follows [10-PLAN-ADD-IMAGES.md](10-PLAN-ADD-IMAGES.md).
 
-**Related designs:** **../06-DOCS/DESIGN-DOCS.md** defines how dynamic document templates consume images (image variables, mapping optgroup, `image:<uuid>`, context builder resolution). **../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md** defines deal data; images are a **separate** source for the mapping UI (Images optgroup), not part of the deal-centric schema.
+**Related designs:** [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) defines how dynamic document templates consume images (image variables, mapping optgroup, `image:<uuid>`, context builder resolution). [04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md](../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md) defines deal data; images are a **separate** source for the mapping UI (Images optgroup), not part of the deal-centric schema.
 
-**Knowledge:** **../GENERAL-KNOWLEDGE/KNOWLEDGE-FILE-ASSETS-MEDIA.md** describes the general pattern of file upload and storage without a document management subsystem, stable URLs, and when to use a DMS. This design implements that pattern for images.
+**Knowledge:** [GENERAL-KNOWLEDGE/KNOWLEDGE-FILE-ASSETS-MEDIA.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-FILE-ASSETS-MEDIA.md) describes the general pattern of file upload and storage without a document management subsystem, stable URLs, and when to use a DMS. This design implements that pattern for images.
 
 ---
 
@@ -20,7 +20,7 @@ This design does **not** cover document templates, document sets, or signing; th
 
 ## Current Platform (Assumed)
 
-This design assumes **../01-BASELINE/10-PLAN-BASELINE.md** and **../02-BIZ-DOMAIN/PHASE-PLANS-BIZ-DOMAIN.md** (Vehicles, Contacts, Deals) are implemented:
+This design assumes [01-BASELINE/10-PLAN-BASELINE.md](../01-BASELINE/10-PLAN-BASELINE.md) and [02-BIZ-DOMAIN/PHASE-PLANS-BIZ-DOMAIN.md](../02-BIZ-DOMAIN/PHASE-PLANS-BIZ-DOMAIN.md) (Vehicles, Contacts, Deals) are implemented:
 
 - Django project, users app, auth, base templates.
 - Business domain (apps.vehicles, apps.contacts, apps.deals) with standard CRUD and sidebar.
@@ -38,7 +38,7 @@ The Images plan adds **apps.images** and configures MEDIA_ROOT/MEDIA_URL. It doe
 - **Conventions:** Docstrings, `__str__` (return name), verbose_name in Meta. Pillow required for ImageField.
 - **MEDIA_ROOT / MEDIA_URL:** Configured in settings (e.g. MEDIA_ROOT = BASE_DIR / "media", MEDIA_URL = "/media/"). In development, serve media via `static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)` in the main urls.py so the relative URL (e.g. `/media/images/...`) is reachable.
 
-Full field specs and upload_to behavior are in 10-PLAN-ADD-IMAGES.md.
+Full field specs and upload_to behavior are in [10-PLAN-ADD-IMAGES.md](10-PLAN-ADD-IMAGES.md).
 
 ---
 
@@ -84,8 +84,8 @@ See KNOWLEDGE-FILE-ASSETS-MEDIA for when to use a DMS and how this pattern fits.
 
 ## 6. Implementation Order and References
 
-- **Implementation:** **10-PLAN-ADD-IMAGES.md** — Batch 1 (app, media config, model, migrations), Batch 2 (forms, views, URLs, templates, sidebar, optional admin). Section 6 and Section 6a for order and verification.
-- **70-PLAN-MASTER.md:** Images is plan 3 in the main sequence (after Biz Domain Master, before Data Interface). Document features (PHASE-PLANS-DOCS) assume Images and Data Interface are in place.
+- **Implementation:** [10-PLAN-ADD-IMAGES.md](10-PLAN-ADD-IMAGES.md) — Batch 1 (app, media config, model, migrations), Batch 2 (forms, views, URLs, templates, sidebar, optional admin). Section 6 and Section 6a for order and verification.
+- **[70-PLAN-MASTER.md](../70-PLAN-MASTER.md):** Images is plan 3 in the main sequence (after Biz Domain Master, before Data Interface). Document features (PHASE-PLANS-DOCS) assume Images and Data Interface are in place.
 
 ---
 
@@ -109,4 +109,4 @@ When building the template context for document generation, image URLs are suppl
 
 ---
 
-*End of design. Implementation follows 10-PLAN-ADD-IMAGES.md. See ../06-DOCS/DESIGN-DOCS.md for image variables and mapping; ../GENERAL-KNOWLEDGE/KNOWLEDGE-FILE-ASSETS-MEDIA.md for the file-asset pattern.*
+*End of design. Implementation follows [10-PLAN-ADD-IMAGES.md](10-PLAN-ADD-IMAGES.md). See [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) for image variables and mapping; [GENERAL-KNOWLEDGE/KNOWLEDGE-FILE-ASSETS-MEDIA.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-FILE-ASSETS-MEDIA.md) for the file-asset pattern.*

@@ -1,12 +1,12 @@
 # Phase Plans: SIGNiX Dashboard and Sync — Implementation Order
 
-This document defines the order in which to implement the **dashboard, event sync, download, and transaction artifact viewing** features from **DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md**: model changes for push and per-signer progress (including fields for storing the audit trail and certificate of completion), the push notification listener, including the push URL in SubmitDocument (and setting signer_count at create), the Signers column on the dashboard and Deal View, **proactively** downloading signed documents plus the audit trail and certificate when transactions complete and storing them on the transaction, and a **signature transaction detail page** (with row action from the tables) so users can view signed documents, the audit trail, and the certificate of completion. Each plan builds on the previous so that status updates and per-signer progress work before the download flow, and the download flow stores all artifacts before the detail page serves them.
+This document defines the order in which to implement the **dashboard, event sync, download, and transaction artifact viewing** features from [DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md](DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md): model changes for push and per-signer progress (including fields for storing the audit trail and certificate of completion), the push notification listener, including the push URL in SubmitDocument (and setting signer_count at create), the Signers column on the dashboard and Deal View, **proactively** downloading signed documents plus the audit trail and certificate when transactions complete and storing them on the transaction, and a **signature transaction detail page** (with row action from the tables) so users can view signed documents, the audit trail, and the certificate of completion. Each plan builds on the previous so that status updates and per-signer progress work before the download flow, and the download flow stores all artifacts before the detail page serves them.
 
 **Status:** Complete. Plans 1–6 in this phase plans document have been implemented, tested, and documented.
 
 **Usage:** Implement each plan below in sequence. Within each plan, follow its Implementation Order and Batches/Verification. Do not skip ahead—later plans depend on earlier ones. **Testing note:** unit tests and mocked integration tests can run without ngrok, but any manual or end-to-end verification that depends on **real SIGNiX push notifications** requires the Django app and **ngrok to be running in parallel** so the submitted callback URL is reachable from SIGNiX.
 
-**Source of truth:** DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md. Refer to it for status values, action→status mapping, idempotency rules, push handler behavior, SubmitDocument client preferences, download mapping (including audit trail and certificate storage), data model (Section 7.4, 7.5), and signature transaction detail page (Section 8). ../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md for push format, DownloadDocument/ConfirmDownload, and Flex API details.
+**Source of truth:** [DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md](DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md). Refer to it for status values, action→status mapping, idempotency rules, push handler behavior, SubmitDocument client preferences, download mapping (including audit trail and certificate storage), data model (Section 7.4, 7.5), and signature transaction detail page (Section 8). [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md) for push format, DownloadDocument/ConfirmDownload, and Flex API details.
 
 **Flow from design:** The plans below are derived from the design: Plan 1 adds the data model (Section 7) and event model (7.5); Plan 2 implements the listener (Section 4) and creates events per push; Plan 3 adds the push URL and submitted event (Section 5, 11); Plan 4 adds dashboard columns (Section 3); Plan 5 implements download and storage (Section 6, 7.4); Plan 6 implements the detail page (Section 8). Each plan’s implementation order uses **batches** that build on one another—complete each batch and run its verification before starting the next. Not all plan documents may be written in full yet; where a plan is summarized here, implement per the master deliverables and the design sections cited until the dedicated plan file is available.
 
@@ -15,12 +15,12 @@ This document defines the order in which to implement the **dashboard, event syn
 ## Prerequisites
 
 - **PHASE-PLANS-SIGNiX-SUBMIT** plans 1–9 are implemented: SignixConfig, SignatureTransaction model, signer service, Signers table, build body, send and persist, Send for Signature button, signature transactions dashboard (list view), and related transactions on Deal View. The dashboard and Deal View tables exist but do not yet show live status from push or the Signers column.
-- **../08-NGROK/10-PLAN-NGROK.md** has been applied so the app is reachable at an HTTPS URL (e.g. ngrok tunnel). The push listener will be called by SIGNiX at that URL.
+- [08-NGROK/10-PLAN-NGROK.md](../08-NGROK/10-PLAN-NGROK.md) has been applied so the app is reachable at an HTTPS URL (e.g. ngrok tunnel). The push listener will be called by SIGNiX at that URL.
 - **Implementation testing requirement:** when running any verification that expects **real** SIGNiX callbacks, keep **Django and ngrok running in parallel**. Without the active tunnel, the application will not receive the push notifications. If the callback URL is derived from the incoming request host, Django must also trust the forwarded HTTPS scheme from ngrok so SubmitDocument emits `https://...`, not `http://...`. Pure unit tests and mocked tests do not require ngrok.
 
 ---
 
-## 1. 10-PLAN-SIGNiX-SYNC-MODEL.md
+## 1. [10-PLAN-SIGNiX-SYNC-MODEL.md](10-PLAN-SIGNiX-SYNC-MODEL.md)
 
 **Purpose:** Add the model fields and status value required for push-driven status and per-signer progress. No listener or UI yet; this plan only adds the schema and migrations.
 
@@ -36,7 +36,7 @@ This document defines the order in which to implement the **dashboard, event syn
 
 ---
 
-## 2. 20-PLAN-SIGNiX-PUSH-LISTENER.md
+## 2. [20-PLAN-SIGNiX-PUSH-LISTENER.md](20-PLAN-SIGNiX-PUSH-LISTENER.md)
 
 **Purpose:** Implement the push notification endpoint that SIGNiX calls when events occur (Send, partyComplete, complete, suspend, cancel, expire). **The system listens to these push notifications and updates the number of signers who have completed whenever SIGNiX notifies it** (on partyComplete or complete), so the dashboard Signers column stays in sync. Update transaction status and per-signer progress; return 200 OK quickly; for action=complete, trigger the download flow asynchronously (implemented in Plan 5; this plan wires the trigger or a no-op stub).
 
@@ -56,7 +56,7 @@ This document defines the order in which to implement the **dashboard, event syn
 
 ---
 
-## 3. 30-PLAN-SIGNiX-SUBMIT-PUSH-URL.md
+## 3. [30-PLAN-SIGNiX-SUBMIT-PUSH-URL.md](30-PLAN-SIGNiX-SUBMIT-PUSH-URL.md)
 
 **Purpose:** Include the push notification URL in every SubmitDocument request (so SIGNiX can send webhooks to this app) and set signer_count when creating a SignatureTransaction. Requires the listener (Plan 2) to be in place so SIGNiX can reach the endpoint once we send the URL.
 
@@ -72,7 +72,7 @@ This document defines the order in which to implement the **dashboard, event syn
 
 ---
 
-## 4. 40-PLAN-SIGNiX-DASHBOARD-SIGNERS.md
+## 4. [40-PLAN-SIGNiX-DASHBOARD-SIGNERS.md](40-PLAN-SIGNiX-DASHBOARD-SIGNERS.md)
 
 **Purpose:** Add the **Signers** column (e.g. "0/2", "1/2", "2/2") and the **Status updated** column (when the current status was last updated, from status_last_updated) to the signature transactions list view and to the Deal View related-transactions table. Status column already exists; it will now be updated by the push listener (Plan 2). This plan adds the Signers and Status updated columns and ensures null-safe display. **Plan 1’s data migration** sets status_last_updated = submitted_at for existing transactions, so migrated rows show a consistent Status updated value; the display helper shows "—" only when status_last_updated is null (edge case).
 
@@ -87,7 +87,7 @@ This document defines the order in which to implement the **dashboard, event syn
 
 ---
 
-## 5. 50-PLAN-SIGNiX-DOWNLOAD-ON-COMPLETE.md
+## 5. [50-PLAN-SIGNiX-DOWNLOAD-ON-COMPLETE.md](50-PLAN-SIGNiX-DOWNLOAD-ON-COMPLETE.md)
 
 **Purpose:** When a push with action=complete is received, after returning 200 OK, run the download flow asynchronously: call DownloadDocument (requesting the audit trail and optional certificate of completion), map returned signed documents to the transaction's document_set instances, create new DocumentInstanceVersions (status=Final, file=signed PDF), **store the audit trail and certificate of completion PDFs on the SignatureTransaction** (DESIGN Section 6.5a, 7.4), then call ConfirmDownload. Storage is **proactive**—done in this flow so the signature transaction detail page (Plan 6) only serves already-stored files; the system does not retrieve them when the user visits that page. Idempotent: skip only if this transaction’s signed versions were already created, not merely because the reused document instances have some older `Final` versions.
 
@@ -103,7 +103,7 @@ This document defines the order in which to implement the **dashboard, event syn
 
 ---
 
-## 6. 60-PLAN-SIGNiX-TRANSACTION-DETAIL.md
+## 6. [60-PLAN-SIGNiX-TRANSACTION-DETAIL.md](60-PLAN-SIGNiX-TRANSACTION-DETAIL.md)
 
 **Purpose:** Provide a **signature transaction detail page** that is a **living representation** of the transaction (DESIGN Section 8). Users see what was sent to SIGNiX, status and when it was last updated, signers (with who signed and when), documents as sent vs signed, a chronological event timeline, and links to the audit trail and certificate of completion. The audit trail and certificate are **already stored** on the transaction by Plan 5; this plan only adds the page and file-serving views—no on-demand fetch from SIGNiX.
 
@@ -122,12 +122,12 @@ This document defines the order in which to implement the **dashboard, event syn
 
 | Order | Plan | Key deliverables |
 |-------|------|------------------|
-| 1 | 10-PLAN-SIGNiX-SYNC-MODEL.md | SignatureTransaction: signer_count, signers_completed_refids, signers_completed_count, **status_last_updated**; Expired status; **audit_trail_file**, **certificate_of_completion_file** (FileField, blank). **SignatureTransactionEvent** model (Section 7.5). SignixConfig: push_base_url. Migrations. |
-| 2 | 20-PLAN-SIGNiX-PUSH-LISTENER.md | GET /signix/push/; **get_signature_transaction_for_push**, **apply_push_action** (DESIGN 4.4); set status_last_updated on every update; **create SignatureTransactionEvent per push** (event_type from action, occurred_at, refid/pid); return 200 OK "OK"; async **download_signed_documents_on_complete**. CSRF exempt. Listener route remains `/signix/push/` even when Plan 3 emits `/signix/push` in SubmitDocument. |
-| 3 | 30-PLAN-SIGNiX-SUBMIT-PUSH-URL.md | build_submit_document_body accepts push_base_url, adds ClientPreference elements; **get_push_base_url(request)** helper in signix (config → request → settings, with forwarded HTTPS preserved behind ngrok/proxy); orchestrator and config form both use it; sets signer_count when creating SignatureTransaction; **creates initial SignatureTransactionEvent (submitted)**; ensures document versions marked "Submitted to SIGNiX." Config form shows derived default via helper. |
-| 4 | 40-PLAN-SIGNiX-DASHBOARD-SIGNERS.md | **get_signers_display(transaction)** (DESIGN 3.4); **Signers** and **Status updated** columns on dashboard list and Deal View; null-safe. |
-| 5 | 50-PLAN-SIGNiX-DOWNLOAD-ON-COMPLETE.md | **download_signed_documents_on_complete(transaction)** (DESIGN 6): DownloadDocument (audit trail + certificate in request) → map signed PDFs → new DocumentInstanceVersion per instance (Final) → **store audit_trail_file and certificate_of_completion_file on transaction** (Section 6.5a) → ConfirmDownload. Proactive storage; View page serves stored files only. Wired from push listener. Idempotent. |
-| 6 | 60-PLAN-SIGNiX-TRANSACTION-DETAIL.md | **Signature transaction detail page** `/deals/signatures/<pk>/`: **header** (Transaction ID, Deal link, document set type, status, last status updated); **signers table** (order, name, email, authentication, signed, **signed at**); **documents table** (As sent, Signed); **events table** (chronological timeline); View/Download audit trail and certificate when files present. **View** link on dashboard and Deal View table. Audit-trail and certificate file-serving views (auth). DESIGN Section 8. |
+| 1 | [10-PLAN-SIGNiX-SYNC-MODEL.md](10-PLAN-SIGNiX-SYNC-MODEL.md) | SignatureTransaction: signer_count, signers_completed_refids, signers_completed_count, **status_last_updated**; Expired status; **audit_trail_file**, **certificate_of_completion_file** (FileField, blank). **SignatureTransactionEvent** model (Section 7.5). SignixConfig: push_base_url. Migrations. |
+| 2 | [20-PLAN-SIGNiX-PUSH-LISTENER.md](20-PLAN-SIGNiX-PUSH-LISTENER.md) | GET /signix/push/; **get_signature_transaction_for_push**, **apply_push_action** (DESIGN 4.4); set status_last_updated on every update; **create SignatureTransactionEvent per push** (event_type from action, occurred_at, refid/pid); return 200 OK "OK"; async **download_signed_documents_on_complete**. CSRF exempt. Listener route remains `/signix/push/` even when Plan 3 emits `/signix/push` in SubmitDocument. |
+| 3 | [30-PLAN-SIGNiX-SUBMIT-PUSH-URL.md](30-PLAN-SIGNiX-SUBMIT-PUSH-URL.md) | build_submit_document_body accepts push_base_url, adds ClientPreference elements; **get_push_base_url(request)** helper in signix (config → request → settings, with forwarded HTTPS preserved behind ngrok/proxy); orchestrator and config form both use it; sets signer_count when creating SignatureTransaction; **creates initial SignatureTransactionEvent (submitted)**; ensures document versions marked "Submitted to SIGNiX." Config form shows derived default via helper. |
+| 4 | [40-PLAN-SIGNiX-DASHBOARD-SIGNERS.md](40-PLAN-SIGNiX-DASHBOARD-SIGNERS.md) | **get_signers_display(transaction)** (DESIGN 3.4); **Signers** and **Status updated** columns on dashboard list and Deal View; null-safe. |
+| 5 | [50-PLAN-SIGNiX-DOWNLOAD-ON-COMPLETE.md](50-PLAN-SIGNiX-DOWNLOAD-ON-COMPLETE.md) | **download_signed_documents_on_complete(transaction)** (DESIGN 6): DownloadDocument (audit trail + certificate in request) → map signed PDFs → new DocumentInstanceVersion per instance (Final) → **store audit_trail_file and certificate_of_completion_file on transaction** (Section 6.5a) → ConfirmDownload. Proactive storage; View page serves stored files only. Wired from push listener. Idempotent. |
+| 6 | [60-PLAN-SIGNiX-TRANSACTION-DETAIL.md](60-PLAN-SIGNiX-TRANSACTION-DETAIL.md) | **Signature transaction detail page** `/deals/signatures/<pk>/`: **header** (Transaction ID, Deal link, document set type, status, last status updated); **signers table** (order, name, email, authentication, signed, **signed at**); **documents table** (As sent, Signed); **events table** (chronological timeline); View/Download audit trail and certificate when files present. **View** link on dashboard and Deal View table. Audit-trail and certificate file-serving views (auth). DESIGN Section 8. |
 
 ---
 
@@ -154,14 +154,14 @@ Plan 2 must be implemented before Plan 3 so that when new transactions are submi
 
 ---
 
-## Relation to PHASE-PLANS-SIGNiX-SUBMIT and ../70-PLAN-MASTER.md
+## Relation to PHASE-PLANS-SIGNiX-SUBMIT and [70-PLAN-MASTER.md](../70-PLAN-MASTER.md)
 
 - **PHASE-PLANS-SIGNiX-SUBMIT** delivers the submit flow and the dashboard/Deal View tables (without push-driven status or Signers column). This phase plans document extends that: same dashboard and tables, now with live status from push, Signers column, push URL in SubmitDocument, and download on complete.
-- **../70-PLAN-MASTER.md** should record this document as completed after PHASE-PLANS-SIGNiX-SUBMIT and ../08-NGROK/10-PLAN-NGROK.md, rather than listing it as a remaining next step.
+- [70-PLAN-MASTER.md](../70-PLAN-MASTER.md) should record this document as completed after PHASE-PLANS-SIGNiX-SUBMIT and [08-NGROK/10-PLAN-NGROK.md](../08-NGROK/10-PLAN-NGROK.md), rather than listing it as a remaining next step.
 
 ---
 
-*To implement dashboard, sync, download, and transaction artifact viewing: ensure PHASE-PLANS-SIGNiX-SUBMIT plans 1–9 and ../08-NGROK/10-PLAN-NGROK.md are complete, then implement plans 1–6 above in order, following each plan’s batches and verification. Keep Django and ngrok running in parallel whenever your verification depends on real SIGNiX push notifications reaching the local app.*
+*To implement dashboard, sync, download, and transaction artifact viewing: ensure PHASE-PLANS-SIGNiX-SUBMIT plans 1–9 and [08-NGROK/10-PLAN-NGROK.md](../08-NGROK/10-PLAN-NGROK.md) are complete, then implement plans 1–6 above in order, following each plan’s batches and verification. Keep Django and ngrok running in parallel whenever your verification depends on real SIGNiX push notifications reaching the local app.*
 
 
 ## Open Issues and Recommendations (by Plan)

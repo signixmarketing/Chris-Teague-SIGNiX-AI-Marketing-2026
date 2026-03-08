@@ -2,7 +2,7 @@
 
 This document outlines how to add the **Signature transactions dashboard**: a main menu item, a list view of all signature transactions submitted to SIGNiX (with Deal link, description, SIGNiX DocumentSetID, status, submitted date, and optional "Open link" **so the first signer can re-open the signing flow if they did not complete it initially**), and a **Delete Transaction History** button that removes all records (for testing).
 
-**Design reference:** DESIGN-SIGNiX-SUBMIT.md — **Section 7.3** is the authoritative specification for the signature transactions dashboard (sidebar, list, delete-all). Section 3.4 summarizes the dashboard and Deal View; Section 4.1 defines the SignatureTransaction model. This plan implements Section 7.3 and flows from it (URLs, view names, templates, and batches).
+**Design reference:** [DESIGN-SIGNiX-SUBMIT.md](DESIGN-SIGNiX-SUBMIT.md) — **Section 7.3** is the authoritative specification for the signature transactions dashboard (sidebar, list, delete-all). Section 3.4 summarizes the dashboard and Deal View; Section 4.1 defines the SignatureTransaction model. This plan implements Section 7.3 and flows from it (URLs, view names, templates, and batches).
 
 **Prerequisites:** Plan 2 (SignatureTransaction model, Deal relation) is implemented. Plans 6 and 7 create transactions via the orchestrator. No dependency on Plan 9 (Deal View table); the dashboard lists all transactions system-wide.
 
@@ -176,4 +176,4 @@ This document outlines how to add the **Signature transactions dashboard**: a ma
 
 ---
 
-*End of plan. Proceed to implementation only after review. Next: 90-PLAN-SIGNiX-DEAL-VIEW-TRANSACTIONS.md (Plan 9).*
+*End of plan. Proceed to implementation only after review. Next: [90-PLAN-SIGNiX-DEAL-VIEW-TRANSACTIONS.md](90-PLAN-SIGNiX-DEAL-VIEW-TRANSACTIONS.md) (Plan 9).*

@@ -2,7 +2,7 @@
 
 This document outlines how to add **related signature transactions** on the Deal detail page: a subsection below the Documents section that lists signature transactions for this deal (Submitted at, SIGNiX DocumentSetID, Status, optional "Open signing" link), a link to the full dashboard, and **Delete Transaction History (for this deal)** with confirmation.
 
-**Design reference:** DESIGN-SIGNiX-SUBMIT.md — Section 7.5 (Deal View — Related signature transactions), Section 3.4 (Dashboard and Deal View). Section 4.1 (SignatureTransaction model).
+**Design reference:** [DESIGN-SIGNiX-SUBMIT.md](DESIGN-SIGNiX-SUBMIT.md) — Section 7.5 (Deal View — Related signature transactions), Section 3.4 (Dashboard and Deal View). Section 4.1 (SignatureTransaction model).
 
 **Prerequisites:** Plan 2 (SignatureTransaction model, Deal relation with `related_name='signature_transactions'`) is implemented. Plan 8 (dashboard) is optional for the "View all signature transactions" link but not required for this plan to function. Transactions are created by Plans 6/7.
 

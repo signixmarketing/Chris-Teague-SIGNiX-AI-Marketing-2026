@@ -2,7 +2,7 @@
 
 This document outlines how to add **storage for signer order and authentication** and the **Signers table** on the Deal detail page. Users see who will sign, in what order, and can reorder signers and set authentication per signer (SelectOneClick or SMSOneClick). The packager (Plans 5–6) reads this stored order and auth when building SubmitDocument.
 
-**Design reference:** DESIGN-SIGNiX-SUBMIT.md — Section 4.3 (Signer order and authentication), Section 5.3 (Signers table on Deal View), Section 7.4 (Deal View — Signers table). 30-PLAN-SIGNiX-SIGNER-SERVICE.md (Plan 3) for `get_signers_for_document_set_template` and `resolve_signer_slot`.
+**Design reference:** [DESIGN-SIGNiX-SUBMIT.md](DESIGN-SIGNiX-SUBMIT.md) — Section 4.3 (Signer order and authentication), Section 5.3 (Signers table on Deal View), Section 7.4 (Deal View — Signers table). [30-PLAN-SIGNiX-SIGNER-SERVICE.md](30-PLAN-SIGNiX-SIGNER-SERVICE.md) (Plan 3) for `get_signers_for_document_set_template` and `resolve_signer_slot`.
 
 **Prerequisites:** Plan 3 (signer service) is implemented. Deal detail page and Document Sets exist (PLAN-ADD-DOCUMENT-SETS). Deal has `deal_type` and optional `document_sets`; DocumentSetTemplate exists per deal type.
 
@@ -162,4 +162,4 @@ These allow the packager (Plan 5) and the Signers table to share the same logic.
 
 ---
 
-*End of plan. Proceed to implementation only after review. Next: 50-PLAN-SIGNiX-BUILD-BODY.md (Plan 5).*
+*End of plan. Proceed to implementation only after review. Next: [50-PLAN-SIGNiX-BUILD-BODY.md](50-PLAN-SIGNiX-BUILD-BODY.md) (Plan 5).*

@@ -4,7 +4,7 @@ This document outlines how to add **vehicles** (jet packs) to the existing Djang
 
 **Review this plan before implementation.** Implementation order is in **Section 6**; **Section 6a** defines two batches and how to test each one.
 
-**Part of the business-domain sequence.** See **PHASE-PLANS-BIZ-DOMAIN.md** for implementation order and how this plan relates to Contacts and Deals. **Design:** **DESIGN-BIZ-DOMAIN.md** (entity model, relationships, UI conventions).
+**Part of the business-domain sequence.** See [PHASE-PLANS-BIZ-DOMAIN.md](PHASE-PLANS-BIZ-DOMAIN.md) for implementation order and how this plan relates to Contacts and Deals. **Design:** [DESIGN-BIZ-DOMAIN.md](DESIGN-BIZ-DOMAIN.md) (entity model, relationships, UI conventions).
 
 ---
 

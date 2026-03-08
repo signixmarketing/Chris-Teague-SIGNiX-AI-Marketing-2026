@@ -9,7 +9,7 @@ This document captures design decisions and concepts for handling documents rela
 - Documents are associated with a Deal.
 - Design covers concepts, data model, user flows, and integration points.
 - No implementation here—PLAN files will describe implementation steps.
-- The Internal Data Schema and Deal Data Retrieval interface are in **../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md**; this document references them where relevant.
+- The Internal Data Schema and Deal Data Retrieval interface are in [04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md](../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md); this document references them where relevant.
 
 ## Current Platform (Assumed)
 
@@ -20,11 +20,11 @@ This design assumes the platform already has:
 - **Contacts** — Contact model; full CRUD.
 - **Images** — Image model with name, file, stable URL; full CRUD.
 
-Plans 1–4 from ../70-PLAN-MASTER.md (Baseline, Biz Domain Master, Images, Data Interface) are implemented. This design extends the deal detail page with the Documents section and related features.
+Plans 1–4 from [70-PLAN-MASTER.md](../70-PLAN-MASTER.md) (Baseline, Biz Domain Master, Images, Data Interface) are implemented. This design extends the deal detail page with the Documents section and related features.
 
-**Related design:** The Internal Data Schema and Deal Data Retrieval interface are documented in **../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md**. Dynamic document templates use the schema for mapping and `get_deal_data(deal)` for population. The Debug Data page (deal list with View JSON) is also defined there. The core business domain (Deals, Vehicles, Contacts, Deal Type) is designed in **../02-BIZ-DOMAIN/DESIGN-BIZ-DOMAIN.md** and described in **../02-BIZ-DOMAIN/KNOWLEDGE-LEASE-JETPACKS.md**.
+**Related design:** The Internal Data Schema and Deal Data Retrieval interface are documented in [04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md](../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md). Dynamic document templates use the schema for mapping and `get_deal_data(deal)` for population. The Debug Data page (deal list with View JSON) is also defined there. The core business domain (Deals, Vehicles, Contacts, Deal Type) is designed in [02-BIZ-DOMAIN/DESIGN-BIZ-DOMAIN.md](../02-BIZ-DOMAIN/DESIGN-BIZ-DOMAIN.md) and described in [02-BIZ-DOMAIN/KNOWLEDGE-LEASE-JETPACKS.md](../02-BIZ-DOMAIN/KNOWLEDGE-LEASE-JETPACKS.md).
 
-**Document generation enablers:** Three capabilities underpin document features (templates, mapping, generation, HTML-to-PDF). Implement them per ../70-PLAN-MASTER.md before starting PHASE-PLANS-DOCS: (1) **Data interface** — schema and `get_deal_data(deal)` (../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md, ../04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md). (2) **Images** — upload, storage, stable URLs for assets referenced in templates (../03-IMAGES/DESIGN-IMAGES.md, ../03-IMAGES/10-PLAN-ADD-IMAGES.md; ../GENERAL-KNOWLEDGE/KNOWLEDGE-FILE-ASSETS-MEDIA.md). (3) **HTML-to-PDF** — wkhtmltopdf + pdfkit for converting rendered HTML to PDF (../05-SETUP-WKHTMLTOPDF/SETUP-WKHTMLTOPDF.md, ../GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md).
+**Document generation enablers:** Three capabilities underpin document features (templates, mapping, generation, HTML-to-PDF). Implement them per [70-PLAN-MASTER.md](../70-PLAN-MASTER.md) before starting PHASE-PLANS-DOCS: (1) **Data interface** — schema and `get_deal_data(deal)` ([04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md](../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md), ../04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md). (2) **Images** — upload, storage, stable URLs for assets referenced in templates ([03-IMAGES/DESIGN-IMAGES.md](../03-IMAGES/DESIGN-IMAGES.md), [03-IMAGES/10-PLAN-ADD-IMAGES.md](../03-IMAGES/10-PLAN-ADD-IMAGES.md); ../GENERAL-KNOWLEDGE/KNOWLEDGE-FILE-ASSETS-MEDIA.md). (3) **HTML-to-PDF** — wkhtmltopdf + pdfkit for converting rendered HTML to PDF ([05-SETUP-WKHTMLTOPDF/SETUP-WKHTMLTOPDF.md](../05-SETUP-WKHTMLTOPDF/SETUP-WKHTMLTOPDF.md), ../GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md).
 
 ---
 
@@ -379,7 +379,7 @@ A **Document Set** is attached to a Deal and contains the documents produced for
 
 ### Deal Type Association
 
-- **Deal Type** — A classification of the deal (e.g., lease, cash purchase, early lease termination, trade-in). The Deal model has an explicit `deal_type` field. Deal Type is already implemented as part of ../02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md and is in place.
+- **Deal Type** — A classification of the deal (e.g., lease, cash purchase, early lease termination, trade-in). The Deal model has an explicit `deal_type` field. Deal Type is already implemented as part of [02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md](../02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md) and is in place.
 - **Initial release:** There is exactly one Deal Type: **"Lease - Single Signer"**. All deals default to this type. No UI for the user to select deal type.
 - **Future:** When multiple Deal Types exist, the user will select the deal type (e.g., when creating or editing a Deal). Each Deal Type may use a different Document Set Template. Document Set Templates may also vary by number of co-signers or signer roles (e.g., guarantor vs. primary signer).
 
@@ -403,7 +403,7 @@ A **Document Set** is attached to a Deal and contains the documents produced for
 
 **UI pattern:** Use the same pattern as Deals, Vehicles, and Contacts—list, add, edit, delete views with sidebar links.
 
-**Setup order:** Per ../70-PLAN-MASTER.md, plans 1–4 (Baseline, Biz Domain Master, Images, Data Interface) are implemented before document features. The **data interface** (apps.schema: `get_schema()`, `get_paths()`, `get_deal_data(deal)`) per ../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md and ../04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md is in place. For document features:
+**Setup order:** Per [70-PLAN-MASTER.md](../70-PLAN-MASTER.md), plans 1–4 (Baseline, Biz Domain Master, Images, Data Interface) are implemented before document features. The **data interface** (apps.schema: `get_schema()`, `get_paths()`, `get_deal_data(deal)`) per [04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md](../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md) and [04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md](../04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md) is in place. For document features:
 
 1. Create **Static Document Templates** — Upload PDF, add field metadata (ref_id, description, tagging_data).
 2. Create **Dynamic Document Templates** — Upload HTML, configure mapping (uses `get_paths_grouped_for_mapping()` from apps.schema for the Source dropdown) and text tagging; context builder uses `get_deal_data(deal)` from apps.schema.
@@ -576,7 +576,7 @@ Document Templates (Static and Dynamic) and Document Set Templates use the same 
 
 ### Configuration setup order
 
-Per ../70-PLAN-MASTER.md: plans 1–4 (including Data Interface) are implemented first; then document plans in PHASE-PLANS-DOCS order. The data interface (apps.schema: `get_schema()`, `get_paths()`, `get_deal_data(deal)`) per ../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md is implemented in ../04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md before Dynamic Document Templates. Admin creates Static and Dynamic Document Templates, then Document Set Templates that reference them. Deal Type is already implemented as part of Deals (../02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md); no separate setup step.
+Per [70-PLAN-MASTER.md](../70-PLAN-MASTER.md): plans 1–4 (including Data Interface) are implemented first; then document plans in PHASE-PLANS-DOCS order. The data interface (apps.schema: `get_schema()`, `get_paths()`, `get_deal_data(deal)`) per [04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md](../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md) is implemented in [04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md](../04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md) before Dynamic Document Templates. Admin creates Static and Dynamic Document Templates, then Document Set Templates that reference them. Deal Type is already implemented as part of Deals (../02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md); no separate setup step.
 
 ### Document Set Template: all templates required
 
@@ -588,7 +588,7 @@ Document Instances and Document Instance Versions are created by system automati
 
 ### Deal View / Edit split
 
-Deals use a **View / Edit split**: the primary entry point from the list is **View** (deal detail page), not Edit. From the deal detail page, the user can Edit or Delete. Flow: List → View (detail) → Edit or Delete from there. This is implemented in **../02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md** (deal_detail view, list links to detail, Edit and Delete buttons on detail). 40-PLAN-ADD-DOCUMENT-SETS.md extends the deal detail page with the Documents section.
+Deals use a **View / Edit split**: the primary entry point from the list is **View** (deal detail page), not Edit. From the deal detail page, the user can Edit or Delete. Flow: List → View (detail) → Edit or Delete from there. This is implemented in [02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md](../02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md) (deal_detail view, list links to detail, Edit and Delete buttons on detail). [40-PLAN-ADD-DOCUMENT-SETS.md](40-PLAN-ADD-DOCUMENT-SETS.md) extends the deal detail page with the Documents section.
 
 ### Document viewing UX
 

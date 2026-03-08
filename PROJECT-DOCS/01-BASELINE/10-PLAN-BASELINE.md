@@ -4,7 +4,7 @@ This document outlines the plan for building a Django-based **vehicle lease** or
 
 **How to use this plan:** Follow **Section 13** (Implementation Order) step by step to build the project from scratch. Use **Section 14** for batching and verification. When implementing UI, auth, or Admin, follow **Section 12.1** to avoid the 500/405 errors and layout issues described there. All setup and run instructions are in Section 14 (no separate README).
 
-**Design:** DESIGN-BASELINE.md. **Knowledge:** ../GENERAL-KNOWLEDGE/KNOWLEDGE-APP-FOUNDATION.md.
+**Design:** [DESIGN-BASELINE.md](DESIGN-BASELINE.md). **Knowledge:** [GENERAL-KNOWLEDGE/KNOWLEDGE-APP-FOUNDATION.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-APP-FOUNDATION.md).
 
 ---
 

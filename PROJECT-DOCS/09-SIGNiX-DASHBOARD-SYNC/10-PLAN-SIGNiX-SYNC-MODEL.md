@@ -2,7 +2,7 @@
 
 This plan adds the **model fields and status value** required for push-driven status and per-signer progress from DESIGN-SIGNiX-DASHBOARD-AND-SYNC. It does **not** add the push listener, any UI, or changes to the submit flow. Only schema and migrations so that Plan 2 (push listener) and Plan 3 (SubmitDocument with push URL) can use these fields.
 
-**Design reference:** DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md — Section 7 (Data Model): SignatureTransaction (signer_count, signers_completed_refids, signers_completed_count, status_last_updated; **audit_trail_file**, **certificate_of_completion_file** per Section 7.4; Expired status); **Section 7.5 (SignatureTransactionEvent)** for event history; Section 7.3 (SignixConfig.push_base_url). PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md — Plan 1 deliverables.
+**Design reference:** [DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md](DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md) — Section 7 (Data Model): SignatureTransaction (signer_count, signers_completed_refids, signers_completed_count, status_last_updated; **audit_trail_file**, **certificate_of_completion_file** per Section 7.4; Expired status); **Section 7.5 (SignatureTransactionEvent)** for event history; Section 7.3 (SignixConfig.push_base_url). [PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md](PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md) — Plan 1 deliverables.
 
 **Prerequisites:** PHASE-PLANS-SIGNiX-SUBMIT plans 1–9 are implemented (SignixConfig, SignatureTransaction, dashboard, Deal View table). The app has `apps.deals` with `SignixConfig` and `SignatureTransaction` models.
 
@@ -276,4 +276,4 @@ Use the same test setup as other deals tests (e.g. create Deal, DocumentSet, Use
 
 ---
 
-*End of plan. Proceed to implementation only after review. Next: 20-PLAN-SIGNiX-PUSH-LISTENER.md (Plan 2).*
+*End of plan. Proceed to implementation only after review. Next: [20-PLAN-SIGNiX-PUSH-LISTENER.md](20-PLAN-SIGNiX-PUSH-LISTENER.md) (Plan 2).*

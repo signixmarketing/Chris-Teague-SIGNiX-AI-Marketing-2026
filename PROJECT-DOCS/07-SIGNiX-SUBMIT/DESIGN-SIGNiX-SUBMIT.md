@@ -2,7 +2,7 @@
 
 This document captures the design for **submitting** a deal’s document set to SIGNiX (SubmitDocument flow). Users submit a deal’s current document set for signature from the Deal detail page. **Who signs, the order they sign, and what documents each signer sees and signs** are determined by the app’s **signer identification and signing sequence** functionality (Section 5.3): signer slots are derived from the document set template; the Signers table on Deal View shows them resolved to people and allows reordering; that order becomes the SIGNiX **Members** (MemberInfo) in the SubmitDocument call. The first signer in that order can sign via a **separate window** (GetAccessLink); other signers receive SIGNiX email and complete signing in the workflow defined by the templates. The design also defines a signature-transaction dashboard and the link between SIGNiX transactions and Deals. Push notifications, DownloadDocument, and ConfirmDownload are **deferred** (Section 8).
 
-**Design references:** **../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md** (Flex API, SubmitDocument, GetAccessLink, push notifications, XML/template approach; SIGNiX “Members” = MemberInfo in the request). **../06-DOCS/DESIGN-DOCS.md** (document sets; status flow Draft → Submitted to SIGNiX → Final; DESIGN-DOCS uses member_info_number 1 = lease officer, 2 = first contact as an example). **PLAN-ADD-DOCUMENT-SETS** (deal detail Documents section, Send for Signature stub, `document_set`, `DocumentInstance`, `DocumentInstanceVersion`). **apps.doctemplates** (Static and Dynamic templates expose signer slots via `tagging_data` — form field config and text-tagging config both use `member_info_number`).
+**Design references:** [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md) (Flex API, SubmitDocument, GetAccessLink, push notifications, XML/template approach; SIGNiX “Members” = MemberInfo in the request). [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) (document sets; status flow Draft → Submitted to SIGNiX → Final; DESIGN-DOCS uses member_info_number 1 = lease officer, 2 = first contact as an example). **PLAN-ADD-DOCUMENT-SETS** (deal detail Documents section, Send for Signature stub, `document_set`, `DocumentInstance`, `DocumentInstanceVersion`). **apps.doctemplates** (Static and Dynamic templates expose signer slots via `tagging_data` — form field config and text-tagging config both use `member_info_number`).
 
 ---
 
@@ -34,10 +34,10 @@ This document captures the design for **submitting** a deal’s document set to 
 
 | Document | Use |
 |----------|-----|
-| **../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md** | Flex API overview, credentials, endpoints (Webtest/Production), SubmitDocument structure (CustInfo, Data, MemberInfo, Form), GetAccessLink, push notifications, XML request (template + Base64 in Form), response parsing (ElementTree). |
-| **../06-DOCS/DESIGN-DOCS.md** | Document sets, Document Set Template, signer mapping (`member_info_number` 1 = user/lease officer, 2 = first contact as an **example**); status flow (Draft → Submitted to SIGNiX → Final), Deal detail Documents section. |
+| [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md) | Flex API overview, credentials, endpoints (Webtest/Production), SubmitDocument structure (CustInfo, Data, MemberInfo, Form), GetAccessLink, push notifications, XML request (template + Base64 in Form), response parsing (ElementTree). |
+| [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) | Document sets, Document Set Template, signer mapping (`member_info_number` 1 = user/lease officer, 2 = first contact as an **example**); status flow (Draft → Submitted to SIGNiX → Final), Deal detail Documents section. |
 | **PLAN-ADD-DOCUMENT-SETS** | Deal detail URL `/deals/<pk>/`, Documents section, Send for Signature stub at `POST /deals/<pk>/documents/send-for-signature/`, `document_set`, `DocumentInstance` (order), `DocumentInstanceVersion` (status, file). |
-| **../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md** | `get_deal_data(deal)` for deal/contact/lease officer data; first contact = first in `deal.contacts` list for slot→person resolution. |
+| [04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md](../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md) | `get_deal_data(deal)` for deal/contact/lease officer data; first contact = first in `deal.contacts` list for slot→person resolution. |
 | **Flex API documentation** | [https://www.signix.com/apidocumentation](https://www.signix.com/apidocumentation) — SubmitDocument request/response XML, GetAccessLink, Form/MemberInfo structure. |
 
 ---
@@ -334,7 +334,7 @@ The dashboard is a **single list page** of all signature transactions, reachable
 
 - **Requirement** — To show accurate status (In Progress, Complete) and to trigger DownloadDocument/ConfirmDownload, the app must receive **push notifications** from SIGNiX (Send, partyComplete, complete, etc.). See KNOWLEDGE-SIGNiX and [Push Notifications](https://www.signix.com/pndocumentation).
 - **Development** — When the app runs on a development machine, SIGNiX cannot reach it unless the endpoint is publicly reachable. **ngrok** (or similar) can expose a local URL and forward to the Django server so SIGNiX can POST webhooks. Configuration (URL registration with SIGNiX, secret verification) may be documented here or in a **separate design** (e.g. “Design: SIGNiX push notifications and dev setup”).
-- **Decision:** Core design assumes status is stored as “Submitted” until we implement push (or polling). The dashboard and Deal View still show the list of transactions; status column can show “Submitted” or “Pending” until push is in place. **Push notification handling (endpoint, auth, idempotency, updating SignatureTransaction status and DocumentInstanceVersion, and DownloadDocument/ConfirmDownload) is designed in ../09-SIGNiX-DASHBOARD-SYNC/DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md**, which also covers including the push URL in SubmitDocument and downloading signed documents as new Document Instance Versions when transactions complete.
+- **Decision:** Core design assumes status is stored as “Submitted” until we implement push (or polling). The dashboard and Deal View still show the list of transactions; status column can show “Submitted” or “Pending” until push is in place. **Push notification handling (endpoint, auth, idempotency, updating SignatureTransaction status and DocumentInstanceVersion, and DownloadDocument/ConfirmDownload) is designed in [09-SIGNiX-DASHBOARD-SYNC/DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md](../09-SIGNiX-DASHBOARD-SYNC/DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md)**, which also covers including the push URL in SubmitDocument and downloading signed documents as new Document Instance Versions when transactions complete.
 
 ---
 
@@ -353,4 +353,4 @@ The dashboard is a **single list page** of all signature transactions, reachable
 
 ---
 
-*End of design. Implementation will follow a PLAN document. For Flex API details, see ../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md and the official SIGNiX documentation.*
+*End of design. Implementation will follow a PLAN document. For Flex API details, see [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md) and the official SIGNiX documentation.*

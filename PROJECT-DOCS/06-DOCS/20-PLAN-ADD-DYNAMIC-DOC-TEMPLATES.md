@@ -2,9 +2,9 @@
 
 This document outlines how to add **Dynamic Document Templates** to the Django lease application. Dynamic templates are HTML files with Django Template Language (DTL) that produce populated documents when combined with deal data and Images. Users upload HTML, configure text tagging (signature/date fields for SIGNiX), and configure the mapping of template variables to deal data or Images.
 
-**Design reference:** DESIGN-DOCS.md — Dynamic Document Templates and Template-to-Data Mapping sections. ../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md — schema, `get_paths_grouped_for_mapping()`, `get_deal_data(deal)`, and no-circumvention requirement.
+**Design reference:** [DESIGN-DOCS.md](DESIGN-DOCS.md) — Dynamic Document Templates and Template-to-Data Mapping sections. [04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md](../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md) — schema, `get_paths_grouped_for_mapping()`, `get_deal_data(deal)`, and no-circumvention requirement.
 
-**Prerequisites:** 10-PLAN-ADD-STATIC-DOC-TEMPLATES.md must be implemented (apps.doctemplates exists). ../70-PLAN-MASTER.md plans 1–4 are implemented, including **../03-IMAGES/10-PLAN-ADD-IMAGES.md** (Image model for image mapping) and **../04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md** (apps.schema: `get_paths_grouped_for_mapping()`, `get_deal_data(deal)`). The mapping UI uses schema paths plus an Images optgroup; the context builder uses `get_deal_data(deal)` for deal data and resolves `image:<uuid>` via the Image model.
+**Prerequisites:** [10-PLAN-ADD-STATIC-DOC-TEMPLATES.md](10-PLAN-ADD-STATIC-DOC-TEMPLATES.md) must be implemented (apps.doctemplates exists). [70-PLAN-MASTER.md](../70-PLAN-MASTER.md) plans 1–4 are implemented, including [03-IMAGES/10-PLAN-ADD-IMAGES.md](../03-IMAGES/10-PLAN-ADD-IMAGES.md) (Image model for image mapping) and [04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md](../04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md) (apps.schema: `get_paths_grouped_for_mapping()`, `get_deal_data(deal)`). The mapping UI uses schema paths plus an Images optgroup; the context builder uses `get_deal_data(deal)` for deal data and resolves `image:<uuid>` via the Image model.
 
 **Review this plan before implementation.** Implementation order is in **Section 7**; **Section 7a** defines batches and verification.
 

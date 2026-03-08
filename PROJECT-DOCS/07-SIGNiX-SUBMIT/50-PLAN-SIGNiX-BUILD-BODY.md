@@ -2,7 +2,7 @@
 
 This document outlines how to implement **building the SubmitDocument request body (XML)** from a deal, document set, and configuration—without sending to SIGNiX. This enables unit testing of the payload and debugging (e.g. dump XML). The send step and persistence are in Plan 6.
 
-**Design reference:** DESIGN-SIGNiX-SUBMIT.md — Section 6 (Transaction Packager), Section 6.1.1 (SubmitDocument data sourcing), Section 6.4 (Separation of body construction and send). ../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md — SubmitDocument structure, template approach, Form/Base64, escaping and `| safe`.
+**Design reference:** [DESIGN-SIGNiX-SUBMIT.md](DESIGN-SIGNiX-SUBMIT.md) — Section 6 (Transaction Packager), Section 6.1.1 (SubmitDocument data sourcing), Section 6.4 (Separation of body construction and send). [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md) — SubmitDocument structure, template approach, Form/Base64, escaping and `| safe`.
 
 **Prerequisites:** Plans 1 (SignixConfig, get_signix_config), 3 (signer service, resolve_signer_slot, get_signers_for_document_set_template), and 4 (signer order/auth storage, get_signer_order_for_deal, get_signer_authentication_for_slot) are implemented. Document Sets with instances and latest versions (PLAN-ADD-DOCUMENT-SETS). Plan 2 (SignatureTransaction) is not required for building the body but is required for Plan 6.
 
@@ -301,4 +301,4 @@ Reference template snippet (DTL; align with Flex API doc):
 
 ---
 
-*End of plan. Proceed to implementation only after review. Next: 60-PLAN-SIGNiX-SEND-AND-PERSIST.md (Plan 6).*
+*End of plan. Proceed to implementation only after review. Next: [60-PLAN-SIGNiX-SEND-AND-PERSIST.md](60-PLAN-SIGNiX-SEND-AND-PERSIST.md) (Plan 6).*

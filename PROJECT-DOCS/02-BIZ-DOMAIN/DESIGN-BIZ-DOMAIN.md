@@ -1,10 +1,10 @@
 # Design: Core Business Domain (Vehicles, Contacts, Deals)
 
-This document captures the design for the **core business domain** of the lease origination application: **Vehicles**, **Contacts**, **DealType**, and **Deals**. It defines the entities, their relationships, and the shared UI and workflow conventions. Implementation follows **PHASE-PLANS-BIZ-DOMAIN.md** and the individual **10-PLAN-ADD-VEHICLES.md**, **20-PLAN-ADD-CONTACTS.md**, and **30-PLAN-ADD-DEALS.md**.
+This document captures the design for the **core business domain** of the lease origination application: **Vehicles**, **Contacts**, **DealType**, and **Deals**. It defines the entities, their relationships, and the shared UI and workflow conventions. Implementation follows [PHASE-PLANS-BIZ-DOMAIN.md](PHASE-PLANS-BIZ-DOMAIN.md) and the individual [10-PLAN-ADD-VEHICLES.md](10-PLAN-ADD-VEHICLES.md), [20-PLAN-ADD-CONTACTS.md](20-PLAN-ADD-CONTACTS.md), and [30-PLAN-ADD-DEALS.md](30-PLAN-ADD-DEALS.md).
 
-**Related designs:** **../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md** defines the deal-centric schema and `get_deal_data(deal)` that consume this domain. **../06-DOCS/DESIGN-DOCS.md** assumes Deals (and Deal Type) exist and uses them for document sets and signing.
+**Related designs:** [04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md](../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md) defines the deal-centric schema and `get_deal_data(deal)` that consume this domain. [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) assumes Deals (and Deal Type) exist and uses them for document sets and signing.
 
-**Knowledge:** **../GENERAL-KNOWLEDGE/KNOWLEDGE-DOCUMENT-CENTRIC-APPS.md** describes the general pattern (products, customers, deals, document-centric flow) that this domain instantiates. **KNOWLEDGE-LEASE-JETPACKS.md** describes this application’s domain (vehicle leasing, jet packs, business objects, terminology).
+**Knowledge:** [GENERAL-KNOWLEDGE/KNOWLEDGE-DOCUMENT-CENTRIC-APPS.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-DOCUMENT-CENTRIC-APPS.md) describes the general pattern (products, customers, deals, document-centric flow) that this domain instantiates. [KNOWLEDGE-LEASE-JETPACKS.md](KNOWLEDGE-LEASE-JETPACKS.md) describes this application’s domain (vehicle leasing, jet packs, business objects, terminology).
 
 ---
 
@@ -21,7 +21,7 @@ This design does not cover Images, the data schema interface, document templates
 
 ## Current Platform (Assumed)
 
-This design assumes only **../01-BASELINE/10-PLAN-BASELINE.md** is implemented (see **../01-BASELINE/DESIGN-BASELINE.md** and **../GENERAL-KNOWLEDGE/KNOWLEDGE-APP-FOUNDATION.md** for baseline design and capabilities):
+This design assumes only [01-BASELINE/10-PLAN-BASELINE.md](../01-BASELINE/10-PLAN-BASELINE.md) is implemented (see [01-BASELINE/DESIGN-BASELINE.md](../01-BASELINE/DESIGN-BASELINE.md) and [GENERAL-KNOWLEDGE/KNOWLEDGE-APP-FOUNDATION.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-APP-FOUNDATION.md) for baseline design and capabilities):
 
 - Django project, venv, users app with LeaseOfficerProfile.
 - Auth (login/logout), base templates (base.html, base_plain.html), profile view/edit.
@@ -70,7 +70,7 @@ Vehicles and Contacts have **no** direct relationship to each other. They are li
 
 **Deal** — **Relations:** `lease_officer` (FK to User), `deal_type` (FK to DealType), `vehicles` (M2M, blank=True), `contacts` (M2M, blank=True). **Properties:** `date_entered`, `lease_start_date`, `lease_end_date`, `payment_amount`, `payment_period`, `security_deposit`, `insurance_amount`, `governing_law`. Default deal type set in `Deal.save()` and in the add view when `deal_type_id` is None. Conventions: docstrings, `__str__`, verbose_name in Meta; list views order by `-date_entered` or `-id`.
 
-Full field specs, migrations, and seed data are in the individual plan files (**10-PLAN-ADD-VEHICLES.md**, **20-PLAN-ADD-CONTACTS.md**, **30-PLAN-ADD-DEALS.md**).
+Full field specs, migrations, and seed data are in the individual plan files ([10-PLAN-ADD-VEHICLES.md](10-PLAN-ADD-VEHICLES.md), [20-PLAN-ADD-CONTACTS.md](20-PLAN-ADD-CONTACTS.md), [30-PLAN-ADD-DEALS.md](30-PLAN-ADD-DEALS.md)).
 
 ---
 
@@ -114,10 +114,10 @@ Seed data supports demos and testing; the app does not depend on it for core log
 
 ## 5. Implementation Order and References
 
-- **Order** — Implement **Vehicles** first, then **Contacts**, then **Deals**. See **PHASE-PLANS-BIZ-DOMAIN.md** for the full sequence and deliverables.
-- **Source of truth for implementation** — **10-PLAN-ADD-VEHICLES.md**, **20-PLAN-ADD-CONTACTS.md**, **30-PLAN-ADD-DEALS.md** (model fields, URLs, batch steps, verification).
-- **../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md** — Assumes this domain exists; defines deal-centric schema and `get_deal_data(deal)` using Deal, Vehicle, Contact, User.
-- **../06-DOCS/DESIGN-DOCS.md** — Assumes Deals and Deal Type exist; document sets and templates are associated with deals and deal type.
+- **Order** — Implement **Vehicles** first, then **Contacts**, then **Deals**. See [PHASE-PLANS-BIZ-DOMAIN.md](PHASE-PLANS-BIZ-DOMAIN.md) for the full sequence and deliverables.
+- **Source of truth for implementation** — [10-PLAN-ADD-VEHICLES.md](10-PLAN-ADD-VEHICLES.md), [20-PLAN-ADD-CONTACTS.md](20-PLAN-ADD-CONTACTS.md), [30-PLAN-ADD-DEALS.md](30-PLAN-ADD-DEALS.md) (model fields, URLs, batch steps, verification).
+- [04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md](../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md) — Assumes this domain exists; defines deal-centric schema and `get_deal_data(deal)` using Deal, Vehicle, Contact, User.
+- [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) — Assumes Deals and Deal Type exist; document sets and templates are associated with deals and deal type.
 
 ---
 
@@ -145,4 +145,4 @@ Vehicle and Contact seeds are idempotent management commands so they can be run 
 
 ---
 
-*End of design. Implementation follows PHASE-PLANS-BIZ-DOMAIN.md and the individual 10-PLAN-ADD-VEHICLES.md, 20-PLAN-ADD-CONTACTS.md, and 30-PLAN-ADD-DEALS.md. See ../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md for schema and deal data; ../06-DOCS/DESIGN-DOCS.md for documents and signing.*
+*End of design. Implementation follows [PHASE-PLANS-BIZ-DOMAIN.md](PHASE-PLANS-BIZ-DOMAIN.md) and the individual [10-PLAN-ADD-VEHICLES.md](10-PLAN-ADD-VEHICLES.md), [20-PLAN-ADD-CONTACTS.md](20-PLAN-ADD-CONTACTS.md), and [30-PLAN-ADD-DEALS.md](30-PLAN-ADD-DEALS.md). See [04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md](../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md) for schema and deal data; [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) for documents and signing.*

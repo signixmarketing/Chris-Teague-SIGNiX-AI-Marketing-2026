@@ -1,21 +1,21 @@
 # Phase Plans: SIGNiX Submit — Implementation Order
 
-This document defines the order in which to implement the **submit flow** from **DESIGN-SIGNiX-SUBMIT.md**: configuration, signer identification, transaction packager (build body, send, persist), Send for Signature on Deal detail, and signature-transaction tracking (dashboard and Deal View table). Each plan covers a specific feature or layer; dependencies are implemented first so that testing can progress incrementally.
+This document defines the order in which to implement the **submit flow** from [DESIGN-SIGNiX-SUBMIT.md](DESIGN-SIGNiX-SUBMIT.md): configuration, signer identification, transaction packager (build body, send, persist), Send for Signature on Deal detail, and signature-transaction tracking (dashboard and Deal View table). Each plan covers a specific feature or layer; dependencies are implemented first so that testing can progress incrementally.
 
 **Usage:** Implement each plan below in sequence. Within each plan, follow its Implementation Order and Batches/Verification. Do not skip ahead—later plans depend on earlier ones.
 
-**Source of truth:** DESIGN-SIGNiX-SUBMIT.md. Refer to it for data sourcing (Section 6.1.1), validation rules, and UI placement. ../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md for Flex API structure and field notes.
+**Source of truth:** [DESIGN-SIGNiX-SUBMIT.md](DESIGN-SIGNiX-SUBMIT.md). Refer to it for data sourcing (Section 6.1.1), validation rules, and UI placement. [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md) for Flex API structure and field notes.
 
 ---
 
 ## Prerequisites
 
-- **../70-PLAN-MASTER.md** plans 1–4 are implemented (Baseline, Biz Domain Master, Images, Data Interface). Deals includes Deal Type and the deal detail page (View/Edit split). Data Interface provides `get_deal_data(deal)`.
+- [70-PLAN-MASTER.md](../70-PLAN-MASTER.md) plans 1–4 are implemented (Baseline, Biz Domain Master, Images, Data Interface). Deals includes Deal Type and the deal detail page (View/Edit split). Data Interface provides `get_deal_data(deal)`.
 - **PHASE-PLANS-DOCS** plans 1–4 are implemented: Static Document Templates, Dynamic Document Templates, Document Set Templates, **Document Sets** (Generate/Regenerate/Delete, Documents section on Deal detail, **Send for Signature stub**). The stub is replaced in Plan 7 below.
 
 ---
 
-## 1. 10-PLAN-SIGNiX-CONFIG.md
+## 1. [10-PLAN-SIGNiX-CONFIG.md](10-PLAN-SIGNiX-CONFIG.md)
 
 **Purpose:** SIGNiX configuration—model and administrative UI so credentials and submitter information are stored and available to the transaction packager. No submit flow yet; only the ability to create/edit one configuration record.
 
@@ -27,7 +27,7 @@ This document defines the order in which to implement the **submit flow** from *
 
 ---
 
-## 2. 20-PLAN-SIGNiX-SIGNATURE-TRANSACTION.md
+## 2. [20-PLAN-SIGNiX-SIGNATURE-TRANSACTION.md](20-PLAN-SIGNiX-SIGNATURE-TRANSACTION.md)
 
 **Purpose:** Local record for each transaction submitted to SIGNiX—model and relations so the app can persist DocumentSetID, first-signing URL, status, and link to Deal and Document Set.
 
@@ -39,7 +39,7 @@ This document defines the order in which to implement the **submit flow** from *
 
 ---
 
-## 3. 30-PLAN-SIGNiX-SIGNER-SERVICE.md
+## 3. [30-PLAN-SIGNiX-SIGNER-SERVICE.md](30-PLAN-SIGNiX-SIGNER-SERVICE.md)
 
 **Purpose:** Signer identification and slot→person resolution—service layer that the Signers table and transaction packager both use. No UI in this plan.
 
@@ -55,7 +55,7 @@ This document defines the order in which to implement the **submit flow** from *
 
 ---
 
-## 4. 40-PLAN-SIGNiX-SIGNERS-TABLE.md
+## 4. [40-PLAN-SIGNiX-SIGNERS-TABLE.md](40-PLAN-SIGNiX-SIGNERS-TABLE.md)
 
 **Purpose:** Signer order and authentication storage, and the Signers table on Deal View—so users can see who will sign, reorder them, and set authentication per signer before submitting.
 
@@ -70,7 +70,7 @@ This document defines the order in which to implement the **submit flow** from *
 
 ---
 
-## 5. 50-PLAN-SIGNiX-BUILD-BODY.md
+## 5. [50-PLAN-SIGNiX-BUILD-BODY.md](50-PLAN-SIGNiX-BUILD-BODY.md)
 
 **Purpose:** Build the SubmitDocument request body (XML) from deal, document set, and configuration—without sending to SIGNiX. Enables unit testing of payload and debugging (e.g. dump XML).
 
@@ -86,7 +86,7 @@ This document defines the order in which to implement the **submit flow** from *
 
 ---
 
-## 6. 60-PLAN-SIGNiX-SEND-AND-PERSIST.md
+## 6. [60-PLAN-SIGNiX-SEND-AND-PERSIST.md](60-PLAN-SIGNiX-SEND-AND-PERSIST.md)
 
 **Purpose:** Send the built body to SIGNiX (POST), parse response, call GetAccessLink if needed, create SignatureTransaction, and update DocumentInstanceVersion status to “Submitted to SIGNiX”.
 
@@ -103,7 +103,7 @@ This document defines the order in which to implement the **submit flow** from *
 
 ---
 
-## 7. 70-PLAN-SIGNiX-SEND-FOR-SIGNATURE.md
+## 7. [70-PLAN-SIGNiX-SEND-FOR-SIGNATURE.md](70-PLAN-SIGNiX-SEND-FOR-SIGNATURE.md)
 
 **Purpose:** Replace the Send for Signature stub on Deal detail—wire the button to the transaction packager and open the first signer’s signing URL in a separate window.
 
@@ -118,7 +118,7 @@ This document defines the order in which to implement the **submit flow** from *
 
 ---
 
-## 8. 80-PLAN-SIGNiX-DASHBOARD.md
+## 8. [80-PLAN-SIGNiX-DASHBOARD.md](80-PLAN-SIGNiX-DASHBOARD.md)
 
 **Purpose:** Signature transactions dashboard—main menu item and list view of all submitted transactions, with Delete Transaction History (all) for testing.
 
@@ -134,7 +134,7 @@ This document defines the order in which to implement the **submit flow** from *
 
 ---
 
-## 9. 90-PLAN-SIGNiX-DEAL-VIEW-TRANSACTIONS.md
+## 9. [90-PLAN-SIGNiX-DEAL-VIEW-TRANSACTIONS.md](90-PLAN-SIGNiX-DEAL-VIEW-TRANSACTIONS.md)
 
 **Purpose:** Related signature transactions on Deal View—table under the Documents section and Delete Transaction History for this deal.
 
@@ -154,15 +154,15 @@ This document defines the order in which to implement the **submit flow** from *
 
 | Order | Plan | Key deliverables |
 |-------|------|------------------|
-| 1 | 10-PLAN-SIGNiX-CONFIG.md | SignixConfig model, SIGNiX Configuration admin UI (credentials, submitter, demo_only, etc.) |
-| 2 | 20-PLAN-SIGNiX-SIGNATURE-TRANSACTION.md | SignatureTransaction model, Deal relation |
-| 3 | 30-PLAN-SIGNiX-SIGNER-SERVICE.md | get_signers_for_document_set_template, slot→person resolution, unit tests |
-| 4 | 40-PLAN-SIGNiX-SIGNERS-TABLE.md | signer_order/signer_authentication storage, Signers table on Deal View (reorder, auth dropdown) |
-| 5 | 50-PLAN-SIGNiX-BUILD-BODY.md | build_submit_document_body, validation, XML template, unit tests |
-| 6 | 60-PLAN-SIGNiX-SEND-AND-PERSIST.md | send to Flex, parse response, GetAccessLink, create SignatureTransaction, update version status |
-| 7 | 70-PLAN-SIGNiX-SEND-FOR-SIGNATURE.md | Replace Send for Signature stub, open first signer URL in new window, button visibility |
-| 8 | 80-PLAN-SIGNiX-DASHBOARD.md | Signature transactions list view, Delete Transaction History (all) |
-| 9 | 90-PLAN-SIGNiX-DEAL-VIEW-TRANSACTIONS.md | Related signature transactions table on Deal View (separate card), Delete for deal (deal-scoped URL), context on all deal-detail paths |
+| 1 | [10-PLAN-SIGNiX-CONFIG.md](10-PLAN-SIGNiX-CONFIG.md) | SignixConfig model, SIGNiX Configuration admin UI (credentials, submitter, demo_only, etc.) |
+| 2 | [20-PLAN-SIGNiX-SIGNATURE-TRANSACTION.md](20-PLAN-SIGNiX-SIGNATURE-TRANSACTION.md) | SignatureTransaction model, Deal relation |
+| 3 | [30-PLAN-SIGNiX-SIGNER-SERVICE.md](30-PLAN-SIGNiX-SIGNER-SERVICE.md) | get_signers_for_document_set_template, slot→person resolution, unit tests |
+| 4 | [40-PLAN-SIGNiX-SIGNERS-TABLE.md](40-PLAN-SIGNiX-SIGNERS-TABLE.md) | signer_order/signer_authentication storage, Signers table on Deal View (reorder, auth dropdown) |
+| 5 | [50-PLAN-SIGNiX-BUILD-BODY.md](50-PLAN-SIGNiX-BUILD-BODY.md) | build_submit_document_body, validation, XML template, unit tests |
+| 6 | [60-PLAN-SIGNiX-SEND-AND-PERSIST.md](60-PLAN-SIGNiX-SEND-AND-PERSIST.md) | send to Flex, parse response, GetAccessLink, create SignatureTransaction, update version status |
+| 7 | [70-PLAN-SIGNiX-SEND-FOR-SIGNATURE.md](70-PLAN-SIGNiX-SEND-FOR-SIGNATURE.md) | Replace Send for Signature stub, open first signer URL in new window, button visibility |
+| 8 | [80-PLAN-SIGNiX-DASHBOARD.md](80-PLAN-SIGNiX-DASHBOARD.md) | Signature transactions list view, Delete Transaction History (all) |
+| 9 | [90-PLAN-SIGNiX-DEAL-VIEW-TRANSACTIONS.md](90-PLAN-SIGNiX-DEAL-VIEW-TRANSACTIONS.md) | Related signature transactions table on Deal View (separate card), Delete for deal (deal-scoped URL), context on all deal-detail paths |
 
 ---
 
@@ -199,8 +199,8 @@ Plans 1 and 2 have no dependencies on each other and can be implemented in eithe
 
 ## Relation to PHASE-PLANS-DOCS
 
-**PHASE-PLANS-DOCS** item 5 (SIGNiX integration) has been replaced by a reference to this phase plans document and the nine plans above; implement document features as DOCS plans 1–4 only, then this phase plans document. DESIGN-SIGNiX-SUBMIT.md scopes the first phase to **submit only** (no push, no DownloadDocument/ConfirmDownload). This phase plans document covers that scope. Full integration (push, download, confirm) can be a later phase plans document or extension.
+**PHASE-PLANS-DOCS** item 5 (SIGNiX integration) has been replaced by a reference to this phase plans document and the nine plans above; implement document features as DOCS plans 1–4 only, then this phase plans document. [DESIGN-SIGNiX-SUBMIT.md](DESIGN-SIGNiX-SUBMIT.md) scopes the first phase to **submit only** (no push, no DownloadDocument/ConfirmDownload). This phase plans document covers that scope. Full integration (push, download, confirm) can be a later phase plans document or extension.
 
 ---
 
-*To implement the SIGNiX submit flow: ensure ../70-PLAN-MASTER.md 1–4 and PHASE-PLANS-DOCS 1–4 are complete, then implement plans 1–9 above in order, following each plan’s batches and verification.*
+*To implement the SIGNiX submit flow: ensure [70-PLAN-MASTER.md](../70-PLAN-MASTER.md) 1–4 and PHASE-PLANS-DOCS 1–4 are complete, then implement plans 1–9 above in order, following each plan’s batches and verification.*

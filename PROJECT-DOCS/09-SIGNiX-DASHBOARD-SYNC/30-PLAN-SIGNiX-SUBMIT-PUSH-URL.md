@@ -2,7 +2,7 @@
 
 This plan adds the **push notification URL** to every SubmitDocument request (so SIGNiX can send webhooks to this app) and sets **signer_count** when creating a SignatureTransaction. It uses a single helper **get_push_base_url(request=None)** for resolution and wires the submit path and config form to use it. Plan 2 (push listener) must be in place so SIGNiX can reach the endpoint once we send the URL.
 
-**Design reference:** DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md — Section 5 (SubmitDocument push URL), Section 5.4 (get_push_base_url), Section 3.4 (signer_count at submit), **Section 11 decision #7 (submitted event and document as sent)**. PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md — Plan 3 deliverables.
+**Design reference:** [DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md](DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md) — Section 5 (SubmitDocument push URL), Section 5.4 (get_push_base_url), Section 3.4 (signer_count at submit), **Section 11 decision #7 (submitted event and document as sent)**. [PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md](PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md) — Plan 3 deliverables.
 
 **Prerequisites:** Plan 1 (PLAN-SIGNiX-SYNC-MODEL) and Plan 2 (PLAN-SIGNiX-PUSH-LISTENER) are implemented. SignatureTransaction has signer_count and status_last_updated; SignixConfig has push_base_url; GET /signix/push/ is deployed and reachable. **For real end-to-end verification after submit, keep Django and ngrok running in parallel** so the callback URL embedded in SubmitDocument remains reachable from SIGNiX.
 
@@ -255,4 +255,4 @@ Clear SignixConfig.push_base_url and (if possible) ensure no SIGNIX_PUSH_BASE_UR
 
 ---
 
-*End of plan. Proceed to implementation only after review. Next: 40-PLAN-SIGNiX-DASHBOARD-SIGNERS.md (Plan 4).*
+*End of plan. Proceed to implementation only after review. Next: [40-PLAN-SIGNiX-DASHBOARD-SIGNERS.md](40-PLAN-SIGNiX-DASHBOARD-SIGNERS.md) (Plan 4).*

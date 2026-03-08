@@ -2,7 +2,7 @@
 
 This document outlines how to **replace the Send for Signature stub** on the Deal detail page: wire the button to the Plan 6 orchestrator, open the first signer’s signing URL in a separate window on success, and control button visibility using the same validation used for submit.
 
-**Design reference:** DESIGN-SIGNiX-SUBMIT.md — Section 7.1 (Deal detail — Send for Signature), Section 7.2 (First signer signing experience). PLAN-ADD-DOCUMENT-SETS — Send for Signature stub at `POST /deals/<pk>/documents/send-for-signature/`, deal detail Documents section.
+**Design reference:** [DESIGN-SIGNiX-SUBMIT.md](DESIGN-SIGNiX-SUBMIT.md) — Section 7.1 (Deal detail — Send for Signature), Section 7.2 (First signer signing experience). PLAN-ADD-DOCUMENT-SETS — Send for Signature stub at `POST /deals/<pk>/documents/send-for-signature/`, deal detail Documents section.
 
 **Prerequisites:** Plan 6 (orchestrator `submit_document_set_for_signature`, SignixValidationError, SignixApiError) is implemented. Plans 1–5 (SignixConfig, SignatureTransaction, signer service, signers table, validate_submit_preconditions, build_submit_document_body) are in place. The stub view and button exist (POST to `deals:deal_send_for_signature_stub`, URL `/deals/<pk>/documents/send-for-signature/`).
 
@@ -198,4 +198,4 @@ Two approaches; choose one for implementation.
 
 ---
 
-*End of plan. Proceed to implementation only after review. Next: 80-PLAN-SIGNiX-DASHBOARD.md (Plan 8).*
+*End of plan. Proceed to implementation only after review. Next: [80-PLAN-SIGNiX-DASHBOARD.md](80-PLAN-SIGNiX-DASHBOARD.md) (Plan 8).*

@@ -1,6 +1,6 @@
 # Knowledge: File Upload, Storage, and Media (Without a Document Management Subsystem)
 
-This document describes the **pattern** of uploading files (e.g. images), storing them with metadata, and exposing **stable URLs** for reference—**without** introducing a full document management subsystem (DMS). It is reusable for document-centric applications that need logos, diagrams, or other assets in templates. This project implements this pattern for **Images** (PLAN-ADD-IMAGES); the design is in **../03-IMAGES/DESIGN-IMAGES.md**.
+This document describes the **pattern** of uploading files (e.g. images), storing them with metadata, and exposing **stable URLs** for reference—**without** introducing a full document management subsystem (DMS). It is reusable for document-centric applications that need logos, diagrams, or other assets in templates. This project implements this pattern for **Images** (PLAN-ADD-IMAGES); the design is in [03-IMAGES/DESIGN-IMAGES.md](../03-IMAGES/DESIGN-IMAGES.md).
 
 **When to use a DMS:** If you need versioning, complex access control, or integration with an external system (e.g. Directus, S3 + metadata API), you may add or replace this layer with a dedicated DMS. The knowledge here applies to the **simple** case: app-managed storage under a media root, with a single source of truth in your application.
 
@@ -24,7 +24,7 @@ Document templates (e.g. HTML with `<img src="...">`) and mapping configurations
 - **Unstable URL** — Each upload gets a new path (e.g. `media/images/logo_abc123.png` → `media/images/logo_def456.png`). References in saved templates break unless you rewrite them on replace.
 - **Stable URL** — The path includes a **stable** part (e.g. `media/images/<id>/image` or `media/images/<uuid>.png`) so the same record always serves from the same URL. Replacing the file updates the file on disk but the URL stays the same; templates keep working.
 
-This project uses a **stable URL** strategy (e.g. `upload_to` that includes the instance id or a uuid) so that replacement does not break template references. See ../03-IMAGES/DESIGN-IMAGES.md and ../03-IMAGES/10-PLAN-ADD-IMAGES.md.
+This project uses a **stable URL** strategy (e.g. `upload_to` that includes the instance id or a uuid) so that replacement does not break template references. See [03-IMAGES/DESIGN-IMAGES.md](../03-IMAGES/DESIGN-IMAGES.md) and [03-IMAGES/10-PLAN-ADD-IMAGES.md](../03-IMAGES/10-PLAN-ADD-IMAGES.md).
 
 ---
 
@@ -53,7 +53,7 @@ Consider a **DMS** (e.g. Directus, custom S3 + metadata, or a document managemen
 - You want to **offload** storage and serving to an external system (e.g. S3, Directus assets).
 - You have **many** asset types or complex metadata beyond name and file.
 
-**Extending this project:** The current design (DESIGN-IMAGES) uses app-managed storage and a stable identifier (e.g. uuid) for resolution. To integrate Directus (or similar), you would: (1) keep the **contract** that document features resolve "image:<uuid>" (or a URL) to an HTTP-accessible image URL; (2) replace the resolution implementation (e.g. `Image.objects.get(uuid=...)` → Directus API or asset URL builder). The mapping UI and context builder would still work; only the **source** of the file and URL would change. See ../03-IMAGES/DESIGN-IMAGES.md for the extension point.
+**Extending this project:** The current design (DESIGN-IMAGES) uses app-managed storage and a stable identifier (e.g. uuid) for resolution. To integrate Directus (or similar), you would: (1) keep the **contract** that document features resolve "image:<uuid>" (or a URL) to an HTTP-accessible image URL; (2) replace the resolution implementation (e.g. `Image.objects.get(uuid=...)` → Directus API or asset URL builder). The mapping UI and context builder would still work; only the **source** of the file and URL would change. See [03-IMAGES/DESIGN-IMAGES.md](../03-IMAGES/DESIGN-IMAGES.md) for the extension point.
 
 ---
 
@@ -61,11 +61,11 @@ Consider a **DMS** (e.g. Directus, custom S3 + metadata, or a document managemen
 
 | Document | Content |
 |----------|---------|
-| **../03-IMAGES/DESIGN-IMAGES.md** | This application’s design: Image model, stable URLs, how document features consume images, extension point for DMS. |
-| **../03-IMAGES/10-PLAN-ADD-IMAGES.md** | Implementation: apps.images, model, MEDIA config, CRUD, list with URL column, edit with replacement. |
-| **../06-DOCS/DESIGN-DOCS.md** | Image variables in dynamic templates; mapping optgroup; `image:<uuid>`; context builder resolution. |
-| **KNOWLEDGE-DOCUMENT-CENTRIC-APPS.md** | General pattern; document generation enablers include file/assets (images). |
+| [03-IMAGES/DESIGN-IMAGES.md](../03-IMAGES/DESIGN-IMAGES.md) | This application’s design: Image model, stable URLs, how document features consume images, extension point for DMS. |
+| [03-IMAGES/10-PLAN-ADD-IMAGES.md](../03-IMAGES/10-PLAN-ADD-IMAGES.md) | Implementation: apps.images, model, MEDIA config, CRUD, list with URL column, edit with replacement. |
+| [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) | Image variables in dynamic templates; mapping optgroup; `image:<uuid>`; context builder resolution. |
+| [KNOWLEDGE-DOCUMENT-CENTRIC-APPS.md](KNOWLEDGE-DOCUMENT-CENTRIC-APPS.md) | General pattern; document generation enablers include file/assets (images). |
 
 ---
 
-*This knowledge file describes the **pattern** of file upload and media storage without a DMS. For this application’s design and implementation, see **../03-IMAGES/DESIGN-IMAGES.md** and **../03-IMAGES/10-PLAN-ADD-IMAGES.md**.*
+*This knowledge file describes the **pattern** of file upload and media storage without a DMS. For this application’s design and implementation, see [03-IMAGES/DESIGN-IMAGES.md](../03-IMAGES/DESIGN-IMAGES.md) and [03-IMAGES/10-PLAN-ADD-IMAGES.md](../03-IMAGES/10-PLAN-ADD-IMAGES.md).*

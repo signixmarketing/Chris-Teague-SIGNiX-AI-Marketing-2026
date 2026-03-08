@@ -1,12 +1,12 @@
 # Level of Effort Estimate — Lease Origination Sample Application
 
-This document provides a **level of effort estimate** for fully executing the work-breakdown in **50-WBS.md**. It is intended to give stakeholders and project managers a clear view of the effort required so they can confirm commitment, adjust scope, or prioritize. The estimate is closely aligned with the work-breakdown: each phase (and where useful, work type within a phase) has an effort value.
+This document provides a **level of effort estimate** for fully executing the work-breakdown in [50-WBS.md](50-WBS.md). It is intended to give stakeholders and project managers a clear view of the effort required so they can confirm commitment, adjust scope, or prioritize. The estimate is closely aligned with the work-breakdown: each phase (and where useful, work type within a phase) has an effort value.
 
 **Unit:** Person-days. Assumes a single project lead directing work (e.g. with Cursor or similar AI-powered development); in a traditional team, effort could be distributed across roles (e.g. design, implementation, QA) and the same WBS used for assignment.
 
 **Basis:** The estimates are informed by the actual experience of executing this project. They are indicative rather than contractual; scope changes, learning curve, or tooling differences can affect actual effort. For a from-scratch run following the project’s plans and documentation, these numbers are a reasonable starting point for stakeholder review.
 
-**References:** 50-WBS.md (work-breakdown), 40-REQUIREMENTS.md (phases and scope), 30-SCOPE.md (boundaries).
+**References:** [50-WBS.md](50-WBS.md) (work-breakdown), [40-REQUIREMENTS.md](40-REQUIREMENTS.md) (phases and scope), [30-SCOPE.md](30-SCOPE.md) (boundaries).
 
 ---
 
@@ -52,7 +52,7 @@ This document provides a **level of effort estimate** for fully executing the wo
 ## Assumptions and Risks
 
 - **Single project lead with AI-assisted development:** One person directing work (e.g. with Cursor); implementation and documentation are produced in conversation with the tool. A larger team would redistribute effort and might add coordination overhead.
-- **Scope stability:** Effort assumes scope as defined in 30-SCOPE.md and 40-REQUIREMENTS.md. Significant scope creep or new phases would require a revised WBS and LOE.
+- **Scope stability:** Effort assumes scope as defined in [30-SCOPE.md](30-SCOPE.md) and [40-REQUIREMENTS.md](40-REQUIREMENTS.md). Significant scope creep or new phases would require a revised WBS and LOE.
 - **Existing knowledge:** If the team is new to Django, SIGNiX, or document-centric patterns, Knowledge and Implementation effort may increase; the estimates assume the project’s knowledge and design docs are used.
 - **Environment:** Assumes development environment (OS, Python, database, SIGNiX test account, ngrok) can be set up without major blockers. Delays in environment setup are not included.
 - **Phase 10:** Reference and template quality (documentation feedback loop, gold standard) is ongoing. No separate lump sum is added; it is assumed to be part of the discipline of each phase.
@@ -68,4 +68,4 @@ This document provides a **level of effort estimate** for fully executing the wo
 
 ---
 
-*Work-breakdown: **50-WBS.md**. What the system must do: **40-REQUIREMENTS.md**. What is in or out of scope: **30-SCOPE.md**. Implementation order: **70-PLAN-MASTER.md**.*
+*Work-breakdown: [50-WBS.md](50-WBS.md). What the system must do: [40-REQUIREMENTS.md](40-REQUIREMENTS.md). What is in or out of scope: [30-SCOPE.md](30-SCOPE.md). Implementation order: [70-PLAN-MASTER.md](70-PLAN-MASTER.md).*

@@ -2,7 +2,7 @@
 
 This plan implements the **push notification listener** that SIGNiX calls when events occur (Send, partyComplete, complete, suspend, cancel, expire). It updates `SignatureTransaction` status and per-signer progress via two helpers, returns 200 OK quickly, and for **action=complete** triggers the download flow asynchronously (Plan 5 implements the real download; this plan wires a stub).
 
-**Design reference:** DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md — Section 4 (Push Notification Listener), Section 4.2 (record event), Section 4.4 (helpers), Section 7.5 (SignatureTransactionEvent); Section 3.1 (status values), Section 3.4 (per-signer progress). ../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md — push request format, action→status mapping, idempotency.
+**Design reference:** [DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md](DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md) — Section 4 (Push Notification Listener), Section 4.2 (record event), Section 4.4 (helpers), Section 7.5 (SignatureTransactionEvent); Section 3.1 (status values), Section 3.4 (per-signer progress). [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md) — push request format, action→status mapping, idempotency.
 
 **Prerequisites:** Plan 1 (PLAN-SIGNiX-SYNC-MODEL) is implemented: SignatureTransaction has signer_count, signers_completed_refids, signers_completed_count, **status_last_updated**, and STATUS_EXPIRED; **SignatureTransactionEvent** model exists; migrations applied. **For real end-to-end testing with SIGNiX callbacks, PLAN-NGROK must also be active and both Django and ngrok must be running in parallel** so SIGNiX can reach the callback URL emitted by Plan 3. If Plan 3 derives the callback from the request host behind ngrok, Django must trust the forwarded HTTPS scheme so the generated URL is `https://...`, not `http://...`.
 
@@ -311,4 +311,4 @@ Use your runserver URL (or ngrok URL for production-like testing) in place of `h
 
 ---
 
-*End of plan. Proceed to implementation only after review. Next: 30-PLAN-SIGNiX-SUBMIT-PUSH-URL.md (Plan 3).*
+*End of plan. Proceed to implementation only after review. Next: [30-PLAN-SIGNiX-SUBMIT-PUSH-URL.md](30-PLAN-SIGNiX-SUBMIT-PUSH-URL.md) (Plan 3).*

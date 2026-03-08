@@ -2,7 +2,7 @@
 
 This document outlines how to **send** the built SubmitDocument body to SIGNiX (POST), parse the response, call GetAccessLink when needed to obtain the first signer's URL, create a `SignatureTransaction` record, and update `DocumentInstanceVersion` status to "Submitted to SIGNiX". The orchestrator ties together validation (Plan 5), body building (Plan 5), send, and persistence so the view (Plan 7) can call a single entry point.
 
-**Design reference:** DESIGN-SIGNiX-SUBMIT.md — Section 6 (Transaction Packager), Section 6.1 (Responsibilities), Section 6.3 (Error handling), Section 6.4 (Separation of body construction and send). ../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md — endpoints (Webtest/Production), SubmitDocument response, GetAccessLink, response parsing (ElementTree).
+**Design reference:** [DESIGN-SIGNiX-SUBMIT.md](DESIGN-SIGNiX-SUBMIT.md) — Section 6 (Transaction Packager), Section 6.1 (Responsibilities), Section 6.3 (Error handling), Section 6.4 (Separation of body construction and send). [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md) — endpoints (Webtest/Production), SubmitDocument response, GetAccessLink, response parsing (ElementTree).
 
 **Prerequisites:** Plans 1 (SignixConfig, get_signix_config), 2 (SignatureTransaction model), 3 (signer service), 4 (signer order/auth), and 5 (validate_submit_preconditions, build_submit_document_body) are implemented. Document Sets with `DocumentInstanceVersion` and a `status` field (e.g. Draft, Submitted to SIGNiX, Final) exist from PLAN-ADD-DOCUMENT-SETS.
 
@@ -201,4 +201,4 @@ This document outlines how to **send** the built SubmitDocument body to SIGNiX (
 
 ---
 
-*End of plan. Proceed to implementation only after review. Next: 70-PLAN-SIGNiX-SEND-FOR-SIGNATURE.md (Plan 7).*
+*End of plan. Proceed to implementation only after review. Next: [70-PLAN-SIGNiX-SEND-FOR-SIGNATURE.md](70-PLAN-SIGNiX-SEND-FOR-SIGNATURE.md) (Plan 7).*

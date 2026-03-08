@@ -2,7 +2,7 @@
 
 This plan adds the **Signers** column (e.g. "0/2", "1/2", "2/2") and the **Status updated** column (when the current status was last updated) to the signature transactions list view and to the Deal View related-transactions table. Status is already driven by the push listener (Plan 2); this plan adds the two new columns and ensures **null-safe** display. **Plan 1’s data migration** sets **status_last_updated = submitted_at** for all existing transactions, so migrated rows have a consistent Status updated value (submit time as the effective “last status update”); the display helper shows "—" only when status_last_updated is null (edge case).
 
-**Design reference:** DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md — Section 3.2 (Dashboard columns), Section 3.4 (get_signers_display), Section 3.3 (status_last_updated). PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md — Plan 4 deliverables.
+**Design reference:** [DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md](DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md) — Section 3.2 (Dashboard columns), Section 3.4 (get_signers_display), Section 3.3 (status_last_updated). [PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md](PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md) — Plan 4 deliverables.
 
 **Prerequisites:** Plan 1 (PLAN-SIGNiX-SYNC-MODEL) is implemented: SignatureTransaction has signer_count, signers_completed_count, status_last_updated. Plan 2 (push listener) and Plan 3 (submit with signer_count) populate these fields. No dependency on Plan 5.
 
@@ -211,4 +211,4 @@ Confirm that Status updated uses the same date/time format as Submitted at (e.g.
 
 ---
 
-*End of plan. Proceed to implementation only after review. Next: 50-PLAN-SIGNiX-DOWNLOAD-ON-COMPLETE.md (Plan 5).*
+*End of plan. Proceed to implementation only after review. Next: [50-PLAN-SIGNiX-DOWNLOAD-ON-COMPLETE.md](50-PLAN-SIGNiX-DOWNLOAD-ON-COMPLETE.md) (Plan 5).*

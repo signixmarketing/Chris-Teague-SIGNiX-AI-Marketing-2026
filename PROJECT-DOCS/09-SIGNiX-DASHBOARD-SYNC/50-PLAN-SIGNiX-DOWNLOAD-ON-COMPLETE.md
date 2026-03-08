@@ -2,7 +2,7 @@
 
 When a push with **action=complete** is received, the app runs the download flow asynchronously: call **DownloadDocument** (requesting the audit trail and optional certificate of completion), map returned signed documents to the transaction's document_set instances, create new **DocumentInstanceVersion**s (status=Final), **store the audit trail and certificate of completion PDFs on the SignatureTransaction**, then call **ConfirmDownload**. Storage is **proactive**—done in this flow so the signature transaction detail page (Plan 6) only serves already-stored files; the system does not retrieve them when the user visits that page.
 
-**Design reference:** DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md — Section 6 (Download on Completion), Section 6.5a (Store audit trail and certificate on SignatureTransaction), Section 7.4 (audit_trail_file, certificate_of_completion_file). ../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md — DownloadDocument request/response (signed PDFs, audit trail, certificate of completion). PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md — Plan 5 deliverables.
+**Design reference:** [DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md](DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md) — Section 6 (Download on Completion), Section 6.5a (Store audit trail and certificate on SignatureTransaction), Section 7.4 (audit_trail_file, certificate_of_completion_file). [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md) — DownloadDocument request/response (signed PDFs, audit trail, certificate of completion). [PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md](PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md) — Plan 5 deliverables.
 
 **Prerequisites:** Plan 1 (PLAN-SIGNiX-SYNC-MODEL) is implemented: SignatureTransaction has audit_trail_file and certificate_of_completion_file. Plan 2 (push listener) triggers download_signed_documents_on_complete on action=complete. DocumentInstanceVersion and document_set.instances exist (PLAN-ADD-DOCUMENT-SETS or equivalent). **For real end-to-end verification driven by SIGNiX completion pushes, Django and ngrok must be running in parallel** so the `complete` callback reaches the local app.
 
@@ -31,7 +31,7 @@ When a push with **action=complete** is received, the app runs the download flow
 - **UseConfirmDownload** — true when using retention (DelDocsAfter); required for ConfirmDownload to apply.
 - **Observed working order (live verification)** — In the request `<Data>` block, SIGNiX accepted the elements in this order: `DocumentSetID`, `IncludeAuditData`, `AuditDataFormat`, `UseConfirmDownload`, then `IncludeCertificateOfCompletion` when requested. Using `AuditTrailFormat`, or placing `AuditDataFormat` after `UseConfirmDownload`, caused schema validation errors during live testing.
 
-Exact element names and structure per [Flex API — DownloadDocument](https://www.signix.com/apidocumentation) and ../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md.
+Exact element names and structure per [Flex API — DownloadDocument](https://www.signix.com/apidocumentation) and [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md).
 
 ### 2.2 Response parsing
 
@@ -147,4 +147,4 @@ Create **apps/deals/tests/test_signix_download_on_complete.py** (or add to exist
 
 ---
 
-*End of plan. Proceed to implementation only after review. Next: 60-PLAN-SIGNiX-TRANSACTION-DETAIL.md (Plan 6).*
+*End of plan. Proceed to implementation only after review. Next: [60-PLAN-SIGNiX-TRANSACTION-DETAIL.md](60-PLAN-SIGNiX-TRANSACTION-DETAIL.md) (Plan 6).*

@@ -2,9 +2,9 @@
 
 This document outlines how to add **SignixConfig** (SIGNiX credentials and submitter information) and the **SIGNiX Configuration** administrative page. There is a single configuration record (singleton); the page allows staff to create or edit it. This plan does not implement the submit flow—only the model and UI so that configuration exists for the transaction packager (later plans).
 
-**Design reference:** DESIGN-SIGNiX-SUBMIT.md — Section 4.4 (SIGNiX configuration), Section 6.2 (Configuration), Section 7.6 (Administrative — SIGNiX configuration). ../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md — Flex API credentials and endpoints.
+**Design reference:** [DESIGN-SIGNiX-SUBMIT.md](DESIGN-SIGNiX-SUBMIT.md) — Section 4.4 (SIGNiX configuration), Section 6.2 (Configuration), Section 7.6 (Administrative — SIGNiX configuration). [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md) — Flex API credentials and endpoints.
 
-**Prerequisites:** ../70-PLAN-MASTER.md plans 1–4 and PHASE-PLANS-DOCS plans 1–4 are implemented. The app has Deals, Document Sets, and the Send for Signature stub.
+**Prerequisites:** [70-PLAN-MASTER.md](../70-PLAN-MASTER.md) plans 1–4 and PHASE-PLANS-DOCS plans 1–4 are implemented. The app has Deals, Document Sets, and the Send for Signature stub.
 
 **Review this plan before implementation.** Implementation order is in **Section 6**; **Section 6a** defines batches and verification.
 
@@ -200,4 +200,4 @@ Batch 2 is complete when all of the above pass.
 
 ---
 
-*End of plan. Proceed to implementation only after review. Next: 20-PLAN-SIGNiX-SIGNATURE-TRANSACTION.md (Plan 2).*
+*End of plan. Proceed to implementation only after review. Next: [20-PLAN-SIGNiX-SIGNATURE-TRANSACTION.md](20-PLAN-SIGNiX-SIGNATURE-TRANSACTION.md) (Plan 2).*

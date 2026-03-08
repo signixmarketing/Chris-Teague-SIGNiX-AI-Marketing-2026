@@ -2,7 +2,7 @@
 
 This document outlines how to add **Static Document Templates** to the Django lease application. Static templates are reusable PDFs with form fields (e.g., safety advisory, disclosures) that become "required documents" in a document set. Users upload a PDF and configure metadata (ref_id, description) and form field definitions (tagging_data) for SIGNiX.
 
-**Design reference:** DESIGN-DOCS.md — Static Document Templates section.
+**Design reference:** [DESIGN-DOCS.md](DESIGN-DOCS.md) — Static Document Templates section.
 
 **Prerequisites:** PLAN-MASTER plans 1–4 are implemented (Baseline, Biz Domain Master, Images, Data Interface). MEDIA_ROOT/MEDIA_URL are configured from Images. Same UI patterns (list, add, edit, delete with confirmation) are in use.
 

@@ -1,12 +1,12 @@
 # Requirements — Lease Origination Sample Application
 
-This document states the **requirements** for the lease origination sample application: what the system must do and satisfy so that the project meets the goals described in **10-PROJECT-PITCH.md**. Requirements are written so that they can be verified; scope (what we build in which version) is in **30-SCOPE.md**; approach (how we build and document) is in **20-APPROACH.md**.
+This document states the **requirements** for the lease origination sample application: what the system must do and satisfy so that the project meets the goals described in [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md). Requirements are written so that they can be verified; scope (what we build in which version) is in [30-SCOPE.md](30-SCOPE.md); approach (how we build and document) is in [20-APPROACH.md](20-APPROACH.md).
 
 ---
 
 ## 1. Context and Stakeholders
 
-The application serves multiple stakeholders (see **10-PROJECT-PITCH.md** for the full narrative):
+The application serves multiple stakeholders (see [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md) for the full narrative):
 
 - **Project lead** — Responsible for direction, technical research, best practices, and ensuring the application and documentation serve project goals (learning AI-powered development, creating a template for teaching, proving out SIGNiX integration, clarifying end-to-end usage).
 - **Lease officers** — Primary users in the scenario; employees who manage vehicles, contacts, deals, generate documents, and send for signature.
@@ -94,14 +94,14 @@ The application must satisfy the functional and non-functional requirements belo
 ## 4. Constraints
 
 - **R-C1** The application shall integrate with **SIGNiX** for electronic signing (Flex API, SubmitDocument, GetAccessLink, push notifications, DownloadDocument, ConfirmDownload) as the chosen provider for this project.
-- **R-C2** The application shall be implemented using the **Django** framework and the **Python** ecosystem as specified in the project’s plans; technology choices are documented in **20-APPROACH.md**.
-- **R-C3** The application shall follow the **Knowledge → Design → Plan** documentation structure and the deal-centric pattern described in **GENERAL-KNOWLEDGE/KNOWLEDGE-DOCUMENT-CENTRIC-APPS.md** so that requirements, scope, and approach remain aligned with the implementation.
+- **R-C2** The application shall be implemented using the **Django** framework and the **Python** ecosystem as specified in the project’s plans; technology choices are documented in [20-APPROACH.md](20-APPROACH.md).
+- **R-C3** The application shall follow the **Knowledge → Design → Plan** documentation structure and the deal-centric pattern described in [GENERAL-KNOWLEDGE/KNOWLEDGE-DOCUMENT-CENTRIC-APPS.md](GENERAL-KNOWLEDGE/KNOWLEDGE-DOCUMENT-CENTRIC-APPS.md) so that requirements, scope, and approach remain aligned with the implementation.
 
 ---
 
 ## 5. Out of Scope / Not Requirements (This Version)
 
-The following are **not** required for this version of the application; they may be in scope for a later version or a different project (see **30-SCOPE.md** for in/out of scope):
+The following are **not** required for this version of the application; they may be in scope for a later version or a different project (see [30-SCOPE.md](30-SCOPE.md) for in/out of scope):
 
 - **Role-based permissions** — No requirement for fine-grained roles (e.g. viewer, editor, admin) beyond staff access to the app and admin.
 - **Multi-tenancy** — No requirement for multiple organizations or tenants in a single deployment.
@@ -112,4 +112,4 @@ The following are **not** required for this version of the application; they may
 
 ---
 
-*Stakeholder and benefit narrative: **10-PROJECT-PITCH.md**. What is in or out of scope for this version: **30-SCOPE.md**. How we build and document: **20-APPROACH.md**. Work-breakdown and effort: **50-WBS.md**, **60-LOE.md**.*
+*Stakeholder and benefit narrative: [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md). What is in or out of scope for this version: [30-SCOPE.md](30-SCOPE.md). How we build and document: [20-APPROACH.md](20-APPROACH.md). Work-breakdown and effort: [50-WBS.md](50-WBS.md), [60-LOE.md](60-LOE.md).*

@@ -2,9 +2,9 @@
 
 This document outlines how to add **Document Sets**, **Document Instances**, and **Document Instance Versions** to the Django lease application. A Document Set is attached to a Deal and contains the documents generated from templates (lease agreement, safety advisory, etc.). Users generate documents from the Deal page, view them, regenerate when data changes, and delete the document set when needed.
 
-**Design reference:** DESIGN-DOCS.md — Document Sets, Document Instances, Document Instance Versions, Creation Flow, Re-generation Flow, Status Flow, User Experience, and Decisions Log. ../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md — `get_deal_data(deal)` and no-circumvention requirement for the context builder.
+**Design reference:** [DESIGN-DOCS.md](DESIGN-DOCS.md) — Document Sets, Document Instances, Document Instance Versions, Creation Flow, Re-generation Flow, Status Flow, User Experience, and Decisions Log. [04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md](../04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md) — `get_deal_data(deal)` and no-circumvention requirement for the context builder.
 
-**Prerequisites:** 10-PLAN-ADD-STATIC-DOC-TEMPLATES.md, 20-PLAN-ADD-DYNAMIC-DOC-TEMPLATES.md, 30-PLAN-ADD-DOC-SET-TEMPLATES.md, and ../02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md must be implemented. ../70-PLAN-MASTER.md plans 1–4 are implemented, including ../04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md (apps.schema provides `get_deal_data(deal)` for the context builder). Deal Type is in place; the deal detail page (View/Edit split) exists with Back, Edit, and Delete—list links to detail via View.
+**Prerequisites:** [10-PLAN-ADD-STATIC-DOC-TEMPLATES.md](10-PLAN-ADD-STATIC-DOC-TEMPLATES.md), [20-PLAN-ADD-DYNAMIC-DOC-TEMPLATES.md](20-PLAN-ADD-DYNAMIC-DOC-TEMPLATES.md), [30-PLAN-ADD-DOC-SET-TEMPLATES.md](30-PLAN-ADD-DOC-SET-TEMPLATES.md), and [02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md](../02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md) must be implemented. [70-PLAN-MASTER.md](../70-PLAN-MASTER.md) plans 1–4 are implemented, including [04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md](../04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md) (apps.schema provides `get_deal_data(deal)` for the context builder). Deal Type is in place; the deal detail page (View/Edit split) exists with Back, Edit, and Delete—list links to detail via View.
 
 **Review this plan before implementation.** Implementation order is in **Section 8**; **Section 7a** defines batches and verification. **All four batches are implemented**; the plan is kept as the single source of truth for behavior and future changes.
 
@@ -55,9 +55,9 @@ This document outlines how to add **Document Sets**, **Document Instances**, and
 
 ## 3. Deal Detail Page
 
-**Decision:** The View / Edit split is implemented in **../02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md** and is in place. The deal detail page exists with "View" as the primary link from the list; Edit and Delete are on the detail page. This plan extends the deal detail page with the Documents section.
+**Decision:** The View / Edit split is implemented in [02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md](../02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md) and is in place. The deal detail page exists with "View" as the primary link from the list; Edit and Delete are on the detail page. This plan extends the deal detail page with the Documents section.
 
-../02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md provides: `deal_detail` view and template at `/deals/<pk>/`, list links to detail (View primary, no Edit on list), Back and Edit and Delete buttons on detail. This plan adds the Documents section below the deal summary.
+[02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md](../02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md) provides: `deal_detail` view and template at `/deals/<pk>/`, list links to detail (View primary, no Edit on list), Back and Edit and Delete buttons on detail. This plan adds the Documents section below the deal summary.
 
 - **URL:** `/deals/<pk>/` (name `deal_detail`) — already exists.
 - **Content:** Deal summary (read-only) including deal type, lease officer, dates, payment, vehicles, contacts; Back, Edit, Delete buttons. This plan adds: Generate Documents (or Regenerate / Delete Document Set when set exists) and the Documents table.
@@ -157,7 +157,7 @@ The **context builder** and **Dynamic render-to-PDF** logic live in the same ser
    - Run `makemigrations` and `migrate`.
 
 4. **Deal detail — Documents section**
-   - The deal detail page (View/Edit split) is implemented in ../02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md. This step adds the **Documents** section to the existing deal detail template. Replace the placeholder with the Documents UI (Generate button, Documents table, etc.).
+   - The deal detail page (View/Edit split) is implemented in [02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md](../02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md). This step adds the **Documents** section to the existing deal detail template. Replace the placeholder with the Documents UI (Generate button, Documents table, etc.).
    - Update the deal_detail view to prefetch `document_sets__instances__versions` and pass `document_set = deal.document_sets.first()` so the template can render the Documents section (and, when a set exists, the instances table) without N+1 queries. No changes to deal list or deal_detail URL.
 
 Batch 1 complete when models exist and deal detail loads.
@@ -332,7 +332,7 @@ The following are fixed for this plan so that implementation is consistent.
 
 | # | Topic | Decision |
 |---|-------|----------|
-| 1 | **Deal detail** | Deal detail page (View primary from list, Edit/Delete on detail) is implemented in ../02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md. This plan adds the Documents section to that page. See Section 3. |
+| 1 | **Deal detail** | Deal detail page (View primary from list, Edit/Delete on detail) is implemented in [02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md](../02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md). This plan adds the Documents section to that page. See Section 3. |
 | 2 | **Image URLs for PDF** | Pass `request` to generation; build image URLs with `request.build_absolute_uri(image.file.url)` when request is present so wkhtmltopdf can load them. When request is None, use `SITE_URL` + relative path (e.g. management command). Do **not** pass `--base-url` to wkhtmltopdf; many builds (0.12.6) do not support it. See Section 6 and Implementation Notes. |
 | 3 | **Transforms** | Use `apps.doctemplates.utils.apply_transform()`. Supported: date_day, date_month, date_year, date_month_day, count, number_to_word, plural_suffix. See Implementation Notes. |
 | 4 | **First contact / first vehicle** | Resolve from `get_deal_data(deal)` output at index 0; ordering is by id per DESIGN-DATA-INTERFACE. |

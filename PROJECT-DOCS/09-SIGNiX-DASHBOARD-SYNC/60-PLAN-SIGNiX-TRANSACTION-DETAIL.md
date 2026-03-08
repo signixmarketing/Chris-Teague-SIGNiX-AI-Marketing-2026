@@ -2,7 +2,7 @@
 
 This plan adds a **signature transaction detail page** that provides a **living representation** of the transaction: what was sent to SIGNiX, status and when it was last updated, signers (with who signed and when), documents as sent vs signed, a chronological event timeline, and links to the audit trail and certificate of completion. The audit trail and certificate are **already stored** on the transaction by Plan 5; this plan only adds the page and file-serving views—no on-demand fetch from SIGNiX when the user visits the page.
 
-**Design reference:** DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md — Section 8 (Signature transaction detail and viewing artifacts), **Section 8.2 (page structure: header, signers table, documents table, events table, audit/certificate)**, Section 8.3 (table row action), Section 8.4 (serving the files). PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md — Plan 6 deliverables.
+**Design reference:** [DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md](DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md) — Section 8 (Signature transaction detail and viewing artifacts), **Section 8.2 (page structure: header, signers table, documents table, events table, audit/certificate)**, Section 8.3 (table row action), Section 8.4 (serving the files). [PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md](PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md) — Plan 6 deliverables.
 
 **Prerequisites:** Plan 1 (SignatureTransaction has status_last_updated, audit_trail_file, certificate_of_completion_file; **SignatureTransactionEvent** exists). Plan 2 (push listener creates events per push). Plan 3 (orchestrator creates **submitted** event and marks document versions "Submitted to SIGNiX"). Plan 5 (download_signed_documents_on_complete stores audit trail and certificate when transaction completes). Dashboard and Deal View tables exist (Plan 4 adds Signers/Status updated; this plan adds a "View" link to the same tables).
 
@@ -183,4 +183,4 @@ Create **apps/deals/tests/test_signature_transaction_detail.py** (or add to an e
 
 ---
 
-*End of plan. Implementation completes the dashboard/sync feature set from DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md Section 8.*
+*End of plan. Implementation completes the dashboard/sync feature set from [DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md](DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md) Section 8.*

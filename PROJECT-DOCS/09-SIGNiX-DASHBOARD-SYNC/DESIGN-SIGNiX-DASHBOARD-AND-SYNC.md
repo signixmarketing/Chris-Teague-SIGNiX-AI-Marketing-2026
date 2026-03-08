@@ -2,9 +2,9 @@
 
 This document captures the design for **dashboard status driven by push notifications**, the **push notification listener**, **including the listener URL in SubmitDocument** (so SIGNiX can send webhooks to the app, initially via ngrok), and **downloading signed documents** when transactions complete and storing them as new Document Instance Versions.
 
-**Design references:** **../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md** (push format, action→status mapping, DownloadDocument, ConfirmDownload, per-transaction push URL). **../07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md** (SignatureTransaction model, dashboard and Deal View tables, submit flow; Section 8 defers push and download to this design). **../06-DOCS/DESIGN-DOCS.md** (DocumentInstanceVersion status: Draft → Submitted to SIGNiX → Final). **../08-NGROK/10-PLAN-NGROK.md** (ngrok tunnel and codebase changes so the app is reachable at an HTTPS URL).
+**Design references:** [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md) (push format, action→status mapping, DownloadDocument, ConfirmDownload, per-transaction push URL). [07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md](../07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md) (SignatureTransaction model, dashboard and Deal View tables, submit flow; Section 8 defers push and download to this design). [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) (DocumentInstanceVersion status: Draft → Submitted to SIGNiX → Final). [08-NGROK/10-PLAN-NGROK.md](../08-NGROK/10-PLAN-NGROK.md) (ngrok tunnel and codebase changes so the app is reachable at an HTTPS URL).
 
-**Next step:** After this design is complete, create multiple plan files and a **phase plans document** (e.g. PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md) that defines the order of those plans, then link that document from **../70-PLAN-MASTER.md** so there is a clear end-to-end process for implementing dashboard, sync, and download in the correct order.
+**Next step:** After this design is complete, create multiple plan files and a **phase plans document** (e.g. PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md) that defines the order of those plans, then link that document from [70-PLAN-MASTER.md](../70-PLAN-MASTER.md) so there is a clear end-to-end process for implementing dashboard, sync, and download in the correct order.
 
 ---
 
@@ -30,10 +30,10 @@ This document captures the design for **dashboard status driven by push notifica
 
 | Document | Use |
 |----------|-----|
-| **../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md** | Push notification format (GET, query params: action, id, extid, pid, refid, ts); response 200 OK body "OK"; action→status mapping; idempotency; DownloadDocument, ConfirmDownload; per-transaction push URL (UseClientNotifyVersion2, TransactionClientNotifyURL). |
-| **../07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md** | SignatureTransaction model (deal, document_set, signix_document_set_id, transaction_id, status, first_signing_url, submitted_at, completed_at); dashboard list (Section 7.3) and Deal View related table (Section 7.5); submit flow and build_submit_document_body. |
-| **../06-DOCS/DESIGN-DOCS.md** | Document set, DocumentInstance, DocumentInstanceVersion; status flow Draft → Submitted to SIGNiX → Final. |
-| **../08-NGROK/10-PLAN-NGROK.md** | ngrok setup, ALLOWED_HOSTS, CSRF_TRUSTED_ORIGINS, health endpoint, NGROK_DOMAIN; codebase changes so the app is reachable at `https://<ngrok-domain>/...`. |
+| [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md) | Push notification format (GET, query params: action, id, extid, pid, refid, ts); response 200 OK body "OK"; action→status mapping; idempotency; DownloadDocument, ConfirmDownload; per-transaction push URL (UseClientNotifyVersion2, TransactionClientNotifyURL). |
+| [07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md](../07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md) | SignatureTransaction model (deal, document_set, signix_document_set_id, transaction_id, status, first_signing_url, submitted_at, completed_at); dashboard list (Section 7.3) and Deal View related table (Section 7.5); submit flow and build_submit_document_body. |
+| [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) | Document set, DocumentInstance, DocumentInstanceVersion; status flow Draft → Submitted to SIGNiX → Final. |
+| [08-NGROK/10-PLAN-NGROK.md](../08-NGROK/10-PLAN-NGROK.md) | ngrok setup, ALLOWED_HOSTS, CSRF_TRUSTED_ORIGINS, health endpoint, NGROK_DOMAIN; codebase changes so the app is reachable at `https://<ngrok-domain>/...`. |
 | [SIGNiX Push Notifications](https://www.signix.com/pndocumentation) | Full parameter list, retry behavior, server requirements. |
 | [Flex API](https://www.signix.com/apidocumentation) | DownloadDocument, ConfirmDownload request/response; QueryTransactionStatus. |
 
@@ -340,8 +340,8 @@ This section defines the **signature transaction detail page** as a **living rep
 
 ## 10. Dependencies and Implementation Order
 
-- **Depends on:** DESIGN-SIGNiX-SUBMIT implemented (SignatureTransaction, submit flow, dashboard and Deal View tables per Plans 1–9 in PHASE-PLANS-SIGNiX-SUBMIT). **../08-NGROK/10-PLAN-NGROK.md** applied (tunnel and codebase changes so the app is reachable at an HTTPS URL).
-- **Next step:** Create **plan files** (e.g. one for push listener + status updates, one for SubmitDocument URL, one for download + ConfirmDownload, or a different split). Create **PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md** (or similar) that lists those plans in order and links from **../70-PLAN-MASTER.md** so implementers follow the correct end-to-end order.
+- **Depends on:** DESIGN-SIGNiX-SUBMIT implemented (SignatureTransaction, submit flow, dashboard and Deal View tables per Plans 1–9 in PHASE-PLANS-SIGNiX-SUBMIT). [08-NGROK/10-PLAN-NGROK.md](../08-NGROK/10-PLAN-NGROK.md) applied (tunnel and codebase changes so the app is reachable at an HTTPS URL).
+- **Next step:** Create **plan files** (e.g. one for push listener + status updates, one for SubmitDocument URL, one for download + ConfirmDownload, or a different split). Create [PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md](PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md) (or similar) that lists those plans in order and links from [70-PLAN-MASTER.md](../70-PLAN-MASTER.md) so implementers follow the correct end-to-end order.
 
 ---
 
@@ -387,4 +387,4 @@ These decisions are resolved here so plan files can implement without re-opening
 
 ---
 
-*End of design. Implementation will follow plan files and the phase plans document (PHASE-PLANS-SIGNiX-DASHBOARD-SYNC). For Flex API and push details, see ../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md and the SIGNiX documentation.*
+*End of design. Implementation will follow plan files and the phase plans document (PHASE-PLANS-SIGNiX-DASHBOARD-SYNC). For Flex API and push details, see [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md) and the SIGNiX documentation.*

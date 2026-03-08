@@ -2,7 +2,7 @@
 
 This plan defines how to **set up ngrok** and **apply the required codebase changes** so SIGNiX’s servers can send push notifications (webhooks) to a developer’s machine during development and test. It is reusable for building the project from scratch: a different developer on a different computer with a different ngrok account can follow this plan; only **their** domain, authtoken, and whether ngrok is already installed will differ.
 
-**Design context:** ../07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md Section 8 defers push notifications and notes that **ngrok** (or similar) can expose a local URL so SIGNiX can POST webhooks to the Django app. This plan enables that. ../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md and [SIGNiX Push Notifications](https://www.signix.com/pndocumentation) describe the webhook format and subscription.
+**Design context:** [07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md](../07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md) Section 8 defers push notifications and notes that **ngrok** (or similar) can expose a local URL so SIGNiX can POST webhooks to the Django app. This plan enables that. [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md) and [SIGNiX Push Notifications](https://www.signix.com/pndocumentation) describe the webhook format and subscription.
 
 **Usage:** Follow the implementation order (Section 4). Run the “already set up?” check (Section 4.0) first; if ngrok is already installed and authenticated, skip to the batch you need. Apply the **codebase changes** (Section 5) in the order given—they are required for the app to work correctly when accessed through the tunnel. Replace every placeholder (e.g. `YOUR_NGROK_DOMAIN`) with **your** ngrok hostname.
 
@@ -34,7 +34,7 @@ Use the [ngrok pricing and limits](https://ngrok.com/docs/pricing-limits/free-pl
 
 ## 3. Prerequisites
 
-- **Django app** runnable (../70-PLAN-MASTER.md plans 1–4 at minimum; PHASE-PLANS-DOCS 1–4 if you use document generation through the tunnel). The app does not need a push-notification endpoint yet; this plan only establishes the tunnel and the code changes so that when you add the endpoint, SIGNiX can reach it.
+- **Django app** runnable ([70-PLAN-MASTER.md](../70-PLAN-MASTER.md) plans 1–4 at minimum; PHASE-PLANS-DOCS 1–4 if you use document generation through the tunnel). The app does not need a push-notification endpoint yet; this plan only establishes the tunnel and the code changes so that when you add the endpoint, SIGNiX can reach it.
 - **Your machine:** Linux (WSL2 or native), macOS, or Windows. Commands below are for Linux/WSL2; adjust for your OS.
 - **Network:** Outbound HTTPS to ngrok’s services so the ngrok agent can connect.
 - **ngrok:** May **not** be installed when you start; Batch 1 covers install. If it is already installed and authenticated, Section 4.0 tells you how to skip ahead.
@@ -238,8 +238,8 @@ Then proceed to the batches below (or skip to Batch 3 if you only need to run th
 - [ngrok Free plan limits](https://ngrok.com/docs/pricing-limits/free-plan-limits/)
 - [ngrok HTTP agent / tunnels](https://ngrok.com/docs/http)
 - [ngrok config file](https://ngrok.com/docs/agent/config)
-- ../07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md — Section 8 (Push notifications deferred; ngrok for dev)
-- ../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md — Push notifications overview
+- [07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md](../07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md) — Section 8 (Push notifications deferred; ngrok for dev)
+- [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md) — Push notifications overview
 - [SIGNiX Push Notifications](https://www.signix.com/pndocumentation)
 
 ---

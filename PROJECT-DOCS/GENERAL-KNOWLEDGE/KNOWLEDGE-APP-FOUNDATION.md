@@ -1,6 +1,6 @@
 # Knowledge: Application Foundation (Baseline for Data-Centric and Document-Centric Apps)
 
-This document describes the **foundation** that data-centric and document-centric business applications need before adding products, customers, deals, and document generation. It is **technology-agnostic**: the same capabilities and principles apply whether you build with Python/Django, .NET, Node, Go, or another stack. This repo implements the foundation in Django per **../01-BASELINE/10-PLAN-BASELINE.md**; the design decisions are in **../01-BASELINE/DESIGN-BASELINE.md**.
+This document describes the **foundation** that data-centric and document-centric business applications need before adding products, customers, deals, and document generation. It is **technology-agnostic**: the same capabilities and principles apply whether you build with Python/Django, .NET, Node, Go, or another stack. This repo implements the foundation in Django per [01-BASELINE/10-PLAN-BASELINE.md](../01-BASELINE/10-PLAN-BASELINE.md); the design decisions are in [01-BASELINE/DESIGN-BASELINE.md](../01-BASELINE/DESIGN-BASELINE.md).
 
 ---
 
@@ -50,7 +50,7 @@ For this repo, **Python and Django** were chosen because they provide the baseli
 - **Templates and views** — Base templates (app shell vs plain) and view logic are straightforward. The same patterns scale to the rest of the app.
 - **Ecosystem** — Mature, well-documented, and widely used. A developer cloning this template can focus on the business domain and documents rather than reinventing auth and admin.
 
-The same **baseline capabilities** can be implemented in other stacks (see Section 6). This repo provides the **Django** implementation in ../01-BASELINE/10-PLAN-BASELINE.md; ../01-BASELINE/DESIGN-BASELINE.md states the decisions any implementation should satisfy.
+The same **baseline capabilities** can be implemented in other stacks (see Section 6). This repo provides the **Django** implementation in [01-BASELINE/10-PLAN-BASELINE.md](../01-BASELINE/10-PLAN-BASELINE.md); [01-BASELINE/DESIGN-BASELINE.md](../01-BASELINE/DESIGN-BASELINE.md) states the decisions any implementation should satisfy.
 
 ---
 
@@ -68,8 +68,8 @@ The same **baseline capabilities** can be implemented in other stacks (see Secti
 
 If you use this project as a **conceptual template** but implement in a **different language or framework** (e.g. .NET, Node, Go):
 
-- Use **this knowledge file** and **../01-BASELINE/DESIGN-BASELINE.md** as the **capability and design checklist**. They describe *what* the baseline must provide and *why*, not how to code it in Django.
-- **../01-BASELINE/10-PLAN-BASELINE.md** remains the **Django** implementation reference. You do not need to duplicate it in another language; the value for a non-Python project is the checklist (auth, profile with timezone, app shell, admin, initial user) and the design decisions (root redirect, logout via POST, two layouts, etc.).
+- Use **this knowledge file** and [01-BASELINE/DESIGN-BASELINE.md](../01-BASELINE/DESIGN-BASELINE.md) as the **capability and design checklist**. They describe *what* the baseline must provide and *why*, not how to code it in Django.
+- [01-BASELINE/10-PLAN-BASELINE.md](../01-BASELINE/10-PLAN-BASELINE.md) remains the **Django** implementation reference. You do not need to duplicate it in another language; the value for a non-Python project is the checklist (auth, profile with timezone, app shell, admin, initial user) and the design decisions (root redirect, logout via POST, two layouts, etc.).
 - Implement the same **contract**: authenticated users, profile with timezone, app shell with sidebar, admin linked to app, idempotent initial user. Map stack-specific details (e.g. ASP.NET Core Identity, Express + Passport, Next.js auth) to that contract.
 
 ---
@@ -78,11 +78,11 @@ If you use this project as a **conceptual template** but implement in a **differ
 
 | Document | Content |
 |----------|---------|
-| **../01-BASELINE/DESIGN-BASELINE.md** | Design decisions for the baseline (profile shape, redirect, logout, shell, admin, initial user). |
-| **../01-BASELINE/10-PLAN-BASELINE.md** | Django implementation: project structure, users app, profile, auth, base templates, admin, setup command. Section 13 = order, Section 14 = batches and verification. |
-| **../70-PLAN-MASTER.md** | Baseline is plan 1; then biz domain, images, data interface, wkhtmltopdf, document features, signing. |
-| **KNOWLEDGE-DOCUMENT-CENTRIC-APPS.md** | The overall pattern; assumes this baseline before adding products, customers, deals, and documents. |
+| [01-BASELINE/DESIGN-BASELINE.md](../01-BASELINE/DESIGN-BASELINE.md) | Design decisions for the baseline (profile shape, redirect, logout, shell, admin, initial user). |
+| [01-BASELINE/10-PLAN-BASELINE.md](../01-BASELINE/10-PLAN-BASELINE.md) | Django implementation: project structure, users app, profile, auth, base templates, admin, setup command. Section 13 = order, Section 14 = batches and verification. |
+| [70-PLAN-MASTER.md](../70-PLAN-MASTER.md) | Baseline is plan 1; then biz domain, images, data interface, wkhtmltopdf, document features, signing. |
+| [KNOWLEDGE-DOCUMENT-CENTRIC-APPS.md](KNOWLEDGE-DOCUMENT-CENTRIC-APPS.md) | The overall pattern; assumes this baseline before adding products, customers, deals, and documents. |
 
 ---
 
-*This knowledge file describes the **foundation** for data-centric and document-centric business applications. For design decisions, see **../01-BASELINE/DESIGN-BASELINE.md**. For the Django implementation, see **../01-BASELINE/10-PLAN-BASELINE.md**.*
+*This knowledge file describes the **foundation** for data-centric and document-centric business applications. For design decisions, see [01-BASELINE/DESIGN-BASELINE.md](../01-BASELINE/DESIGN-BASELINE.md). For the Django implementation, see [01-BASELINE/10-PLAN-BASELINE.md](../01-BASELINE/10-PLAN-BASELINE.md).*

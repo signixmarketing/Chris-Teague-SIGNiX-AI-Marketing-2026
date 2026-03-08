@@ -1,8 +1,8 @@
 # Design: Application Baseline (Foundation for Data-Centric and Document-Centric Apps)
 
-This document captures the **design** for the application baseline: authentication, user profile (with timezone), app shell (base layout and navigation), admin integration, and initial user. It is the foundation that all later plans (business domain, images, data interface, documents, signing) assume. Implementation in this repo follows **10-PLAN-BASELINE.md** (Django).
+This document captures the **design** for the application baseline: authentication, user profile (with timezone), app shell (base layout and navigation), admin integration, and initial user. It is the foundation that all later plans (business domain, images, data interface, documents, signing) assume. Implementation in this repo follows [10-PLAN-BASELINE.md](10-PLAN-BASELINE.md) (Django).
 
-**Knowledge:** **../GENERAL-KNOWLEDGE/KNOWLEDGE-APP-FOUNDATION.md** describes the principles and capabilities that the baseline must provide; it is technology-agnostic so that the same foundation can be implemented in other stacks. This design states the **decisions** that any implementation should satisfy.
+**Knowledge:** [GENERAL-KNOWLEDGE/KNOWLEDGE-APP-FOUNDATION.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-APP-FOUNDATION.md) describes the principles and capabilities that the baseline must provide; it is technology-agnostic so that the same foundation can be implemented in other stacks. This design states the **decisions** that any implementation should satisfy.
 
 ---
 
@@ -15,7 +15,7 @@ This document captures the **design** for the application baseline: authenticati
 
 ## Assumed Platform
 
-None. The baseline is **plan 1** in 70-PLAN-MASTER.md; it is implemented first. All other designs assume this baseline is in place.
+None. The baseline is **plan 1** in [70-PLAN-MASTER.md](../70-PLAN-MASTER.md); it is implemented first. All other designs assume this baseline is in place.
 
 ---
 
@@ -67,13 +67,13 @@ None. The baseline is **plan 1** in 70-PLAN-MASTER.md; it is implemented first. 
 ## 6. Relation to Other Designs
 
 - **DESIGN-BIZ-DOMAIN,** **DESIGN-IMAGES,** **DESIGN-DATA-INTERFACE,** **DESIGN-DOCS** (and SIGNiX designs) all assume this baseline: users app (or equivalent), auth, base templates, profile with timezone. They extend the shell with new sidebar links and new content; they do not replace auth or layout.
-- **70-PLAN-MASTER.md:** Baseline is plan 1. After 10-PLAN-BASELINE.md, implement ../02-BIZ-DOMAIN/PHASE-PLANS-BIZ-DOMAIN.md, then ../03-IMAGES/10-PLAN-ADD-IMAGES.md, ../04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md, then ../05-SETUP-WKHTMLTOPDF/SETUP-WKHTMLTOPDF.md, then document and signing plans.
+- **[70-PLAN-MASTER.md](../70-PLAN-MASTER.md):** Baseline is plan 1. After [10-PLAN-BASELINE.md](10-PLAN-BASELINE.md), implement [02-BIZ-DOMAIN/PHASE-PLANS-BIZ-DOMAIN.md](../02-BIZ-DOMAIN/PHASE-PLANS-BIZ-DOMAIN.md), then [03-IMAGES/10-PLAN-ADD-IMAGES.md](../03-IMAGES/10-PLAN-ADD-IMAGES.md), [04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md](../04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md), then [05-SETUP-WKHTMLTOPDF/SETUP-WKHTMLTOPDF.md](../05-SETUP-WKHTMLTOPDF/SETUP-WKHTMLTOPDF.md), then document and signing plans.
 
 ---
 
 ## 7. Implementation
 
-- **In this repo:** **10-PLAN-BASELINE.md** — Django project structure, `apps.users`, `LeaseOfficerProfile` model, auth URLs, base templates (`base.html`, `base_plain.html`), profile views and forms, admin theme (Jazzmin), custom_links and person-icon override, setup command. Section 13 = implementation order; Section 14 = batches and verification. Django-specific details (Jazzmin `custom_links` dict, logout POST form, template paths) stay in the plan.
+- **In this repo:** [10-PLAN-BASELINE.md](10-PLAN-BASELINE.md) — Django project structure, `apps.users`, `LeaseOfficerProfile` model, auth URLs, base templates (`base.html`, `base_plain.html`), profile views and forms, admin theme (Jazzmin), custom_links and person-icon override, setup command. Section 13 = implementation order; Section 14 = batches and verification. Django-specific details (Jazzmin `custom_links` dict, logout POST form, template paths) stay in the plan.
 - **In another stack:** Use this design as the contract (user + profile, timezone, root redirect, logout via POST, two layouts, admin linked to app, idempotent initial user). Implement with the equivalent of your framework’s auth, admin, and templates.
 
 ---
@@ -106,4 +106,4 @@ The step that creates the first user (and profile) is idempotent: running it aga
 
 ---
 
-*End of design. Implementation in this repo follows **10-PLAN-BASELINE.md**. For principles and capabilities (technology-agnostic), see **../GENERAL-KNOWLEDGE/KNOWLEDGE-APP-FOUNDATION.md**.*
+*End of design. Implementation in this repo follows [10-PLAN-BASELINE.md](10-PLAN-BASELINE.md). For principles and capabilities (technology-agnostic), see [GENERAL-KNOWLEDGE/KNOWLEDGE-APP-FOUNDATION.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-APP-FOUNDATION.md).*

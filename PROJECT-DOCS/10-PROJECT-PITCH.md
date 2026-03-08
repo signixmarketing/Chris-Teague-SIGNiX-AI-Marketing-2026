@@ -95,4 +95,4 @@ In the **usage scenario**, the primary user is a **lease officer** (employee). T
 
 ---
 
-*For system-level requirements derived from this pitch, see **40-REQUIREMENTS.md**. For what is in or out of scope for this version, see **30-SCOPE.md**. For how we build and document the project, see **20-APPROACH.md**. For work-breakdown and level of effort, see **50-WBS.md** and **60-LOE.md**.*
+*For system-level requirements derived from this pitch, see [40-REQUIREMENTS.md](40-REQUIREMENTS.md). For what is in or out of scope for this version, see [30-SCOPE.md](30-SCOPE.md). For how we build and document the project, see [20-APPROACH.md](20-APPROACH.md). For work-breakdown and level of effort, see [50-WBS.md](50-WBS.md) and [60-LOE.md](60-LOE.md).*

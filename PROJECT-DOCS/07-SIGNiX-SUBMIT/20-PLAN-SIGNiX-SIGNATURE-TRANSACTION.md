@@ -2,9 +2,9 @@
 
 This document outlines how to add the **SignatureTransaction** model and its relation to Deal (and DocumentSet). Each transaction represents one submission to SIGNiX: we store SIGNiX’s DocumentSetID, the client-chosen TransactionID, status, the first signer’s signing URL, and timestamps. This plan does **not** add list/detail UI—that is Plans 8 and 9. It only adds the model, migration, and Deal relation so that the orchestrator (Plan 6) can create and query signature transactions.
 
-**Design reference:** DESIGN-SIGNiX-SUBMIT.md — Section 4.1 (Signature transaction record), Section 4.2 (Document Instance Version status). PHASE-PLANS-SIGNiX-SUBMIT.md — Plan 2 deliverables.
+**Design reference:** [DESIGN-SIGNiX-SUBMIT.md](DESIGN-SIGNiX-SUBMIT.md) — Section 4.1 (Signature transaction record), Section 4.2 (Document Instance Version status). [PHASE-PLANS-SIGNiX-SUBMIT.md](PHASE-PLANS-SIGNiX-SUBMIT.md) — Plan 2 deliverables.
 
-**Prerequisites:** ../70-PLAN-MASTER.md plans 1–4 and PHASE-PLANS-DOCS plans 1–4 are implemented. The app has Deals and Document Sets (`apps.deals`, `apps.documents`).
+**Prerequisites:** [70-PLAN-MASTER.md](../70-PLAN-MASTER.md) plans 1–4 and PHASE-PLANS-DOCS plans 1–4 are implemented. The app has Deals and Document Sets (`apps.deals`, `apps.documents`).
 
 **Review this plan before implementation.** Implementation order is in **Section 5**; **Section 5a** defines batches and verification.
 
@@ -139,4 +139,4 @@ Batch 1 is complete when the above pass.
 
 ---
 
-*End of plan. Proceed to implementation only after review. Next: 30-PLAN-SIGNiX-SIGNER-SERVICE.md (Plan 3).*
+*End of plan. Proceed to implementation only after review. Next: [30-PLAN-SIGNiX-SIGNER-SERVICE.md](30-PLAN-SIGNiX-SIGNER-SERVICE.md) (Plan 3).*

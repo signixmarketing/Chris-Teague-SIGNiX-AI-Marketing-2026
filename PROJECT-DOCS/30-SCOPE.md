@@ -1,6 +1,6 @@
 # Scope — Lease Origination Sample Application
 
-This document states **what is in scope** and **what is out of scope** for this version of the lease origination sample application. It complements **40-REQUIREMENTS.md** (what the system must do) and **10-PROJECT-PITCH.md** (why we are doing the project). Scope may be revised when we add or defer features; approach is in **20-APPROACH.md**.
+This document states **what is in scope** and **what is out of scope** for this version of the lease origination sample application. It complements [40-REQUIREMENTS.md](40-REQUIREMENTS.md) (what the system must do) and [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md) (why we are doing the project). Scope may be revised when we add or defer features; approach is in [20-APPROACH.md](20-APPROACH.md).
 
 ---
 
@@ -20,7 +20,7 @@ This document states **what is in scope** and **what is out of scope** for this 
 ### 1.2 Documentation and template use
 
 - **Documentation**: Knowledge, Design, and Plan documents that allow the application to be **recreated from scratch** and used as a **template** for other document-centric applications (e.g. personal loans, wealth management onboarding). *(See REQUIREMENTS R-R1–R-R3.)*
-- **Requirements, scope, approach**: 40-REQUIREMENTS.md, 30-SCOPE.md, 20-APPROACH.md, and 10-PROJECT-PITCH.md so that stakeholders, scope, and approach are explicit and maintainable.
+- **Requirements, scope, approach**: [40-REQUIREMENTS.md](40-REQUIREMENTS.md), 30-SCOPE.md, [20-APPROACH.md](20-APPROACH.md), and [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md) so that stakeholders, scope, and approach are explicit and maintainable.
 
 ### 1.3 Deal type and domain
 
@@ -34,7 +34,7 @@ This document states **what is in scope** and **what is out of scope** for this 
 
 ## 2. Out of Scope (This Version)
 
-The following are **explicitly out of scope** for this version. They are not requirements (see 40-REQUIREMENTS.md Section 5) and are not planned for implementation in the current PLAN set. They may be revisited in a later version or in a derivative project.
+The following are **explicitly out of scope** for this version. They are not requirements (see [40-REQUIREMENTS.md](40-REQUIREMENTS.md) Section 5) and are not planned for implementation in the current PLAN set. They may be revisited in a later version or in a derivative project.
 
 - **Role-based access control** — Fine-grained roles (e.g. viewer, editor, admin) beyond “staff can use the app and admin.”
 - **Multi-tenancy** — Multiple organizations or tenants in one deployment.
@@ -65,8 +65,8 @@ When this project is used as a **template** for another document-centric applica
 
 - **In scope to carry over**: Baseline (auth, profile, app shell, admin), the *structure* of the business domain (products, customers, deals), data interface pattern, document templates and document sets, signing integration pattern. Documentation (Knowledge, Design, Plan) and the requirements/scope/approach structure should be adapted for the new project.
 - **Out of scope / replace**: The **business domain** itself (vehicles, contacts, deals for leasing) — replace with the new domain’s entities (e.g. loan products, borrowers, loan applications). SIGNiX may be replaced with another signing provider if the new project so chooses; the integration pattern (submit, status, download) remains applicable.
-- **Scope for the new project**: The new project should define its own 30-SCOPE.md (and 40-REQUIREMENTS.md, 20-APPROACH.md) so that in/out of scope is clear for that application.
+- **Scope for the new project**: The new project should define its own 30-SCOPE.md (and [40-REQUIREMENTS.md](40-REQUIREMENTS.md), 20-APPROACH.md) so that in/out of scope is clear for that application.
 
 ---
 
-*What the system must do: **40-REQUIREMENTS.md**. Why we are doing the project: **10-PROJECT-PITCH.md**. How we build and document: **20-APPROACH.md**. Work-breakdown and effort: **50-WBS.md**, **60-LOE.md**.*
+*What the system must do: [40-REQUIREMENTS.md](40-REQUIREMENTS.md). Why we are doing the project: [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md). How we build and document: [20-APPROACH.md](20-APPROACH.md). Work-breakdown and effort: [50-WBS.md](50-WBS.md), [60-LOE.md](60-LOE.md).*

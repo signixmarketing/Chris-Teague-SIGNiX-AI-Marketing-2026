@@ -2,7 +2,7 @@
 
 This document is a **step-by-step setup guide** so that the Django app can convert rendered HTML (from Dynamic Document Templates) to PDF. When you are ready to set up wkhtmltopdf, **check first if it is already installed** (Section 3.0); if so, you can skip or only run verification. Then follow the batches in order and use the verification steps as a checklist.
 
-**Knowledge:** For background on HTML-to-PDF in document generation, wkhtmltopdf and pdfkit, constraints (e.g. absolute image URLs, no `--base-url`), and alternatives, see **../GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md**.
+**Knowledge:** For background on HTML-to-PDF in document generation, wkhtmltopdf and pdfkit, constraints (e.g. absolute image URLs, no `--base-url`), and alternatives, see [GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md).
 
 **App context:** PLAN-ADD-DOCUMENT-SETS and DESIGN-DOCS specify **pdfkit** (Python) with **wkhtmltopdf** (system binary) for HTML-to-PDF. The app uses this for generating documents from Dynamic templates; see `apps.documents.services.render_dynamic_template_to_pdf` and the Django system check `documents.W001` (wkhtmltopdf availability).
 
@@ -13,7 +13,7 @@ This document is a **step-by-step setup guide** so that the Django app can conve
 ## 1. Summary: What is wkhtmltopdf and how the app uses it
 
 - **wkhtmltopdf** is a command-line tool (WebKit-based) that renders HTML and outputs PDF; it must be installed on the **system**. **pdfkit** is the Python wrapper that invokes it. This app uses them in the Document Sets flow: Dynamic templates → HTML → PDF → stored in DocumentInstanceVersion. Without wkhtmltopdf on PATH, dynamic document generation fails; the app raises `DocumentGenerationError` and the Django check `documents.W001` warns.
-- **Image URLs** in the HTML must be **absolute**; many wkhtmltopdf builds do not support `--base-url`. The app builds absolute URLs (e.g. `request.build_absolute_uri(image.file.url)` or SITE_URL). See **../GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md** for full detail.
+- **Image URLs** in the HTML must be **absolute**; many wkhtmltopdf builds do not support `--base-url`. The app builds absolute URLs (e.g. `request.build_absolute_uri(image.file.url)` or SITE_URL). See [GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md) for full detail.
 
 ---
 
@@ -82,7 +82,7 @@ Follow the batches below in sequence. After each batch, run the verification ste
 
 **Goal:** Ensure the Python environment has pdfkit installed and that the app can see wkhtmltopdf.
 
-**Do not duplicate:** If you are following **70-PLAN-MASTER.md** and will implement (or have already implemented) **40-PLAN-ADD-DOCUMENT-SETS.md**, that plan already includes adding pdfkit to `requirements.txt` and running `pip install -r requirements.txt`. Do **not** install pdfkit twice—consider it covered by the document plan. Only run the install step below if you have **not** yet installed project requirements (e.g. you are setting up wkhtmltopdf before any document plans). When in doubt, run `pip list | grep -i pdfkit`; if pdfkit is listed, skip the pip install and only run the verification steps (manage.py check and optional Python check).
+**Do not duplicate:** If you are following [70-PLAN-MASTER.md](../70-PLAN-MASTER.md) and will implement (or have already implemented) [40-PLAN-ADD-DOCUMENT-SETS.md](../06-DOCS/40-PLAN-ADD-DOCUMENT-SETS.md), that plan already includes adding pdfkit to `requirements.txt` and running `pip install -r requirements.txt`. Do **not** install pdfkit twice—consider it covered by the document plan. Only run the install step below if you have **not** yet installed project requirements (e.g. you are setting up wkhtmltopdf before any document plans). When in doubt, run `pip list | grep -i pdfkit`; if pdfkit is listed, skip the pip install and only run the verification steps (manage.py check and optional Python check).
 
 **Steps:**
 
@@ -164,12 +164,12 @@ Follow the batches below in sequence. After each batch, run the verification ste
 
 ## 6. References
 
-- **../GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md** — HTML-to-PDF in document generation; wkhtmltopdf and pdfkit; constraints and alternatives.
+- [GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md) — HTML-to-PDF in document generation; wkhtmltopdf and pdfkit; constraints and alternatives.
 - [wkhtmltopdf](https://wkhtmltopdf.org/) — project and downloads
 - [pdfkit (Python)](https://pypi.org/project/pdfkit/) — PyPI package
-- ../06-DOCS/40-PLAN-ADD-DOCUMENT-SETS.md — Section 6 (implementation), Section 8 (pdfkit/wkhtmltopdf), Section 12 (image URL handling)
-- ../06-DOCS/DESIGN-DOCS.md — Dynamic template → HTML → PDF (pdfkit/wkhtmltopdf)
-- ../06-DOCS/PHASE-PLANS-DOCS.md — Document Sets row (HTML-to-PDF)
+- [06-DOCS/40-PLAN-ADD-DOCUMENT-SETS.md](../06-DOCS/40-PLAN-ADD-DOCUMENT-SETS.md) — Section 6 (implementation), Section 8 (pdfkit/wkhtmltopdf), Section 12 (image URL handling)
+- [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) — Dynamic template → HTML → PDF (pdfkit/wkhtmltopdf)
+- [06-DOCS/PHASE-PLANS-DOCS.md](../06-DOCS/PHASE-PLANS-DOCS.md) — Document Sets row (HTML-to-PDF)
 - `apps.documents.services` — `check_wkhtmltopdf_available`, `_require_wkhtmltopdf`, `render_dynamic_template_to_pdf`
 - `apps.documents.checks` — `documents.W001` system check
 

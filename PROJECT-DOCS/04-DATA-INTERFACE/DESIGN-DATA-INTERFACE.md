@@ -1,6 +1,6 @@
 # Design: Internal Data Schema and Deal Data Interface
 
-This document captures the design for the **Internal Data Schema** and **Deal Data Retrieval** interface. These are foundational capabilities that support dynamic document templates (mapping, context building) and debugging. They are distinct from document workflows; see **../06-DOCS/DESIGN-DOCS.md** for document templates, document sets, and signing.
+This document captures the design for the **Internal Data Schema** and **Deal Data Retrieval** interface. These are foundational capabilities that support dynamic document templates (mapping, context building) and debugging. They are distinct from document workflows; see [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) for document templates, document sets, and signing.
 
 ---
 
@@ -10,7 +10,7 @@ This document captures the design for the **Internal Data Schema** and **Deal Da
 - **Deal Data Retrieval** — A clean interface to retrieve the full data for a specific deal, including child Vehicles, Contacts, and the lease officer (User).
 - **UI** — Schema viewer page (structure); Debug Data page (deal list with View JSON per deal).
 
-This interface is the **single source of truth** for schema and deal data. ../06-DOCS/DESIGN-DOCS.md mandates that document features (mapping UI, context builder) use it exclusively and must not traverse Django models or QuerySets directly. See ../06-DOCS/DESIGN-DOCS.md for the no-circumvention requirement.
+This interface is the **single source of truth** for schema and deal data. [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) mandates that document features (mapping UI, context builder) use it exclusively and must not traverse Django models or QuerySets directly. See [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) for the no-circumvention requirement.
 
 Implementation will follow in separate PLAN files.
 
@@ -25,7 +25,7 @@ This design assumes the platform has:
 - **Contacts** — Contact model with first_name, middle_name, last_name, email, phone_number.
 - **Users** — Django User with optional LeaseOfficerProfile (first_name, last_name, phone_number, email, full_name).
 
-Plans 1–3 from 70-PLAN-MASTER.md (Baseline, Biz Domain Master, Images) are implemented. This design is implemented by 10-PLAN-DATA-INTERFACE.md (70-PLAN-MASTER.md plan 4). The core domain (Deals, Vehicles, Contacts) is designed in **../02-BIZ-DOMAIN/DESIGN-BIZ-DOMAIN.md**.
+Plans 1–3 from [70-PLAN-MASTER.md](../70-PLAN-MASTER.md) (Baseline, Biz Domain Master, Images) are implemented. This design is implemented by [10-PLAN-DATA-INTERFACE.md](10-PLAN-DATA-INTERFACE.md) (70-PLAN-MASTER.md plan 4). The core domain (Deals, Vehicles, Contacts) is designed in [02-BIZ-DOMAIN/DESIGN-BIZ-DOMAIN.md](../02-BIZ-DOMAIN/DESIGN-BIZ-DOMAIN.md).
 
 ---
 
@@ -37,7 +37,7 @@ The internal data schema is a **clean, programmatic representation** of the data
 
 The schema interface supports three consumers:
 
-1. **Mapping configuration** — The Dynamic Template mapping UI uses the schema to present available data paths (e.g., dropdowns) and validate user selections. See ../06-DOCS/DESIGN-DOCS.md for the mapping feature.
+1. **Mapping configuration** — The Dynamic Template mapping UI uses the schema to present available data paths (e.g., dropdowns) and validate user selections. See [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) for the mapping feature.
 2. **Document population** — The context builder uses the schema for paths and the Deal Data Retrieval interface (Section 2) for data; it applies the mapping and transforms to build the template context at render time.
 3. **Schema viewer page** — A dedicated page in the app displays the internal data structure for testing, troubleshooting, and reference.
 
@@ -159,7 +159,7 @@ The **Deal Data Retrieval** interface returns the full data for a specific deal 
 
 ### Purpose and Uses
 
-1. **Document population** — The context builder calls this interface to obtain deal data, then applies the template mapping and transforms to produce the final template context. See ../06-DOCS/DESIGN-DOCS.md.
+1. **Document population** — The context builder calls this interface to obtain deal data, then applies the template mapping and transforms to produce the final template context. See [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md).
 2. **Debug Data page** — A separate "Debug Data" menu item leads to a page that lists deals in a table, with a "View JSON" button per deal. Clicking it opens a modal displaying `get_deal_data(deal)` as formatted JSON, with a **Copy** button (clipboard) and easy close. Keeps debug functionality out of the main user workflow. Uses: debugging, verifying what data is available for document generation, and troubleshooting mapping issues.
 3. **Future API** — A document-generation service (or external consumer) could request deal data via HTTP without direct database access.
 
@@ -221,12 +221,12 @@ The output is a nested dict with `deal` at the root. The structure mirrors the s
 
 ### Relationship to Context Builder
 
-The **context builder** (used when populating dynamic templates; see ../06-DOCS/DESIGN-DOCS.md):
+The **context builder** (used when populating dynamic templates; see [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md)):
 
 1. Calls `get_deal_data(deal)` to obtain the full deal-centric structure.
 2. Applies the mapping config: for each template variable (e.g. `data.payment_amount`), looks up the source path (e.g. `deal.payment_amount`) in the returned structure, applies any transform (e.g. `date_day`, `date_month_day`), and builds the template context.
 
-The context builder **must not** traverse Django models or QuerySets directly; it works exclusively from the structure returned by `get_deal_data()`. Path resolution (e.g. `deal.contacts[0]` for "first contact") is performed on that structure—e.g. the first element of the `contacts` list—not via database queries. ../06-DOCS/DESIGN-DOCS.md enforces this no-circumvention requirement for all document features.
+The context builder **must not** traverse Django models or QuerySets directly; it works exclusively from the structure returned by `get_deal_data()`. Path resolution (e.g. `deal.contacts[0]` for "first contact") is performed on that structure—e.g. the first element of the `contacts` list—not via database queries. [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) enforces this no-circumvention requirement for all document features.
 
 ### Implementation Notes
 
@@ -270,8 +270,8 @@ For `get_deal_data()` output, vehicles and contacts are ordered by `id` (`order_
 
 ### Single source of truth; no circumvention
 
-This interface is the canonical source for schema and deal data. Document features must use `get_paths_grouped_for_mapping()` for deal paths in the Source dropdown and `get_deal_data()` for deal data. They must not traverse Django models or QuerySets for deal paths. Image variables are mapped via a separate Images optgroup (from the Image model) per ../06-DOCS/DESIGN-DOCS.md.
+This interface is the canonical source for schema and deal data. Document features must use `get_paths_grouped_for_mapping()` for deal paths in the Source dropdown and `get_deal_data()` for deal data. They must not traverse Django models or QuerySets for deal paths. Image variables are mapped via a separate Images optgroup (from the Image model) per [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md).
 
 ---
 
-*End of design. Implementation follows PLAN files. See ../06-DOCS/DESIGN-DOCS.md for document templates, document sets, and signing.*
+*End of design. Implementation follows PLAN files. See [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) for document templates, document sets, and signing.*

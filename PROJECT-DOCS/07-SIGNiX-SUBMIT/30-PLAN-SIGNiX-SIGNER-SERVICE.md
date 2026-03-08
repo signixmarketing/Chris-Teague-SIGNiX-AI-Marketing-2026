@@ -2,9 +2,9 @@
 
 This document outlines how to add the **signer identification** and **slot→person resolution** service layer used by the Signers table (Plan 4) and the transaction packager (Plans 5–6). There is no UI in this plan—only the two service functions and unit tests.
 
-**Design reference:** DESIGN-SIGNiX-SUBMIT.md — Section 5.3 (Signers derived from document set template), Section 5.1 (Signers MemberInfo example mapping), Section 6.1.1 (MemberInfo data sourcing). PHASE-PLANS-SIGNiX-SUBMIT.md — Plan 3 deliverables.
+**Design reference:** [DESIGN-SIGNiX-SUBMIT.md](DESIGN-SIGNiX-SUBMIT.md) — Section 5.3 (Signers derived from document set template), Section 5.1 (Signers MemberInfo example mapping), Section 6.1.1 (MemberInfo data sourcing). [PHASE-PLANS-SIGNiX-SUBMIT.md](PHASE-PLANS-SIGNiX-SUBMIT.md) — Plan 3 deliverables.
 
-**Prerequisites:** ../70-PLAN-MASTER.md plans 1–4 and PHASE-PLANS-DOCS plans 1–4 are implemented. The app has Deals, Contacts, Document Set Templates, DocumentSetTemplateItem (GenericForeignKey to Static/Dynamic templates), and both template types with `tagging_data` containing `member_info_number`. LeaseOfficerProfile (User profile) exists per ../01-BASELINE/10-PLAN-BASELINE.md. No dependency on SignixConfig or SignatureTransaction.
+**Prerequisites:** [70-PLAN-MASTER.md](../70-PLAN-MASTER.md) plans 1–4 and PHASE-PLANS-DOCS plans 1–4 are implemented. The app has Deals, Contacts, Document Set Templates, DocumentSetTemplateItem (GenericForeignKey to Static/Dynamic templates), and both template types with `tagging_data` containing `member_info_number`. LeaseOfficerProfile (User profile) exists per [01-BASELINE/10-PLAN-BASELINE.md](../01-BASELINE/10-PLAN-BASELINE.md). No dependency on SignixConfig or SignatureTransaction.
 
 **Review this plan before implementation.** Implementation order is in **Section 5**; **Section 5a** defines batches and verification.
 
@@ -167,4 +167,4 @@ This document outlines how to add the **signer identification** and **slot→per
 
 ---
 
-*End of plan. Proceed to implementation only after review. Next: 40-PLAN-SIGNiX-SIGNERS-TABLE.md (Plan 4).*
+*End of plan. Proceed to implementation only after review. Next: [40-PLAN-SIGNiX-SIGNERS-TABLE.md](40-PLAN-SIGNiX-SIGNERS-TABLE.md) (Plan 4).*
