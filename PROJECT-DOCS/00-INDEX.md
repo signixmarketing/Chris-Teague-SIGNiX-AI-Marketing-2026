@@ -1,6 +1,6 @@
 # Project Documentation Index
 
-This index lists all project documentation and its location so you can find any document quickly. Paths are relative to the **PROJECT-DOCS** folder. For implementation order, start with [70-PLAN-MASTER.md](70-PLAN-MASTER.md).
+This index lists all project documentation and its location so you can find any document quickly. Paths are relative to the **PROJECT-DOCS** folder. The project follows a **lifecycle** (Ideation → Design → Implementation) with stage gates; see [20-APPROACH.md](20-APPROACH.md) Section 5.5 and Section 6 for the full flow. For implementation order, start with [70-PLAN-MASTER.md](70-PLAN-MASTER.md).
 
 ---
 
@@ -9,12 +9,14 @@ This index lists all project documentation and its location so you can find any 
 | Order | Path | Description |
 |-------|------|-------------|
 | 10 | [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md) | Why we are doing the project; stakeholder alignment |
+| 15 | [15-USER-PROFILES-VALUE-PROPOSITION.md](15-USER-PROFILES-VALUE-PROPOSITION.md) | User profiles (personas), jobs, pains, gains; mapping to requirements |
 | 20 | [20-APPROACH.md](20-APPROACH.md) | How we build and document; methodology |
 | 30 | [30-SCOPE.md](30-SCOPE.md) | What is in scope and out of scope |
 | 40 | [40-REQUIREMENTS.md](40-REQUIREMENTS.md) | What the system must do; phases |
 | 50 | [50-WBS.md](50-WBS.md) | Work-breakdown structure |
 | 60 | [60-LOE.md](60-LOE.md) | Level of effort estimate |
 | 70 | [70-PLAN-MASTER.md](70-PLAN-MASTER.md) | Implementation order (execution map) |
+| 80 | [80-FUTURE-ROADMAP.md](80-FUTURE-ROADMAP.md) | Future roadmap; post–initial-implementation direction (not committed) |
 
 ---
 

@@ -18,6 +18,7 @@ This document describes **how** we build and document the lease origination samp
   - **Deals and document set templates** — How deals are set up according to document template sets is explicit: deal type → document set template → ordered list of templates. Which documents apply is determined by configuration, not hardcoded business logic.
   - **Documents as instances with versions** — Documents are modeled as **instances with versions** (DocumentInstance, DocumentInstanceVersion; draft, submitted to SIGNiX, final) so that the pattern is general and clear—not one-off handling of “this PDF we generated.”
   - **General SIGNiX interface** — The SIGNiX integration (build payload, send, parse response, push handling, download) is a **general interface** not bundled with business logic, so that a developer in another domain (e.g. personal loans) can reuse or adapt it without wading through lease-specific code.
+- **Code maintainability and structure** — Engineering best practices for maintainability, clarity, and code structure are expected. **Do not duplicate code** when the same functionality is needed in multiple places: create and use **helper functions or services** and call them from views or other code. Put logic that belongs outside the UI—e.g. data transformation, integration with external APIs, document generation, schema discovery—into **services or dedicated modules** rather than bloating views or forms. Views and UI code should focus on request/response handling and simple orchestration; **separation of concerns** (UI vs. business logic vs. integration) is an expectation so the codebase stays clear, testable, and easy to extend.
 
 ---
 
@@ -30,11 +31,13 @@ The project uses two levels of documentation: **project-level** documents that d
 These documents are created early (pitch → scope → requirements → work-breakdown and level of effort) and are the basis for stakeholder review and approval before execution begins:
 
 - [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md) — Why the project exists, who it serves, what benefits are expected, what success looks like. Used to secure sponsorship and alignment.
+- [15-USER-PROFILES-VALUE-PROPOSITION.md](15-USER-PROFILES-VALUE-PROPOSITION.md) — User profiles (personas) in the application scenario: jobs to be done, pains the system addresses, gains it delivers, and mapping to requirements. Supports product thinking and template reuse; when using the project as a template, replace these profiles with those for the new project.
 - [30-SCOPE.md](30-SCOPE.md) — What is in scope and out of scope for this version. Keeps requirements and phases focused and gives stakeholders shared expectations.
 - [40-REQUIREMENTS.md](40-REQUIREMENTS.md) — What the system must do and satisfy; breaks the project into phases with clear boundaries and deliverables.
 - [50-WBS.md](50-WBS.md) — Work-breakdown: all work on the project (architecture, knowledge, design, planning, implementation, documentation updates), organized by phase and work type. Used for planning, resource assignment, and GANTT-level views.
 - [60-LOE.md](60-LOE.md) — Level of effort estimate aligned with the WBS; gives stakeholders and project managers a view of effort so they can confirm commitment or adjust scope.
 - **20-APPROACH.md** (this document) — How we build and document: principles, documentation structure, technology choices, conventions, and the execution methodology (Section 6).
+- [80-FUTURE-ROADMAP.md](80-FUTURE-ROADMAP.md) — Future roadmap: where to take the project after initial implementation; candidate priorities and themes (not committed).
 
 Together these define **intent, boundaries, methodology, and planned work**. They do not specify implementation steps; that belongs in the phase-level Knowledge, Design, and Plan documents.
 
@@ -93,39 +96,66 @@ Implementation follows a fixed order and structure so that the application can b
 
 - **Implementation order** — Follow [70-PLAN-MASTER.md](70-PLAN-MASTER.md) for the top-level sequence of plans. Within each phase that has multiple plans, follow the **phase plans document** for that phase (e.g. [02-BIZ-DOMAIN/PHASE-PLANS-BIZ-DOMAIN.md](02-BIZ-DOMAIN/PHASE-PLANS-BIZ-DOMAIN.md), [06-DOCS/PHASE-PLANS-DOCS.md](06-DOCS/PHASE-PLANS-DOCS.md), [07-SIGNiX-SUBMIT/PHASE-PLANS-SIGNiX-SUBMIT.md](07-SIGNiX-SUBMIT/PHASE-PLANS-SIGNiX-SUBMIT.md), [09-SIGNiX-DASHBOARD-SYNC/PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md](09-SIGNiX-DASHBOARD-SYNC/PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md)). Do not skip ahead; later plans depend on earlier ones. Setup documents (e.g. [05-SETUP-WKHTMLTOPDF/SETUP-WKHTMLTOPDF.md](05-SETUP-WKHTMLTOPDF/SETUP-WKHTMLTOPDF.md), [08-NGROK/10-PLAN-NGROK.md](08-NGROK/10-PLAN-NGROK.md)) are executed at the points specified in PLAN-MASTER.
 - **Batches and verification** — Each plan groups its steps into **batches** and defines **verification steps** for each batch (and often a “Section 6a” or equivalent). Implement batch by batch; run the plan’s verification and any tests after each batch; only when the batch is verified complete move to the next. This keeps progress testable and reversible.
+- **No duplication and separation of concerns** — When functionality is needed in more than one place, implement it once in a **helper function** or **service** (e.g. in `services.py` or a dedicated module) and call it from views, forms, or other code. Do not copy-paste logic. Put business logic, data access, and integration code (e.g. SIGNiX payload building, document generation, schema discovery) in services or shared modules; keep **views** focused on HTTP request/response and thin orchestration. This keeps the codebase maintainable, testable, and consistent with the principles in Section 1.
 - **Naming and structure** — Applications live under **apps/** (e.g. `apps.users`, `apps.deals`, `apps.schema`). Templates, URL patterns, and static files follow the structure established in the plans (e.g. PLAN-BASELINE for project layout, app-specific plans for URLs and views). Use the plan as the source of truth for naming and layout; when in doubt, follow the plan’s section on structure or the existing codebase pattern.
 
-For the full methodology (including Knowledge → Design → Plan before implementation), see Section 6.
+### 5.5 Project lifecycle (Ideation → Design → Implementation)
+
+When approaching a **new project**, follow this flow. It uses **stage gates** (stakeholder approval to move from Ideation to Design, and from Design to Implementation) and keeps the documentation set **complete and coherent** so the project can be reproduced from scratch. The detailed execution steps are in Section 6.
+
+**Ideation → Design (gate 1)**  
+Create a **project pitch** and get **project stakeholder approval** to take the project from **Ideation** to **Design**. To support the pitch:
+- **Outline user profiles and value proposition** ([15-USER-PROFILES-VALUE-PROPOSITION.md](15-USER-PROFILES-VALUE-PROPOSITION.md)) — who is served, their jobs, pains, and gains (and, as you refine, mapping to requirements).
+- **Confirm or adapt the approach** ([20-APPROACH.md](20-APPROACH.md)) — how you will build and document; adapt if the project or domain demands a different methodology.
+- **Outline scope** ([30-SCOPE.md](30-SCOPE.md)) — what is in or out of scope for this version.
+
+Once stakeholders approve moving to Design, proceed.
+
+**Design phase**  
+- **Tighten** understanding of user profiles, value proposition, and scope. **Determine requirements** ([40-REQUIREMENTS.md](40-REQUIREMENTS.md)); requirements should **consider and align with** the user profiles and value proposition so that each requirement traces back to who it serves and what value it provides (see Section 6.3).
+- **Update the project pitch** as new information is learned so the "why" and "who we serve" stay aligned with what you are building.
+- When requirements are determined, create the **work-breakdown** ([50-WBS.md](50-WBS.md)) and **level of effort** ([60-LOE.md](60-LOE.md)).
+- **As it makes sense** during Design: collect and document **knowledge**; outline **designs**; divide the project into **phases** and outline the **plan master** ([70-PLAN-MASTER.md](70-PLAN-MASTER.md)). The plan master can be an **outline** (phases, plan names, order); full plan content (batches, steps, verification) is created when you are about to implement each phase.
+- When learnings warrant it, **update scope or requirements** (and the pitch and user profiles as needed)—not only refine wording, but add, remove, or re-prioritize so the doc set stays accurate.
+- **Seek project stakeholder approval** to proceed from Design to **Implementation**.
+
+**Implementation (gate 2)**  
+- **Finalize knowledge and design** for the work you are about to do. **Phase-by-phase finalization** is acceptable: finalize knowledge and design for the next phase, then create that phase's **plan files**, then implement that phase before moving to the next. This avoids big-bang design while keeping plans grounded in stable design and knowledge.
+- When creating plans, follow all **implementation best practices** (Section 5: no duplication, separation of concerns, batches and verification, naming and structure).
+- **At the end of each work item** (e.g. batch or phase): assess whether learnings should be applied to the existing documentation set—requirements, design, knowledge, scope, user profiles and value proposition, and pitch. Update those documents so the set remains **complete and coherent** and would allow reproducing the project's implementation from scratch.
+- **During implementation**, apply the implementation best practices and **bubble learnings up** to the appropriate documentation; do not leave critical information only in conversation or code.
+
+For the full step-by-step methodology (pitch, scope, requirements, Knowledge → Design → Plan, documentation feedback loop), see Section 6.
 
 ---
 
 ## 6. Project Execution Methodology (Best Practices)
 
-This section describes the **recommended order** for executing a project of this kind. It is written for educational use: follow this sequence to apply best practices. The project is completed with **Cursor** (or a similar AI-powered development environment), with the project lead conversing with Cursor and all documentation and code created directly by Cursor (the project lead does not edit files). The goal is disciplined, repeatable execution that keeps implementation, plans, designs, and knowledge consistent and sufficient to recreate the application from scratch—and to use it as a template for other document-centric applications.
+This section describes the **recommended order** for executing a project of this kind and aligns with the **project lifecycle** in Section 5.5 (Ideation → Design → Implementation). It is written for educational use: follow this sequence to apply best practices. The project is completed with **Cursor** (or a similar AI-powered development environment), with the project lead conversing with Cursor and all documentation and code created directly by Cursor (the project lead does not edit files). The goal is disciplined, repeatable execution that keeps implementation, plans, designs, and knowledge consistent and sufficient to recreate the application from scratch—and to use it as a template for other document-centric applications.
 
 **Note on this project's history:** In early phases of this project, some of this process was not strictly followed in order. The documentation now reflects the **end state as if the full sequence had been followed from the start**. New projects should follow the sequence below from the beginning.
 
-### 6.1 Project pitch
+### 6.1 Project pitch (Ideation; gate 1)
 
-Start with a **project pitch** (e.g. [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md)) that secures sponsorship and stakeholder approval. The pitch states why the project is being done, who it serves, what benefits are expected, and what success looks like. It is written as the document that would have been presented to get a green light. Until stakeholders have approved (or at least aligned on) the pitch, do not proceed to scope or requirements.
+Start with a **project pitch** (e.g. [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md)) that secures sponsorship and stakeholder approval. The pitch states why the project is being done, who it serves, what benefits are expected, and what success looks like. **To support the pitch**, outline **user profiles and value proposition** ([15-USER-PROFILES-VALUE-PROPOSITION.md](15-USER-PROFILES-VALUE-PROPOSITION.md)), **confirm or adapt the approach** (this document), and **outline scope** ([30-SCOPE.md](30-SCOPE.md)). Seek **project stakeholder approval** to take the project from **Ideation** to **Design**. Until stakeholders have approved (or at least aligned on) the pitch and agreed to proceed to Design, do not move on to tightening scope or determining requirements.
 
-### 6.2 Scope
+### 6.2 Scope (outline in Ideation; tighten in Design)
 
-Clarify **scope**: what is in scope for this version and what is out of scope. Capture this in a scope document (e.g. [30-SCOPE.md](30-SCOPE.md)). Scope defines the boundary of the project so that requirements and phases stay focused and stakeholders share the same expectations. Scope is refined as needed but should be stable before requirements are finalized.
+Clarify **scope**: what is in scope for this version and what is out of scope. Scope is **outlined** during Ideation (to support the pitch) and **tightened** during the Design phase. Capture it in a scope document (e.g. [30-SCOPE.md](30-SCOPE.md)). Scope defines the boundary of the project so that requirements and phases stay focused and stakeholders share the same expectations. When learnings during Design warrant it, update scope (add, remove, or re-prioritize)—not only refine wording.
 
-### 6.3 Requirements (and phases)
+### 6.3 Requirements (Design phase; consider profiles and value proposition)
 
-Write **requirements** (e.g. [40-REQUIREMENTS.md](40-REQUIREMENTS.md)) that state what the system must do and satisfy. Requirements should **break the project into phases**: each phase has a clear boundary and deliverable (e.g. baseline, business domain, images, data interface, document templates, signing integration). The requirements document references or implies the phase structure so that the next step—work-breakdown and level of effort—can be built from it.
+Determine **requirements** (e.g. [40-REQUIREMENTS.md](40-REQUIREMENTS.md)) during the **Design phase**. Requirements state what the system must do and satisfy. They should **consider and align with** the **user profiles and value proposition** ([15-USER-PROFILES-VALUE-PROPOSITION.md](15-USER-PROFILES-VALUE-PROPOSITION.md)) so that each requirement traces back to who it serves and what value it provides; the "Maps to requirements" in the user profiles document supports this traceability. Requirements should **break the project into phases**: each phase has a clear boundary and deliverable (e.g. baseline, business domain, images, data interface, document templates, signing integration). **Update the project pitch** as new information is learned. When learnings warrant it, **update requirements** (and scope, pitch, or user profiles)—add, remove, or re-prioritize so the doc set stays accurate. The requirements document references or implies the phase structure so that the next step—work-breakdown and level of effort—can be built from it.
 
-### 6.4 Work-breakdown and level of effort (stakeholder review)
+### 6.4 Work-breakdown and level of effort (Design phase; stakeholder approval to implement)
 
-Produce a **work-breakdown** and **level of effort estimate** for stakeholder review. The work-breakdown spells out the phases and, within each phase, the plans and major batches (or work packages). The level of effort estimate gives stakeholders a clear view of the effort required so they can confirm commitment, adjust scope, or prioritize. Once stakeholders have reviewed and approved (or agreed to proceed), move on to executing the phases.
+Once requirements are determined, produce a **work-breakdown** and **level of effort estimate** for stakeholder review. The work-breakdown spells out the phases and, within each phase, the plans and major batches (or work packages). The level of effort estimate gives stakeholders a clear view of the effort required so they can confirm commitment, adjust scope, or prioritize. **Seek project stakeholder approval** to proceed from **Design** to **Implementation**. Once stakeholders have reviewed and approved (or agreed to proceed), move on to executing the phases.
 
 **In this repository:** The work-breakdown is [50-WBS.md](50-WBS.md) and the level of effort estimate is [60-LOE.md](60-LOE.md). They are aligned with the phase/plan structure in [40-REQUIREMENTS.md](40-REQUIREMENTS.md) and [70-PLAN-MASTER.md](70-PLAN-MASTER.md) and with the project’s actual experience; they are presented as the best-practice artifacts for stakeholder review.
 
 ### 6.5 Tackle each phase: Knowledge → Design → Plan → Implementation
 
-Once the pitch, scope, requirements, and (where available) work-breakdown/LOE are in place, **tackle each phase in turn**. Within each phase, follow this order:
+Once the pitch, scope, requirements, and (where available) work-breakdown/LOE are in place, and **stakeholder approval to implement** has been obtained, **tackle each phase in turn**. **Finalize knowledge and design** for the phase (phase-by-phase finalization is acceptable). The **plan master** ([70-PLAN-MASTER.md](70-PLAN-MASTER.md)) may be an outline (phases, plan names, order) until you create full plan content when about to implement each phase. Within each phase, follow this order:
 
 **1. Knowledge identification** — Identify what topic-specific knowledge Cursor (or the implementation team) would need to design, plan, and implement the phase. If that knowledge is not already present or is scattered, create or update a **knowledge file** to hold it. Knowledge files consolidate what must be known: summaries, concepts, and links to external resources (e.g. SIGNiX Flex API documentation, wkhtmltopdf constraints). Examples: [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md), [GENERAL-KNOWLEDGE/KNOWLEDGE-FILE-ASSETS-MEDIA.md](GENERAL-KNOWLEDGE/KNOWLEDGE-FILE-ASSETS-MEDIA.md), [GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md](GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md). Knowledge is technology-agnostic or domain-conceptual where possible. Do not move to design until the knowledge for the phase is in place.
 
@@ -142,14 +172,15 @@ Throughout the process, **with the completion of every significant aspect**, the
 1. **Plans** — Plans are updated to **accurately reflect the actual implementation** and to capture **lessons learned** (e.g. gotchas, workarounds, section references like “Section 12.1” for known pitfalls). If implementation diverged from the plan for a good reason, the plan is updated so that the next time (or another developer/AI) follows it, the same path is taken.
 2. **Designs** — Designs are updated to **reflect real-world experience** from implementing the plans. If a design decision was refined or a constraint discovered, the design document is updated so that it remains the single source of truth for decisions.
 3. **Knowledge** — Knowledge learned from the process of writing and implementing the plans and designs is **accurately and thoroughly documented** in the relevant knowledge file. New concepts, API details, or constraints that emerged during implementation are added so that future phases or a from-scratch rebuild have the benefit of that knowledge.
+4. **Requirements, scope, user profiles and value proposition, pitch** — When learnings warrant it, **update** these documents (not only refine wording—add, remove, or re-prioritize as needed). For example, a new requirement may emerge from implementation; a scope boundary may need to shift; a persona's pains or gains may be refined. Keeping these aligned ensures traceability from value to requirements to implementation.
 
-This **iterative documentation loop** ensures that the implementation, plan, design, and knowledge stay **consistent**. Maintain **consistency and cross-references**: every plan should point to its design and knowledge; designs should point to plans; when adding or changing a document, update references and references tables (e.g. in KNOWLEDGE-DOCUMENT-CENTRIC-APPS) so the doc set stays navigable. The gold standard (see below) depends on it.
+This **iterative documentation loop** ensures that the implementation, plan, design, knowledge, requirements, scope, and user profiles stay **consistent**. Maintain **consistency and cross-references**: every plan should point to its design and knowledge; designs should point to plans; requirements should align with user profiles and value proposition; when adding or changing a document, update references and references tables (e.g. in KNOWLEDGE-DOCUMENT-CENTRIC-APPS) so the doc set stays navigable. The gold standard (see below) depends on it.
 
 ### 6.7 Gold standard: recreate from scratch and use as template
 
 The **gold standard** for the methodology is: **if Cursor (or another developer or AI-powered system) were to redo the implementation from scratch using only the documentation—no prior conversation, no hidden context—the implementation would complete without problems and would result in the same functionality.** The documentation should also support **using the project as a template** for another document-centric application (e.g. different business domain) so that someone can adapt it without the original business domain obscuring the patterns. That means:
 
-- **PROJECT-PITCH**, **SCOPE**, **REQUIREMENTS**, **WBS**, **LOE**, and **APPROACH** make intent, boundaries, methodology, and planned work and effort clear.
+- **PROJECT-PITCH**, **USER-PROFILES-VALUE-PROPOSITION**, **SCOPE**, **REQUIREMENTS**, **WBS**, **LOE**, and **APPROACH** make intent, who is served (and value), boundaries, methodology, and planned work and effort clear.
 - Knowledge files give Cursor everything it needs to understand the domain and the integration points.
 - Designs give Cursor the decisions and contracts it must satisfy.
 - Plans give Cursor the exact sequence of steps and batches, with verification criteria and tests.
