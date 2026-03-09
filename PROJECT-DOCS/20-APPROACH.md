@@ -32,11 +32,12 @@ These documents are created early (pitch → scope → requirements → work-bre
 
 - [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md) — Why the project exists, who it serves, what benefits are expected, what success looks like. Used to secure sponsorship and alignment.
 - [15-USER-PROFILES-VALUE-PROPOSITION.md](15-USER-PROFILES-VALUE-PROPOSITION.md) — User profiles (personas) in the application scenario: jobs to be done, pains the system addresses, gains it delivers, and mapping to requirements. Supports product thinking and template reuse; when using the project as a template, replace these profiles with those for the new project.
+- **20-APPROACH.md** (this document) — How we build and document: principles, documentation structure, technology choices, conventions, and the execution methodology (Section 6).
 - [30-SCOPE.md](30-SCOPE.md) — What is in scope and out of scope for this version. Keeps requirements and phases focused and gives stakeholders shared expectations.
 - [40-REQUIREMENTS.md](40-REQUIREMENTS.md) — What the system must do and satisfy; breaks the project into phases with clear boundaries and deliverables.
 - [50-WBS.md](50-WBS.md) — Work-breakdown: all work on the project (architecture, knowledge, design, planning, implementation, documentation updates), organized by phase and work type. Used for planning, resource assignment, and GANTT-level views.
 - [60-LOE.md](60-LOE.md) — Level of effort estimate aligned with the WBS; gives stakeholders and project managers a view of effort so they can confirm commitment or adjust scope.
-- **20-APPROACH.md** (this document) — How we build and document: principles, documentation structure, technology choices, conventions, and the execution methodology (Section 6).
+- [70-PLAN-MASTER.md](70-PLAN-MASTER.md) — Implementation order (execution map); top-level sequence of phases and plans.
 - [80-FUTURE-ROADMAP.md](80-FUTURE-ROADMAP.md) — Future roadmap: where to take the project after initial implementation; candidate priorities and themes (not committed).
 
 Together these define **intent, boundaries, methodology, and planned work**. They do not specify implementation steps; that belongs in the phase-level Knowledge, Design, and Plan documents.
