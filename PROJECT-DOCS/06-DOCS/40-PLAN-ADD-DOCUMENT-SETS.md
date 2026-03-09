@@ -14,6 +14,7 @@ This document outlines how to add **Document Sets**, **Document Instances**, and
 
 - **Models:** `DocumentSet`, `DocumentInstance`, `DocumentInstanceVersion`.
 - **Flows:** Generate Documents (create from templates), Regenerate Documents (add new versions), Delete Document Set.
+- **Code structure:** Document generation and shared document logic live in a **service layer**; views orchestrate only (call service, handle response, redirect). Avoid duplicating logic—use helpers or services for shared functionality (per [DESIGN-DOCS.md](DESIGN-DOCS.md) and [20-APPROACH.md](../20-APPROACH.md)).
 - **UI:** Deal detail page with Documents section (table, Generate/Regenerate/Delete buttons, View latest, Download latest, View all versions). Document Instance page (version history, View and Download PDF per version). "Send for Signature" button (implemented in PLAN-SIGNiX-SEND-FOR-SIGNATURE, Plan 7; was a stub until then).
 - **Access:** Authenticated users only (`@login_required`).
 

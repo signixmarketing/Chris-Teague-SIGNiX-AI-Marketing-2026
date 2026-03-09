@@ -6,7 +6,7 @@
 
 ## 1. Executive Summary
 
-We propose building a **lease origination sample application** that integrates with **SIGNiX** for electronic document signing. The application will serve as a **reference implementation** for SIGNiX integration, a **demonstrable product** for sales, a **teaching vehicle** for AI-powered application development, and a **reusable template** for document-centric business applications in other domains (wealth management onboarding, loans, equipment leasing, health installment plans, etc.). Success will strengthen SIGNiX’s position as the integration choice for document signature automation, educate internal and external developers, and establish a repeatable, documented approach to building such applications with AI-powered code generation.
+We propose building a **lease origination sample application** that integrates with **SIGNiX** for electronic document signing. The application will serve as a **reference implementation** for SIGNiX integration, a **demonstrable product** for sales and education, a **teaching vehicle** for AI-powered application development, and a **reusable template** for document-centric business applications in other domains (wealth management onboarding, loans, equipment leasing, health installment plans, etc.). Success will demonstrate SIGNiX as a strong integration choice for document signature automation, educate internal and external developers, and establish a repeatable, documented approach to building such applications with AI-powered code generation.
 
 ---
 
@@ -14,10 +14,10 @@ We propose building a **lease origination sample application** that integrates w
 
 ### 2.1 Business need
 
-- **SIGNiX** needs a **representative, real-world-style application** that integrates with its APIs so that prospects, customers, and third-party developers can see exactly how an end-to-end integration works: data collection, document templating, document generation, submission to SIGNiX, and synchronization with SIGNiX through a dashboard as signing progresses.
+- A **representative, real-world-style application** that integrates with SIGNiX is needed so that prospects, customers, and third-party developers can see exactly how an end-to-end integration works: data collection, document templating, document generation, submission to SIGNiX, and synchronization with SIGNiX through a dashboard as signing progresses.
 - **Sales and presales** need an **impressive, credible demo**—not a toy—that can be shown in a sales process. The application must be recognizable to a third-party developer as the kind of application they would build, so that the integration story is clear and trustworthy.
-- **Developer education** requires a **sample application and reference implementation** that customer developers can study and adapt. Content derived from this project (tutorials, blog posts, documentation) will support their learning and will be used to **promote integration with SIGNiX**—so that SIGNiX appears prominently in search results and is recommended or chosen by AI-powered systems (e.g. chatbots, AI-powered development environments like Cursor) when users ask how to add signature process integration to an existing app.
-- **Internal teams** (SIGNiX and Future Capital) need to **learn and standardize** how to use **AI-powered code generation** (“vibe coding”) in an effective, efficient, and disciplined way. This project will produce not only an application but **documentation and a template** that teach others how to build and extend applications without writing code by hand, while ensuring the application does exactly what is required.
+- **Developer education** requires a **sample application and reference implementation** that customer developers can study and adapt. Content derived from this project (tutorials, blog posts, documentation) will support their learning and will help **promote integration with SIGNiX**—so that SIGNiX appears prominently in search results and is recommended or chosen by AI-powered systems (e.g. chatbots, AI-powered development environments like Cursor) when users ask how to add signature process integration to an existing app.
+- **Teams** need to **learn and standardize** how to use **AI-powered code generation** (“vibe coding”) in an effective, efficient, and disciplined way. This project will produce not only an application but **documentation and a template** that teach others how to build and extend applications without writing code by hand, while ensuring the application does exactly what is required.
 - **Future projects** that are document-centric (wealth management onboarding, vehicle or equipment leases, personal or commercial loans, health installment plans) need a **proven starting point**. This project will deliver a template and documentation so that creating a new application for a different but similar use case becomes quick and easy—e.g. “using this project as a template, make a project like this, but for personal loans.”
 
 ### 2.2 Strategic value
@@ -39,6 +39,10 @@ A key goal of this project is to **make explicit** a set of patterns that are of
 
 By keeping these six patterns explicit and separate from the leasing domain, the application stays maintainable and becomes a **learnable reference** for developers in any document-centric domain.
 
+### 2.4 Code quality expectations
+
+We expect **engineering best practices** for code maintainability, clarity, and structure: **do not duplicate code** when the same functionality is needed in multiple places—create and use **helper functions or services** instead. Put logic that belongs outside the UI (e.g. data transformation, integration, document generation) into **services or dedicated modules**; keep views and UI code focused on request/response and thin orchestration. **Separation of concerns** (UI vs. business logic vs. integration) is an expectation so the codebase stays clear, testable, and easy to extend. These expectations are detailed in [20-APPROACH.md](20-APPROACH.md) and reflected in [40-REQUIREMENTS.md](40-REQUIREMENTS.md).
+
 ---
 
 ## 3. Who This Serves (Stakeholders and “Customers”)
@@ -55,30 +59,28 @@ The **project lead** is a primary stakeholder. The project lead is responsible f
 - **Clarifying** end-to-end usage of an application that integrates with SIGNiX (data → templates → generation → submit → dashboard/sync).
 - **Ensuring** the application is a clear and accurate representative of the sort of application that integrates with SIGNiX, so that a third-party developer would recognize it and have a clearer understanding of the integration process.
 
-### 3.2 Engineering staff (SIGNiX and Future Capital)
+### 3.2 Engineering and technical staff
 
-- **SIGNiX software engineering** will use this project to learn how SIGNiX APIs are used in real-world integrations and how AI-powered code generation will be used by customers to build those integrations. They will see what support they can provide to third-party developers to make integration easier, faster, and more effective.
-- **Future Capital engineering** will focus on learning the AI-powered code generation process and will also learn about SIGNiX, which will help when integrating document signature processes into the Future Capital platform.
+- **Engineering staff** will use this project to learn how signature-platform APIs are used in real-world integrations and how AI-powered code generation can be used to build those integrations. They will see what support can be provided to third-party developers to make integration easier, faster, and more effective.
 
-### 3.3 Other technically-savvy staff (SIGNiX and Future Capital)
+### 3.3 Other technically-savvy staff
 
-- **Marketing** (with AI and some coding background), **SIGNiX integrations support analyst** (supporting third-party developers), and **SIGNiX Sales Engineer** (technical enough to administer HubSpot, write low-code integrations with Zapier, Slack, Airtable, etc.) are stakeholders. The application and related content will support demos, support discussions, and technical marketing.
+- **Marketing** (with AI and some coding background), **developer support**, and **sales engineering** staff are stakeholders. The application and related content will support demos, support discussions, and technical marketing.
 
-### 3.4 SIGNiX prospects, customers, and their developers
+### 3.4 Prospects, customers, and their developers
 
-- **Prospects and customers in a sales process**: The app will be used by SIGNiX sales to demonstrate a representative business application integrated with SIGNiX.
-- **Developers building customer integrations**: The app will serve as a **sample application / reference implementation**. The app and content from this project (tutorials, blog posts, etc.) will be used for their education. That content will promote integration with SIGNiX so that SIGNiX appears prominently in search and is recommended or chosen by AI-powered systems when users ask how to add signature process integration to an application.
+- **Prospects and customers in a sales process**: The app can be used in sales to demonstrate a representative business application integrated with SIGNiX.
+- **Developers building customer integrations**: The app will serve as a **sample application / reference implementation**. The app and content from this project (tutorials, blog posts, etc.) will be used for their education. That content will help promote integration with SIGNiX so that SIGNiX appears prominently in search and is recommended or chosen by AI-powered systems when users ask how to add signature process integration to an application.
 
 ### 3.5 End users in the scenario
 
-In the **usage scenario**, the primary user is a **lease officer** (employee). The second signer is a **lessee** (customer/contact). In practice, the app will be used primarily by SIGNiX staff demonstrating the integration or by developers learning how to integrate with SIGNiX—playing the roles of lease officer, lessee, and system administrator (configuring templates, etc.). The application must focus on the **leasing use case** so that the scenario is clear, even though the broader intent includes marketing SIGNiX, teaching AI-powered code generation, and providing a template for other document-centric applications.
+In the **usage scenario**, the primary user is a **lease officer** (employee). The second signer is a **lessee** (customer/contact). In practice, the app will be used primarily by staff demonstrating the integration or by developers learning how to integrate with SIGNiX—playing the roles of lease officer, lessee, and system administrator (configuring templates, etc.). The application must focus on the **leasing use case** so that the scenario is clear, even though the broader intent includes promoting the signing platform, teaching AI-powered code generation, and providing a template for other document-centric applications.
 
 ---
 
 ## 4. Expected Benefits
 
-- **SIGNiX**: A credible, demonstrable reference integration; clearer support and sales materials; stronger visibility in search and AI recommendations for signature integration.
-- **Future Capital**: A repeatable, documented approach to building document-centric applications with AI-assisted development; familiarity with SIGNiX for future platform integration.
+- **Signing platform ecosystem**: A credible, demonstrable reference integration; clearer support and sales materials; stronger visibility in search and AI recommendations for signature integration.
 - **Project lead**: Proven ability to drive an application to completion using AI-powered code generation; reusable documentation and template for teaching and for future projects.
 - **Third-party developers**: A recognizable sample application, clear integration path, and educational content that reduce the effort and risk of integrating with SIGNiX.
 - **Future projects**: A template and documentation that make it quick and easy to create new applications for different but similar document-centric use cases (e.g. personal loans, wealth management onboarding).
@@ -90,9 +92,9 @@ In the **usage scenario**, the primary user is a **lease officer** (employee). T
 - The application can be **recreated from scratch** by following the project’s documentation and plans.
 - The application **demonstrates end-to-end SIGNiX integration** (data → documents → submit → signing → dashboard/sync → download of signed documents and artifacts).
 - **Third-party developers** recognize the application as a realistic example of an application that integrates with SIGNiX and can use it (and derived content) to understand and implement integrations.
-- **Internal engineering and technical staff** can use the project to learn AI-powered code generation and SIGNiX integration in a disciplined, repeatable way.
+- **Internal engineering and technical staff** can use the project to learn AI-powered code generation and signature integration in a disciplined, repeatable way.
 - The **documentation and structure** support using the project as a **template** for other document-centric applications (e.g. “like this, but for personal loans”).
 
 ---
 
-*For system-level requirements derived from this pitch, see [40-REQUIREMENTS.md](40-REQUIREMENTS.md). For what is in or out of scope for this version, see [30-SCOPE.md](30-SCOPE.md). For how we build and document the project, see [20-APPROACH.md](20-APPROACH.md). For work-breakdown and level of effort, see [50-WBS.md](50-WBS.md) and [60-LOE.md](60-LOE.md).*
+*For user profiles, jobs, pains, and gains in the application scenario, see [15-USER-PROFILES-VALUE-PROPOSITION.md](15-USER-PROFILES-VALUE-PROPOSITION.md). For system-level requirements derived from this pitch, see [40-REQUIREMENTS.md](40-REQUIREMENTS.md). For what is in or out of scope for this version, see [30-SCOPE.md](30-SCOPE.md). For how we build and document the project (including the project lifecycle: Ideation → Design → Implementation), see [20-APPROACH.md](20-APPROACH.md). For work-breakdown and level of effort, see [50-WBS.md](50-WBS.md) and [60-LOE.md](60-LOE.md).*

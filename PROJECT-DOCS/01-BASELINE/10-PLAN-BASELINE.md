@@ -13,6 +13,7 @@ This document outlines the plan for building a Django-based **vehicle lease** or
 - **Purpose**: Showcase how to add SIGNiX digital signing to an application; this repo will serve as a reference implementation.
 - **Domain**: The application is for **vehicle leasing**, with **jet packs** as the vehicle type (lease origination, documents, and signing will center on jet pack leases).
 - **Audience**: Developers integrating SIGNiX; code should be clean, readable, and well-commented.
+- **Code structure**: Follow [20-APPROACH.md](../20-APPROACH.md): use helper functions or services for shared logic rather than duplicating code; keep clear separation of concerns (views thin; business/integration logic in services or dedicated modules).
 - **Initial scope**: Lease officer login, user profile (view/edit), and Admin for user management. SIGNiX integration will be added in a later phase.
 
 ---

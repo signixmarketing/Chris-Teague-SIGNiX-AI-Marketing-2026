@@ -1,6 +1,6 @@
 # Scope — Lease Origination Sample Application
 
-This document states **what is in scope** and **what is out of scope** for this version of the lease origination sample application. It complements [40-REQUIREMENTS.md](40-REQUIREMENTS.md) (what the system must do) and [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md) (why we are doing the project). Scope may be revised when we add or defer features; approach is in [20-APPROACH.md](20-APPROACH.md).
+This document states **what is in scope** and **what is out of scope** for this version of the lease origination sample application. It complements [40-REQUIREMENTS.md](40-REQUIREMENTS.md) (what the system must do) and [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md) (why we are doing the project). Scope is **outlined** during Ideation (to support the pitch) and **tightened** during the Design phase, per the project lifecycle in [20-APPROACH.md](20-APPROACH.md) (Section 5.5). Scope may be revised when we add or defer features; approach is in [20-APPROACH.md](20-APPROACH.md).
 
 ---
 
@@ -20,6 +20,7 @@ This document states **what is in scope** and **what is out of scope** for this 
 ### 1.2 Documentation and template use
 
 - **Documentation**: Knowledge, Design, and Plan documents that allow the application to be **recreated from scratch** and used as a **template** for other document-centric applications (e.g. personal loans, wealth management onboarding). *(See REQUIREMENTS R-R1–R-R3.)*
+- **Engineering best practices**: Code maintainability, clarity, and structure—including no duplication (use helpers/services for shared logic) and separation of concerns (logic in services, views thin)—as defined in [20-APPROACH.md](20-APPROACH.md) are **in scope**; implementation should follow these expectations.
 - **Requirements, scope, approach**: [40-REQUIREMENTS.md](40-REQUIREMENTS.md), 30-SCOPE.md, [20-APPROACH.md](20-APPROACH.md), and [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md) so that stakeholders, scope, and approach are explicit and maintainable.
 
 ### 1.3 Deal type and domain

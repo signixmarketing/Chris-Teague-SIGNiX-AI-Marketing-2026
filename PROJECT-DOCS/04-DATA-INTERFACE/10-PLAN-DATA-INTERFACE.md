@@ -76,6 +76,7 @@ This document outlines how to add the **Internal Data Schema** and **Deal Data R
 ## 6. Implementation Notes
 
 - **Field names:** Use `deal.lease_start_date`, `deal.lease_end_date` (not `lease_start`). Match the actual Deal model.
+- **Views and services:** Keep views thin: call schema services from views; do not duplicate schema or deal-data logic in views (per [20-APPROACH.md](../20-APPROACH.md)).
 - **LeaseOfficerProfile:** Access via `user.lease_officer_profile`; may not exist (handle `DoesNotExist` or use `getattr(user, 'lease_officer_profile', None)`). Include `full_name` from the profile property.
 - **Decimal serialization:** Use `float()` or ensure JSON encoder handles Decimal (Django's `JsonResponse` handles it).
 - **Copy button:** Use `navigator.clipboard.writeText()` with the JSON string. Show "Copied!" feedback after successful copy; hide it after ~2 seconds to return to neutral state.

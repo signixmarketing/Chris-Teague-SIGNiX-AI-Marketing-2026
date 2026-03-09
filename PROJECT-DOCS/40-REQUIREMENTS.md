@@ -2,6 +2,8 @@
 
 This document states the **requirements** for the lease origination sample application: what the system must do and satisfy so that the project meets the goals described in [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md). Requirements are written so that they can be verified; scope (what we build in which version) is in [30-SCOPE.md](30-SCOPE.md); approach (how we build and document) is in [20-APPROACH.md](20-APPROACH.md).
 
+**Relationship to user profiles and value proposition:** Requirements should **consider and align with** the [15-USER-PROFILES-VALUE-PROPOSITION.md](15-USER-PROFILES-VALUE-PROPOSITION.md) document. Each persona's jobs, pains, and gains inform what the system must do; the "Maps to requirements" in that document provide traceability from value to requirements. When determining or updating requirements, ensure they serve the personas and the value proposition described there.
+
 ---
 
 ## 1. Context and Stakeholders
@@ -12,8 +14,8 @@ The application serves multiple stakeholders (see [10-PROJECT-PITCH.md](10-PROJE
 - **Lease officers** — Primary users in the scenario; employees who manage vehicles, contacts, deals, generate documents, and send for signature.
 - **Lessees (contacts)** — Second signers in the scenario; customers who sign documents.
 - **System administrators** — Staff who configure the system (e.g. document templates, SIGNiX configuration); may be the same person as the lease officer in a small deployment.
-- **SIGNiX and Future Capital engineering** — Consumers of the project for learning (AI-powered code generation, SIGNiX API usage).
-- **SIGNiX sales, support, and marketing** — Consumers of the application for demos and of content for education and promotion.
+- **Engineering and technical staff** — Consumers of the project for learning (AI-powered code generation, signature integration API usage).
+- **Sales, support, and marketing staff** — Consumers of the application for demos and of content for education and promotion.
 - **Third-party developers** — Consumers of the application as a reference implementation and of content for learning how to integrate with SIGNiX.
 - **Future projects** — Consumers of the project as a template for other document-centric applications (e.g. personal loans, wealth management onboarding).
 
@@ -86,7 +88,7 @@ The application must satisfy the functional and non-functional requirements belo
 ## 3. Non-Functional Requirements
 
 - **R-N1** The application shall be **demonstrable** in a sales or education context: it shall run, support the full lease-officer and lessee workflow, and show SIGNiX integration end-to-end without requiring production-scale infrastructure (e.g. SQLite for dev is acceptable).
-- **R-N2** The application shall be **maintainable and extendable**: code and documentation shall be structured so that a developer (or project lead using AI-powered development) can add or change features in a disciplined way, with clear reference to design and knowledge documents.
+- **R-N2** The application shall be **maintainable and extendable**: code and documentation shall be structured so that a developer (or project lead using AI-powered development) can add or change features in a disciplined way, with clear reference to design and knowledge documents. In particular: **avoid code duplication**—when the same functionality is needed in multiple places, implement it once in a **helper function or service** and call it from views or other code; put **business logic and integration logic** (e.g. SIGNiX payload building, document generation, schema discovery) in **services or dedicated modules** where appropriate, rather than in views or UI code; and maintain **clear separation of concerns** (UI focused on request/response and orchestration; business and integration logic in services or shared modules) so the codebase stays clear, testable, and easy to extend.
 - **R-N3** Access to the main application shall be **authenticated users only**; there is no requirement for a public-facing or anonymous user experience in this version.
 
 ---
@@ -112,4 +114,4 @@ The following are **not** required for this version of the application; they may
 
 ---
 
-*Stakeholder and benefit narrative: [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md). What is in or out of scope for this version: [30-SCOPE.md](30-SCOPE.md). How we build and document: [20-APPROACH.md](20-APPROACH.md). Work-breakdown and effort: [50-WBS.md](50-WBS.md), [60-LOE.md](60-LOE.md).*
+*Stakeholder and benefit narrative: [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md). User profiles and value proposition: [15-USER-PROFILES-VALUE-PROPOSITION.md](15-USER-PROFILES-VALUE-PROPOSITION.md). What is in or out of scope for this version: [30-SCOPE.md](30-SCOPE.md). How we build and document: [20-APPROACH.md](20-APPROACH.md). Work-breakdown and effort: [50-WBS.md](50-WBS.md), [60-LOE.md](60-LOE.md).*

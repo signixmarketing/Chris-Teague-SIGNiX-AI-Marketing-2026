@@ -12,6 +12,8 @@ This document captures the design for the **Internal Data Schema** and **Deal Da
 
 This interface is the **single source of truth** for schema and deal data. [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) mandates that document features (mapping UI, context builder) use it exclusively and must not traverse Django models or QuerySets directly. See [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) for the no-circumvention requirement.
 
+**Implementation note:** The schema and `get_deal_data` interface should be implemented as a **service or dedicated module** (e.g. in `apps.schema` or a shared services layer) consumed by views and the context builder. Shared logic (e.g. schema discovery, data shaping) should live there rather than in views, so that separation of concerns and no duplication are maintained per [20-APPROACH.md](../20-APPROACH.md).
+
 Implementation will follow in separate PLAN files.
 
 ---

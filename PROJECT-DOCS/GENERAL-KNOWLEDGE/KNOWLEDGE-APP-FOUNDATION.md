@@ -62,6 +62,14 @@ The same **baseline capabilities** can be implemented in other stacks (see Secti
 - **Admin and app linked** — Users can go from app to admin and back; profile is reachable from the admin header (e.g. person icon → profile). The app and admin feel like one product.
 - **Initial user** — Idempotent setup step (e.g. management command or seed script) so that “run from scratch” is documented and repeatable.
 
+### 5.1 Code structure and maintainability
+
+When implementing the baseline (or any layer of the application), apply **engineering best practices** for maintainability and structure. These are technology-agnostic:
+
+- **Avoid duplication** — When the same functionality is needed in more than one place, implement it once in a **helper function** or **service** (or equivalent in your stack) and call it from views, controllers, or UI code. Do not copy-paste logic.
+- **Use services or shared modules for logic** — Put business logic, data access, and integration code in **services** or **dedicated modules** rather than in UI handlers. Keep **views** (or equivalent) focused on request/response and thin orchestration.
+- **Separation of concerns** — Maintain a clear separation between **UI** (presentation, user input, redirects), **business logic** (rules, calculations, workflows), and **integration** (external APIs, persistence). This keeps the codebase clear, testable, and easy to extend.
+
 ---
 
 ## 6. Implementing in Another Stack

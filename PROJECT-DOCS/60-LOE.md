@@ -1,6 +1,6 @@
 # Level of Effort Estimate — Lease Origination Sample Application
 
-This document provides a **level of effort estimate** for fully executing the work-breakdown in [50-WBS.md](50-WBS.md). It is intended to give stakeholders and project managers a clear view of the effort required so they can confirm commitment, adjust scope, or prioritize. The estimate is closely aligned with the work-breakdown: each phase (and where useful, work type within a phase) has an effort value.
+This document provides a **level of effort estimate** for fully executing the work-breakdown in [50-WBS.md](50-WBS.md). It is intended to give stakeholders and project managers a clear view of the effort required so they can confirm commitment, adjust scope, or prioritize. It is produced during the **Design phase**, after requirements are determined, alongside the WBS and before stakeholder approval to implement (see [20-APPROACH.md](20-APPROACH.md) Section 5.5 and 6.4). The estimate is closely aligned with the work-breakdown: each phase (and where useful, work type within a phase) has an effort value.
 
 **Unit:** Person-days. Assumes a single project lead directing work (e.g. with Cursor or similar AI-powered development); in a traditional team, effort could be distributed across roles (e.g. design, implementation, QA) and the same WBS used for assignment.
 
