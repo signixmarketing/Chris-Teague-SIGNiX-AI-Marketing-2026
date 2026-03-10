@@ -31,6 +31,12 @@ local_settings.py
 db.sqlite3
 media/
 staticfiles/
+backups/
+
+# Distribution bundle for class (tracked so students can restore)
+!distribution/
+!distribution/db.sqlite3
+!distribution/media.tar.gz
 
 # Environment and secrets
 .env
