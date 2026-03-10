@@ -25,7 +25,7 @@ This document outlines how to add the **Signature transactions dashboard**: a ma
 - **Model:** `SignatureTransaction` (Plan 2) — `deal`, `document_set`, `signix_document_set_id`, `transaction_id`, `status`, `first_signing_url`, `submitted_at`, `completed_at`.
 - **List query:** `SignatureTransaction.objects.all().order_by('-submitted_at').select_related('deal', 'deal__deal_type', 'document_set', 'document_set__document_set_template')` so each row has deal, deal_type (for description fallback), document_set, and template. Include `deal__deal_type` so the template can fall back to deal type name when document_set_template is null.
 - **Description/label:** Derive per row in the view or template from `deal_id` and `document_set.document_set_template.name` (or deal type name if template name blank). No stored label on SignatureTransaction (decided for Plan 8; see Section 8).
-- **Delete all:** `SignatureTransaction.objects.all().delete()`. Run in a POST view after confirmation.
+- **Delete all:** `SignatureTransaction.objects.all().delete()`. Run in a POST view after confirmation. **Stored artifacts:** Per design (DESIGN-SIGNiX-DASHBOARD-AND-SYNC Section 6.5a), when a SignatureTransaction is deleted, its **audit_trail_file** and **certificate_of_completion_file** are also removed from media storage so no orphaned files remain; implementation uses a **pre_delete** signal on SignatureTransaction (see DESIGN-SIGNiX-DASHBOARD-AND-SYNC and DESIGN-SIGNiX-SUBMIT Section 7.3).
 
 ---
 
@@ -73,7 +73,7 @@ This document outlines how to add the **Signature transactions dashboard**: a ma
 ### Batch 2 — Delete all and menu (steps 5–8)
 
 5. **Delete all — confirmation and action**
-   - Add URL, e.g. `path("signatures/delete-all/", views.signature_transaction_delete_all, name="signature_transaction_delete_all")`. **Register this route before** `path("signatures/", ...)` in `urls.py` so that `/deals/signatures/delete-all/` is matched by the delete-all view, not the list view. View: GET renders a confirmation template ("Are you sure? This will remove all transaction records.") with a form that POSTs to the same view; POST performs `SignatureTransaction.objects.all().delete()`, then redirects to `deals:signature_transaction_list` with a success message (e.g. "All signature transaction records (N) have been removed." where N is the count before delete). Require login.
+   - Add URL, e.g. `path("signatures/delete-all/", views.signature_transaction_delete_all, name="signature_transaction_delete_all")`. **Register this route before** `path("signatures/", ...)` in `urls.py` so that `/deals/signatures/delete-all/` is matched by the delete-all view, not the list view. View: GET renders a confirmation template ("Are you sure? This will remove all transaction records.") with a form that POSTs to the same view; POST performs `SignatureTransaction.objects.all().delete()`, then redirects to `deals:signature_transaction_list` with a success message (e.g. "All signature transaction records (N) have been removed." where N is the count before delete). Require login. **Stored files:** Deletion also removes each transaction's audit trail and certificate of completion files from media storage via a **pre_delete** signal on SignatureTransaction (Design Section 6.5a, 7.4); no orphaned files remain.
 
 6. **Delete all — link from list**
    - On the list template, add a "Delete Transaction History" button (e.g. above the table) that links to the delete-all confirmation page (GET). Style as a danger/outline-danger button so it is clear it is destructive.

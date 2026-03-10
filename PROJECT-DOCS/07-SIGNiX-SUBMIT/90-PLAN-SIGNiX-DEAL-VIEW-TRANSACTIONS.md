@@ -26,7 +26,7 @@ This document outlines how to add **related signature transactions** on the Deal
 
 - **Source:** `deal.signature_transactions` (reverse relation from Plan 2). Order by `-submitted_at` for newest first.
 - **Deal detail view:** Add to the deal detail context: `signature_transactions = deal.signature_transactions.order_by('-submitted_at')`. **Decided:** Add this inside **`_deal_detail_context`** (the helper that builds the context dict) so every code path that renders deal detail — including Plan 7 re-render on validation error, generate-documents error, regenerate-documents error — gets `signature_transactions` without changing each view. One extra query per deal detail load is acceptable.
-- **Delete for this deal:** `SignatureTransaction.objects.filter(deal=deal).delete()` (or `deal_id=pk`). Run in a POST view after confirmation.
+- **Delete for this deal:** `SignatureTransaction.objects.filter(deal=deal).delete()` (or `deal_id=pk`). Run in a POST view after confirmation. **Stored artifacts:** Per design (DESIGN-SIGNiX-DASHBOARD-AND-SYNC Section 6.5a), when each SignatureTransaction is deleted, its **audit_trail_file** and **certificate_of_completion_file** are also removed from media storage via a **pre_delete** signal; no orphaned files remain.
 
 ---
 
@@ -70,7 +70,7 @@ This document outlines how to add **related signature transactions** on the Deal
 ### Batch 2 — Delete for this deal (steps 5–8)
 
 5. **URL and view**
-   - Add `path("<int:pk>/signatures/delete-all/", views.deal_signature_transaction_delete_all, name="deal_signature_transaction_delete_all")` in `apps/deals/urls.py`. View: GET renders confirmation template; POST performs `SignatureTransaction.objects.filter(deal_id=pk).delete()`, then redirects to `deals:deal_detail` with `pk` and success message. Require login; use `get_object_or_404(Deal, pk=pk)` so 404 if deal does not exist.
+   - Add `path("<int:pk>/signatures/delete-all/", views.deal_signature_transaction_delete_all, name="deal_signature_transaction_delete_all")` in `apps/deals/urls.py`. View: GET renders confirmation template; POST performs `SignatureTransaction.objects.filter(deal_id=pk).delete()`, then redirects to `deals:deal_detail` with `pk` and success message. Require login; use `get_object_or_404(Deal, pk=pk)` so 404 if deal does not exist. **Stored files:** Each deleted transaction's audit trail and certificate of completion files are removed from media storage by the **pre_delete** signal on SignatureTransaction (Design Section 6.5a, 7.4).
 
 6. **Confirmation template**
    - Create `templates/deals/deal_signature_transaction_delete_all_confirm.html`. Content: message "Are you sure? This will remove all transaction records for this deal.", form with POST to the delete URL, Cancel link back to deal detail.
