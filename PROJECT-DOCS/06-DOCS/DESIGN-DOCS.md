@@ -263,6 +263,12 @@ Each item in `tagging_data` for `tagging_type: "text_tagging"`:
 
 **Note:** Template authors must ensure the anchor text appears in the rendered HTML. For example, the HTML might include `<span>LESSOR:</span>` or a label "Date:" so SIGNiX can find it.
 
+#### Anchor text uniqueness and white text tagging
+
+- **Unique anchor text per document** — Within a single document, the **anchor text for each field should be unique**. SIGNiX uses the anchor string to locate where to place each tag; if the same phrase appears more than once, placement can be ambiguous or incorrect. Template authors should use a distinct anchor phrase for each tagging_data entry (e.g. "LESSOR:" for one signature field, "LESSEE:" for another, "Lessor date:" vs "Lessee date:" for two date fields).
+- **When unique text is not possible** — If the document layout makes it difficult to use a unique visible phrase for every field (e.g. multiple identical "Date:" labels), **the template should be updated** so that each field has a unique anchor. Options include: (1) reword labels to be distinct (e.g. "Lessor date:", "Lessee date:"), or (2) use **white text tagging** (below).
+- **White text tagging** — When a unique visible phrase is not feasible (e.g. adding another visible "Date:" would clutter the layout), the anchor text can be placed in the document using **the same color as the background** so that it is **invisible to the signer**. SIGNiX still finds the text in the PDF for placement; the signer does not see it. This process is commonly called "white text tagging" (even when the background is not white). For example, in HTML use a span with the anchor phrase and style it to match the background: `<span style="color: #ffffff;">SIG_LESSEE_DATE</span>` on a white background. Each such invisible anchor must still be **unique** within the document so SIGNiX can distinguish the fields.
+
 ### Template-to-Data Mapping
 
 Dynamic templates expect a context dict (e.g., `data`) whose structure may differ from the Deal/Vehicle/Contact models. A **mapping feature** specifies how template variables are populated from deal data. The mapping UI is integrated into the template upload/edit flow.
