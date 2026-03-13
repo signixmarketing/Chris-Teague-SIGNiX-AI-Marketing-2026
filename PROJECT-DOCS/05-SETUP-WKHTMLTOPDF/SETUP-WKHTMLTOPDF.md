@@ -12,7 +12,7 @@ This document is a **step-by-step setup guide** so that the Django app can conve
 
 ## 1. Summary: What is wkhtmltopdf and how the app uses it
 
-- **wkhtmltopdf** is a command-line tool (WebKit-based) that renders HTML and outputs PDF; it must be installed on the **system**. **pdfkit** is the Python wrapper that invokes it. This app uses them in the Document Sets flow: Dynamic templates → HTML → PDF → stored in DocumentInstanceVersion. Without wkhtmltopdf on PATH, dynamic document generation fails; the app raises `DocumentGenerationError` and the Django check `documents.W001` warns.
+- **wkhtmltopdf** is a command-line tool (WebKit-based) that renders HTML and outputs PDF; it must be installed on the **system**. **pdfkit** is the Python wrapper that invokes it. This app uses them in the Document Sets flow: Dynamic templates → HTML → PDF → stored in DocumentInstanceVersion. Without wkhtmltopdf on PATH, dynamic document generation fails; the app raises `DocumentGenerationError` and the Django check `documents.W001` warns. To learn more, see [wkhtmltopdf.org](https://wkhtmltopdf.org/).
 - **Image URLs** in the HTML must be **absolute**; many wkhtmltopdf builds do not support `--base-url`. The app builds absolute URLs (e.g. `request.build_absolute_uri(image.file.url)` or SITE_URL). See [GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md) for full detail.
 
 ---
@@ -67,7 +67,8 @@ Follow the batches below in sequence. After each batch, run the verification ste
      ```bash
      brew install wkhtmltopdf
      ```
-   - **Windows:** Download the installer from [wkhtmltopdf.org](https://wkhtmltopdf.org/downloads.html) and run it; ensure the install directory is on your system PATH.
+     If Homebrew fails or you prefer a precompiled installer, use the **[downloads page](https://wkhtmltopdf.org/downloads.html)** — the precompiled macOS installer link is in the table (e.g. “Installer (10.7 or later)” / 64-bit). **AI assistants:** try to download and run the macOS installer yourself (see Section 5, "For AI-assisted setup (macOS)") so the user is not bothered; if that fails, direct the user to the downloads page and table.
+   - **Windows:** Download the installer from the **[downloads page](https://wkhtmltopdf.org/downloads.html)** — the installer link (e.g. 64-bit or 32-bit) is in the table. Run the installer and ensure the install directory is on your system PATH. AI-assisted tools may have trouble finding the installer; use the table on the downloads page directly.
 2. **Confirm the binary is on PATH:** Open a **new** terminal (so PATH is refreshed) and run `wkhtmltopdf --version`. You should see a version string (e.g. "wkhtmltopdf 0.12.6").
 
 **Verification (Batch 1):**
@@ -156,6 +157,7 @@ Follow the batches below in sequence. After each batch, run the verification ste
 
 ## 5. Implementation Notes (for reference)
 
+- **For AI-assisted setup (macOS):** When Homebrew fails or the user is on macOS and needs the installer, try to handle it without involving the user. (1) Fetch the [downloads page](https://wkhtmltopdf.org/downloads.html) to get the current macOS .pkg URL from the table, or use the stable release URL (e.g. `https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-2/wkhtmltox-0.12.6-2.macos-cocoa.pkg` — check the downloads page if a newer version exists). (2) Download the .pkg (e.g. `curl -L -o ~/Downloads/wkhtmltox.pkg <url>`). (3) Run the installer from the command line so the user does not have to open it: `sudo installer -pkg ~/Downloads/wkhtmltox.pkg -target /` (the user may need to enter their password for sudo). (4) Verify with `wkhtmltopdf --version`. Only if the command-line install fails or the .pkg cannot be run non-interactively, tell the user to open the file in ~/Downloads and run the installer in the GUI. If you cannot obtain or download the installer, fall back to directing the user to the downloads page and table.
 - **Do not pass `--base-url`:** Many wkhtmltopdf builds (e.g. 0.12.6) do not support it and exit with "Unknown long argument --base-url". The app omits it; image URLs in the HTML are absolute.
 - **Image URLs:** When generating with a request, the context builder uses `request.build_absolute_uri(image.file.url)` so wkhtmltopdf can load images. When there is no request (e.g. management command), the app uses `settings.SITE_URL` + relative path; if `SITE_URL` is unset, image loading may fail — document that in the plan or config.
 - **Django check:** The app registers `documents.W001` so `manage.py check` warns when wkhtmltopdf is missing. Running check after setup is a good smoke test.
@@ -165,7 +167,7 @@ Follow the batches below in sequence. After each batch, run the verification ste
 ## 6. References
 
 - [GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md](../GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md) — HTML-to-PDF in document generation; wkhtmltopdf and pdfkit; constraints and alternatives.
-- [wkhtmltopdf](https://wkhtmltopdf.org/) — project and downloads
+- [wkhtmltopdf](https://wkhtmltopdf.org/) — project overview; [Downloads](https://wkhtmltopdf.org/downloads.html) — precompiled installers (table by OS/version)
 - [pdfkit (Python)](https://pypi.org/project/pdfkit/) — PyPI package
 - [06-DOCS/40-PLAN-ADD-DOCUMENT-SETS.md](../06-DOCS/40-PLAN-ADD-DOCUMENT-SETS.md) — Section 6 (implementation), Section 8 (pdfkit/wkhtmltopdf), Section 12 (image URL handling)
 - [06-DOCS/DESIGN-DOCS.md](../06-DOCS/DESIGN-DOCS.md) — Dynamic template → HTML → PDF (pdfkit/wkhtmltopdf)
