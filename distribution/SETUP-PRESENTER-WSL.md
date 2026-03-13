@@ -37,7 +37,7 @@ This file is **self-contained**: follow it only and you’ll get from clone to a
 
 Replace `YOUR_NGROK_DOMAIN` with your ngrok hostname (e.g. `my-demo.ngrok-free.dev`), then paste this into Cursor:
 
-> Do the full installation for this project: create a Python virtual environment, install dependencies from requirements.txt, and run scripts/restore_distribution.py. My ngrok domain is **YOUR_NGROK_DOMAIN**. Update `.vscode/launch.json` so the "Ngrok: tunnel to port 8000" configuration has `NGROK_DOMAIN` set to that domain. Then start ngrok (with that domain on port 8000) and the Django development server so I can access the app at https://YOUR_NGROK_DOMAIN. I will log in as karl / karl.
+> Do the full installation for this project: create a Python virtual environment, install dependencies from requirements.txt, and run scripts/restore_distribution.py. My ngrok domain is **YOUR_NGROK_DOMAIN**. Update `.vscode/launch.json` so the "Ngrok: tunnel to port 8000" configuration has `NGROK_DOMAIN` set to that domain. Then start ngrok (with that domain on port 8000) and the Django development server so I can access the app at https://YOUR_NGROK_DOMAIN. I will log in as karl / karl. Remind me that once the application is running I should update my user profile (first name, last name, phone, email), SIGNiX API credentials, and Contacts accordingly.
 
 ---
 

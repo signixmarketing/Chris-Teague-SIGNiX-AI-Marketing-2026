@@ -65,7 +65,7 @@ In Cursor: **File → Open Folder** → select the repo folder (the one that con
 
 Copy the prompt below, paste it into Cursor, and send it. Cursor will create the venv, install dependencies, restore the distribution, and start the server. Then open **http://127.0.0.1:8000/** in your browser and log in with **karl** / **karl**.
 
-> I'm on Windows and I don't use WSL. Do the full installation for this project so I have a working app: create a Python virtual environment (use `python -m venv .venv` or `py -3 -m venv .venv`), activate it with `.venv\Scripts\activate`, install dependencies from requirements.txt, run scripts/restore_distribution.py, then start the Django development server with `python manage.py runserver`. Use Windows paths and this activation. If Git or Python aren't available in this environment, tell me to install Git for Windows and Python 3 from python.org with "Add Python to PATH" and then try again. I want to open http://127.0.0.1:8000/ and log in as karl / karl.
+> I'm on Windows and I don't use WSL. Do the full installation for this project so I have a working app: create a Python virtual environment (use `python -m venv .venv` or `py -3 -m venv .venv`), activate it with `.venv\Scripts\activate`, install dependencies from requirements.txt, run scripts/restore_distribution.py, then start the Django development server with `python manage.py runserver`. Use Windows paths and this activation. If Git or Python aren't available in this environment, tell me to install Git for Windows and Python 3 from python.org with "Add Python to PATH" and then try again. I want to open http://127.0.0.1:8000/ and log in as karl / karl. Remind me that once the application is running I should update my user profile (first name, last name, phone, email), SIGNiX API credentials, and Contacts accordingly.
 
 **Option 2 — Run commands yourself**
 
@@ -102,8 +102,9 @@ The app runs after B.2. For **Generate/Regenerate** documents you need **wkhtmlt
 
 Once the app is running and you’re logged in:
 
+- **User profile** — Update your profile with the correct first name, last name, phone number, and email address (e.g. in the app under your account/profile).
 - **SIGNiX API credentials** — Sidebar → **SIGNiX Configuration** (`/signix/config/`). Enter your SIGNiX credentials and save.
-- **Contact email for signing links** — Set the **email** of signer **contacts** to your test Gmail (or other inbox). Edit contacts in the app.
+- **Contact email and phone for signing links** — Set the **email** and **phone** of signer **contacts** to your test Gmail (or other inbox) and phone. Edit contacts in the app.
 
 ---
 
