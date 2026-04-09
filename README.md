@@ -1,18 +1,59 @@
-# Lease Origination Sample Application
+# SIGNiX AI Marketing — Chris Teague (AI Summit 2026 Q2)
 
-Django-based lease origination sample app with document generation, SIGNiX integration, and e-signature workflows.
+This repo shows what AI-assisted marketing looks like in practice.
 
-## Get up and running
+Everything here was built using **[Cursor](https://cursor.com)** and a custom AI workflow over roughly three weeks. The work spans campaign strategy, paid media, email, and sales collateral.
 
-To get this project running on your computer (clone, install, restore sample data, and run the app), use the setup guide in the **distribution** folder. It will direct you to the right instructions for your setup (presenter with ngrok, or student on Windows with/without WSL, or Mac).
+---
 
-- **[distribution/README.md](distribution/README.md)** — Choose your profile and follow the linked guide to get the app running.
+## What's in here
 
-## Project documentation
+### Sales Collateral (ABS / CoPilot)
+Two one-pagers built for our sales rep covering Banks and Credit Unions. Corrected April 9, 2026.
 
-All project documentation (pitch, approach, scope, requirements, WBS, LOE, master plan, phase plans, and design docs) lives under **PROJECT-DOCS/**.
+- [SIGNiX_ABS_CoPilot_OnePager_v2_aspen_DRAFT.pdf](PROJECT-DOCS/06-DOCS/SIGNiX_ABS_CoPilot_OnePager_v2_aspen_DRAFT.pdf) — Partner overview one-pager
+- [SIGNiX_ABS_CoPilot_Authentication_OnePager_aspen_DRAFT.pdf](PROJECT-DOCS/06-DOCS/SIGNiX_ABS_CoPilot_Authentication_OnePager_aspen_DRAFT.pdf) — Authentication one-pager
 
-- **Start here:** [PROJECT-DOCS/00-INDEX.md](PROJECT-DOCS/00-INDEX.md) — index of all documents and where to find them.
-- **Implementation order:** [PROJECT-DOCS/70-PLAN-MASTER.md](PROJECT-DOCS/70-PLAN-MASTER.md) — master plan and sequence of phases/plans.
+### Marketing Dashboard
+A live HTML dashboard that pulls from Google Ads, HubSpot, and LinkedIn exports and renders all three in one view. Open in any browser — no server needed.
 
-Use 00-INDEX.md to navigate; use 70-PLAN-MASTER.md to follow the implementation order.
+- [SIGNiX_Dashboard_April2026.html](PROJECT-DOCS/SIGNiX_Dashboard_April2026.html)
+
+**What it shows:**
+- Google Ads: spend, clicks, conversions, CPC, cost-per-lead, campaign comparison, keyword performance, off-hours spend analysis
+- HubSpot: lead response time per rep (color-coded by urgency)
+- LinkedIn: impressions, engagement rate, post-by-post performance
+
+### Campaign Measurement Doc
+A 90-day measurement framework with ROI targets, decision rules, and phase-by-phase benchmarks.
+
+- [SIGNiX_CampaignMeasurement_April2026.docx](PROJECT-DOCS/SIGNiX_CampaignMeasurement_April2026.docx)
+
+### Mike's Fraud Insights Email — Email 1 and Email 2
+Operator-voice email series sent to 70 TruStage Financial Institution customers.
+
+- [Mike-March-2026-Fraud-Insights-Email1-SHORT.pdf](PROJECT-DOCS/06-DOCS/Mike-March-2026-Fraud-Insights-Email1-SHORT.pdf) — Email 1 (March 2026)
+- [Mike-April-2026-Fraud-Email2-Outlook.pdf](PROJECT-DOCS/06-DOCS/Mike-April-2026-Fraud-Email2-Outlook.pdf) — Email 2 (April 2026)
+
+**Email 1 results (sent March 2026):**
+- Open rate: 19.7% (industry avg: 14%)
+- CTR: 15.38% (industry avg: 2–5%)
+- +2 new contacts added within 7 days
+
+---
+
+## How it was built
+
+All deliverables were generated using Python build scripts in `PROJECT-DOCS/build-scripts/`. Each script produces a `.docx`, `.pptx`, `.xlsx`, or `.html` file using SIGNiX brand tokens. The dashboard script reads CSV exports from Google Ads and LinkedIn directly — no API keys required.
+
+The AI workflow (Cursor + custom rules) handled strategy, copywriting, data analysis, and document generation. Chris directed, reviewed, and refined everything.
+
+---
+
+## About SIGNiX
+
+[SIGNiX](https://www.signix.com) provides PKI-based digital signatures, e-sign, and authentication via the Flex API. Primary markets: financial services, lending, wealth management, and Remote Online Notary (RON).
+
+---
+
+*Prepared for AI Summit 2026 Q2 Show-and-Tell | Chris Teague, Head of Growth and Marketing*
