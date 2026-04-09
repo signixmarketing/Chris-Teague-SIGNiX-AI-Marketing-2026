@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SIGNiX · 2026 Paid Media Strategy</title>
+  <style>
+    /*
+      SIGNiX 2026 Paid Media Strategy — 5-Slide Presentation
+      =========================================================
+      NAVIGATION: Arrow keys ← → or on-screen buttons
+      PRINT TO PDF: Cmd+P → Save as PDF → Paper: Letter Landscape → Margins: None → Background graphics ON
+      Design tokens from DESIGN-GUIDELINES.md
+    */
+
+    /* === RESET & BASE === */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:   #6da34a;
+      --ink:     #2e3440;
+      --body:    #545454;
+      --muted:   #6b7280;
+      --rule:    #d8dee9;
+      --panel:   #eceff4;
+      --canvas:  #f8fafb;
+      --white:   #ffffff;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --slide-w: 1280px;
+      --slide-h: 720px;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #1a1a2e;
+      font-family: var(--font);
+      overflow: hidden;
+    }
+
+    /* === SLIDE DECK WRAPPER === */
+    .deck {
+      position: relative;
+      width: var(--slide-w);
+      height: var(--slide-h);
+      margin: 0 auto;
+      top: 50%;
+      transform: translateY(-50%);
+      overflow: hidden;
+    }
+
+    /* === INDIVIDUAL SLIDES === */
+    .slide {
+      position: absolute;
+      inset: 0;
+      width: var(--slide-w);
+      height: var(--slide-h);
+      display: none;
+      flex-direction: column;
+    }
+    .slide.active { display: flex; }
+
+    /* === SLIDE 1 — TITLE (dark cover, large logo) === */
+    .slide-title {
+      background: var(--ink);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 32px;
+      padding: 80px;
+    }
+    .slide-title .logo-wrap { margin-bottom: 8px; }
+    .slide-title h1 {
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+    .slide-title .subtitle {
+      font-size: 20px;
+      color: var(--green);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    .slide-title .meta {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 8px;
+      letter-spacing: 0.06em;
+    }
+    /* Green rule accent at bottom of title slide */
+    .slide-title::after {
+      content: "";
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 4px;
+      background: var(--green);
+    }
+
+    /* === BODY SLIDES — shared structure === */
+    .slide-body {
+      background: var(--white);
+      padding: 0;
+    }
+
+    /* Top accent bar */
+    .slide-body .top-bar {
+      height: 5px;
+      background: var(--green);
+      flex-shrink: 0;
+    }
+
+    /* Header area */
+    .slide-body .slide-header {
+      padding: 36px 64px 20px;
+      flex-shrink: 0;
+    }
+    .slide-body .eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 8px;
+    }
+    .slide-body .slide-title-text {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }
+
+    /* Content area */
+    .slide-body .slide-content {
+      flex: 1;
+      padding: 0 64px 16px;
+      overflow: hidden;
+    }
+
+    /* Footer with logo */
+    .slide-body .slide-footer {
+      height: 52px;
+      padding: 0 64px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      border-top: 1px solid var(--rule);
+      flex-shrink: 0;
+    }
+
+    /* === TWO-COLUMN LAYOUT === */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      height: 100%;
+      align-content: start;
+    }
+    .col-card {
+      background: var(--canvas);
+      border-radius: 8px;
+      padding: 20px 24px;
+      border-left: 3px solid var(--green);
+    }
+    .col-card.dark {
+      background: var(--ink);
+      border-left: 3px solid var(--green);
+    }
+    .col-card h3 {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 12px;
+    }
+    .col-card.dark h3 { color: var(--green); }
+    .col-card ul {
+      list-style: none;
+      padding: 0;
+    }
+    .col-card ul li {
+      font-size: 14px;
+      color: var(--body);
+      line-height: 1.5;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--rule);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .col-card ul li:last-child { border-bottom: none; }
+    .col-card.dark ul li { color: #c8d0d8; border-bottom-color: #3d4a5a; }
+    .col-card ul li::before {
+      content: "›";
+      color: var(--green);
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* === STAT BOXES === */
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 8px;
+    }
+    .stat-box {
+      background: var(--canvas);
+      border-radius: 8px;
+      padding: 24px 20px;
+      text-align: center;
+      border-bottom: 3px solid var(--green);
+    }
+    .stat-box .stat-amount {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1;
+    }
+    .stat-box .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .stat-box .stat-desc {
+      font-size: 13px;
+      color: var(--body);
+      margin-top: 10px;
+      line-height: 1.45;
+    }
+
+    /* === KEYWORD TABLE === */
+    .kw-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .kw-table th {
+      background: var(--ink);
+      color: var(--white);
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .kw-table td {
+      padding: 7px 12px;
+      color: var(--body);
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+      line-height: 1.4;
+    }
+    .kw-table tr:nth-child(even) td { background: var(--canvas); }
+    .kw-table td.bucket {
+      font-weight: 700;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+    .kw-table td.alloc {
+      color: var(--green);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    /* === INDICATOR TABLE === */
+    .ind-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .ind-section h3 {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid var(--green);
+    }
+    .ind-section ul {
+      list-style: none;
+    }
+    .ind-section ul li {
+      font-size: 13px;
+      color: var(--body);
+      padding: 6px 0;
+      border-bottom: 1px solid var(--rule);
+      line-height: 1.4;
+      display: flex;
+      gap: 8px;
+    }
+    .ind-section ul li:last-child { border-bottom: none; }
+    .ind-section ul li .tag {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--white);
+      background: var(--green);
+      padding: 2px 5px;
+      border-radius: 3px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 2px;
+      letter-spacing: 0.04em;
+    }
+    .ind-section ul li .tag.lag {
+      background: var(--ink);
+    }
+
+    /* === NAVIGATION CONTROLS === */
+    .nav {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 100;
+    }
+    .nav button {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+      font-size: 18px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      font-family: var(--font);
+    }
+    .nav button:hover { background: rgba(109,163,74,0.5); }
+    .nav button:disabled { opacity: 0.3; cursor: default; }
+    .nav .counter {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      min-width: 52px;
+      text-align: center;
+      letter-spacing: 0.06em;
+    }
+
+    /* === PRINT / PDF === */
+    @media print {
+      html, body { background: white; overflow: visible; height: auto; }
+      .deck { position: static; transform: none; top: auto; height: auto; overflow: visible; page-break-after: always; }
+      .slide { position: static; display: flex !important; page-break-after: always; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .nav { display: none; }
+    }
+
+    /* === SCALE FOR SMALLER SCREENS === */
+    @media screen and (max-width: 1300px) {
+      .deck { transform: translateY(-50%) scale(0.85); transform-origin: center center; }
+    }
+    @media screen and (max-width: 1100px) {
+      .deck { transform: translateY(-50%) scale(0.72); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 1 — TITLE
+       Large logo, dark ink background
+  ═══════════════════════════════════════════════ -->
+  <div class="slide slide-title active" id="slide-1">
+    <div class="logo-wrap">
+      <!-- SIGNiX reversed (white) logo, large -->
+      <svg width="420" height="102" viewBox="0 0 602 146" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="SIGNiX">
+        <path d="M72.79 15.9698C78.96 18.6498 84.72 22.6698 90.09 28.0398L74 44.1298C68.64 37.6898 61.13 34.4798 51.48 34.4798C41.83 34.4798 35.66 36.7598 32.98 41.3198C30.3 45.8798 30.3 49.7698 32.98 52.9798C35.66 56.1998 41.83 58.6098 51.48 60.2198C61.67 61.2898 70.92 64.6398 79.23 70.2798C87.54 75.9098 91.7 84.8898 91.7 97.2298C91.7 106.88 87.26 115.2 78.39 122.17C69.51 129.14 59.18 132.63 47.38 132.63C36.17 132.63 26.81 131.02 19.31 127.8C11.8 124.58 5.37 120.29 0 114.93L16.09 98.8398C21.45 105.28 30.57 109.03 43.44 110.1C54.17 110.1 60.86 107.82 63.51 103.26C66.16 98.6998 66.16 94.1398 63.51 89.5898C60.86 85.0298 54.16 82.2198 43.44 81.1398C33.79 80.0698 24.94 77.1198 16.89 72.2898C8.85 67.4598 4.82 59.1498 4.82 47.3498C4.82 36.6798 9.39 28.1098 18.54 21.6498C27.68 15.1898 37.08 11.9598 46.74 11.9598C57.94 11.9498 66.63 13.2898 72.79 15.9698Z" fill="white"/>
+        <path d="M113.26 11.8699H137.31V132.62H113.26V11.8699Z" fill="white"/>
+        <path d="M172.34 115.28C160.78 103.78 155 89.3599 155 72.0399C155.05 55.0899 160.84 40.84 172.38 29.29C183.91 17.73 198.2 11.95 215.26 11.95C232.47 11.95 247.25 17.31 259.58 28.04L243.49 45.66C235.28 39.2199 225.87 36.0099 215.25 36.0099C204.42 36.0599 195.69 39.4399 189.07 46.1499C182.45 52.8599 179.14 61.43 179.14 71.89C179.19 83.1 182.54 92 189.2 98.6C195.85 105.2 204.59 108.49 215.42 108.49C224.11 108.49 230.78 106.77 235.45 103.34V82.67L219.36 82.7499V60.2199H259.58V116.53C247.3 127.26 232.52 132.62 215.26 132.62C198.21 132.56 183.9 126.79 172.34 115.28Z" fill="white"/>
+        <path d="M283.88 132.62V11.95H291.92L367.54 87.57V11.95H391.67V132.62H382.82L308.01 57.81V132.62H283.88Z" fill="white"/>
+        <path d="M417.26 24.78C419.4 22.61 422.3 21.52 425.95 21.52C429.81 21.52 432.81 22.61 434.96 24.78C437.1 26.95 438.18 29.65 438.18 32.86C438.18 36.08 437.11 38.76 434.96 40.9C432.81 43.05 429.86 44.12 426.11 44.12C422.36 44.12 419.4 43.05 417.26 40.9C415.11 38.76 414.04 36.07 414.04 32.86C414.05 29.65 415.12 26.95 417.26 24.78ZM437.37 132.62V52.09H414.85V132.61H437.37V132.62Z" fill="#6DA34A"/>
+        <path d="M529.09 0C488.97 0 456.45 32.52 456.45 72.64C456.45 112.76 488.97 145.28 529.09 145.28C569.21 145.28 601.73 112.76 601.73 72.64C601.73 32.52 569.2 0 529.09 0ZM550.19 119.92C548.76 119.92 547.73 119.62 547.4 118.9C545.7 116.43 529.54 90.9 528.49 89.28C527.43 90.91 511.23 116.42 509.52 118.88C509.19 119.59 508.17 119.89 506.75 119.89C501.05 119.89 488.56 114.7 488.73 112.73C488.81 111.77 492.12 105.42 498.46 96.46C505.16 86.71 515.73 73.52 516.14 73.44C512.93 71.14 491.02 38.95 490.99 36.68C490.96 34.84 502.96 30.39 508.64 30.39C510.1 30.39 511.19 30.67 511.62 31.33C512.08 31.56 527.95 57.56 528.87 59.29C529.84 57.56 544.98 32.13 545.67 31.39C546.09 30.72 547.17 30.45 548.63 30.45C554.27 30.45 566.2 34.87 566.16 36.74C566.11 39.14 544.1 71.84 540.87 74.11C541.26 74.17 551.81 87.19 558.52 96.79C564.87 105.63 568.29 111.85 568.29 112.75C568.3 114.76 555.92 119.92 550.19 119.92Z" fill="#6DA34A"/>
+      </svg>
+    </div>
+    <h1>2026 Paid Media Strategy</h1>
+    <p class="subtitle">Moving Budget to the Deals That Matter</p>
+    <p class="meta">Chris · Head of Growth and Marketing · April 2026</p>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 2 — THE CASE FOR CHANGE
+  ═══════════════════════════════════════════════ -->
+  <div class="slide slide-body" id="slide-2">
+    <div class="top-bar"></div>
+    <div class="slide-header">
+      <div class="eyebrow">Strategic Context</div>
+      <div class="slide-title-text">Notary Leads Cost More Than They Bring In</div>
+    </div>
+    <div class="slide-content">
+      <div class="two-col">
+        <div class="col-card dark">
+          <h3>Current State: The Problem</h3>
+          <ul>
+            <li>$5K/month goes to individual notary searches on Google</li>
+            <li>Low value per customer. Most pay once and don't come back.</li>
+            <li>Each deal takes a sales rep and Gina's full onboarding time. The cost likely exceeds the revenue.</li>
+            <li>No LinkedIn presence. B2B buyers who aren't searching are out of reach.</li>
+            <li>RON leads are the whole pipeline. That won't scale.</li>
+          </ul>
+        </div>
+        <div class="col-card">
+          <h3>Proposed State: The Shift</h3>
+          <ul>
+            <li>Same $5K/month. No budget increase needed.</li>
+            <li>Reach FI ops, IT, and compliance buyers. Higher value and recurring revenue.</li>
+            <li>Reach ISV developers through the Flex API. One integration can multiply your transaction base.</li>
+            <li>Add LinkedIn to reach B2B buyers before they start searching</li>
+            <li>Keep RON only for institutional buyers</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <svg width="90" height="26" viewBox="0 0 602 146" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="SIGNiX">
+        <path d="M72.7226 15.9698C78.8869 18.6498 84.6416 22.6698 90.0066 28.0398L73.9315 44.1298C68.5764 37.6898 61.0734 34.4798 51.4323 34.4798C41.7913 34.4798 35.627 36.7598 32.9495 41.3198C30.2719 45.8798 30.2719 49.7698 32.9495 52.9798C35.627 56.1998 41.7913 58.6098 51.4323 60.2198C61.6129 61.2898 70.8543 64.6398 79.1566 70.2798C87.459 75.9098 91.6151 84.8898 91.6151 97.2298C91.6151 106.88 87.1792 115.2 78.3174 122.17C69.4456 129.14 59.1252 132.63 47.3361 132.63C36.1365 132.63 26.7852 131.02 19.2921 127.8C11.7891 124.58 5.36503 120.29 0 114.93L16.0751 98.8398C21.4301 105.28 30.5417 109.03 43.3998 110.1C54.1198 110.1 60.8037 107.82 63.4512 103.26C66.0987 98.6998 66.0987 94.1398 63.4512 89.5898C60.8037 85.0298 54.1099 82.2198 43.3998 81.1398C33.7587 80.0698 24.9169 77.1198 16.8744 72.2898C8.84181 67.4598 4.81554 59.1498 4.81554 47.3498C4.81554 36.6798 9.38131 28.1098 18.5228 21.6498C27.6544 15.1898 37.0457 11.9598 46.6967 11.9598C57.8864 11.9498 66.5683 13.2898 72.7226 15.9698Z" fill="#545454"/>
+        <path d="M113.155 11.8699H137.183V132.62H113.155V11.8699Z" fill="#545454"/>
+        <path d="M172.18 115.28C160.631 103.78 154.856 89.3599 154.856 72.0399C154.906 55.0899 160.691 40.84 172.22 29.29C183.74 17.73 198.016 11.95 215.061 11.95C232.255 11.95 247.021 17.31 259.34 28.04L243.265 45.66C235.062 39.2199 225.661 36.0099 215.051 36.0099C204.231 36.0599 195.509 39.4399 188.895 46.1499C182.281 52.8599 178.974 61.43 178.974 71.89C179.024 83.1 182.371 92 189.025 98.6C195.669 105.2 204.401 108.49 215.221 108.49C223.902 108.49 230.566 106.77 235.232 103.34V82.67L219.157 82.7499V60.2199H259.34V116.53C247.071 127.26 232.305 132.62 215.061 132.62C198.026 132.56 183.73 126.79 172.18 115.28Z" fill="#545454"/>
+        <path d="M283.617 132.62V11.95H291.65L367.2 87.57V11.95H391.307V132.62H382.466L307.725 57.81V132.62H283.617Z" fill="#545454"/>
+        <path d="M416.874 24.78C419.012 22.61 421.909 21.52 425.556 21.52C429.412 21.52 432.409 22.61 434.557 24.78C436.695 26.95 437.774 29.65 437.774 32.86C437.774 36.08 436.705 38.76 434.557 40.9C432.409 43.05 429.462 44.12 425.715 44.12C421.969 44.12 419.012 43.05 416.874 40.9C414.726 38.76 413.657 36.07 413.657 32.86C413.667 29.65 414.736 26.95 416.874 24.78ZM436.965 132.62V52.09H414.466V132.61H436.965V132.62Z" fill="#6DA34A"/>
+        <path d="M528.6 0C488.517 0 456.027 32.52 456.027 72.64C456.027 112.76 488.517 145.28 528.6 145.28C568.683 145.28 601.173 112.76 601.173 72.64C601.173 32.52 568.673 0 528.6 0ZM549.681 119.92C548.252 119.92 547.223 119.62 546.893 118.9C545.195 116.43 529.05 90.9 528.001 89.28C526.942 90.91 510.757 116.42 509.048 118.88C508.719 119.59 507.699 119.89 506.281 119.89C500.586 119.89 488.108 114.7 488.278 112.73C488.357 111.77 491.664 105.42 497.998 96.46C504.692 86.71 515.252 73.52 515.662 73.44C512.455 71.14 490.565 38.95 490.535 36.68C490.505 34.84 502.494 30.39 508.169 30.39C509.628 30.39 510.717 30.67 511.146 31.33C511.606 31.56 527.461 57.56 528.38 59.29C529.349 57.56 544.475 32.13 545.165 31.39C545.584 30.72 546.663 30.45 548.122 30.45C553.757 30.45 565.676 34.87 565.636 36.74C565.586 39.14 543.596 71.84 540.369 74.11C540.759 74.17 551.299 87.19 558.003 96.79C564.347 105.63 567.764 111.85 567.764 112.75C567.774 114.76 555.405 119.92 549.681 119.92Z" fill="#6DA34A"/>
+      </svg>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 3 — BUDGET ALLOCATION
+  ═══════════════════════════════════════════════ -->
+  <div class="slide slide-body" id="slide-3">
+    <div class="top-bar"></div>
+    <div class="slide-header">
+      <div class="eyebrow">Budget</div>
+      <div class="slide-title-text">$5,000/Month, Moved to Enterprise Buyers</div>
+    </div>
+    <div class="slide-content">
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-amount">$3,000</div>
+          <div class="stat-label">Google Search Ads</div>
+          <div class="stat-desc">Five keyword groups: competitor displacement, industry use-case, authentication, Flex API, and institutional RON. Aimed at FI buyers and ISV developers.</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-amount">$1,500</div>
+          <div class="stat-label">LinkedIn Sponsored</div>
+          <div class="stat-desc">Two groups: FI ops and compliance leaders ($800) and ISV product teams ($700). Sponsored posts only for the first two months.</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-amount">$500</div>
+          <div class="stat-label">Test &amp; Reserve</div>
+          <div class="stat-desc">Used for landing page tests, new keyword trials, and cost-per-click buffer. Moved to the top channel after a 30-day review.</div>
+        </div>
+      </div>
+      <div style="margin-top: 24px; padding: 16px 24px; background: var(--canvas); border-radius: 8px; border-left: 3px solid var(--green);">
+        <p style="font-size: 14px; color: var(--body); line-height: 1.55;">
+          <strong style="color: var(--ink);">No budget increase needed.</strong>
+          We are moving existing spend, not adding to it. Notary keywords stop right away. RON stays at a small budget for institutional buyers only.
+        </p>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <svg width="90" height="26" viewBox="0 0 602 146" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="SIGNiX">
+        <path d="M72.7226 15.9698C78.8869 18.6498 84.6416 22.6698 90.0066 28.0398L73.9315 44.1298C68.5764 37.6898 61.0734 34.4798 51.4323 34.4798C41.7913 34.4798 35.627 36.7598 32.9495 41.3198C30.2719 45.8798 30.2719 49.7698 32.9495 52.9798C35.627 56.1998 41.7913 58.6098 51.4323 60.2198C61.6129 61.2898 70.8543 64.6398 79.1566 70.2798C87.459 75.9098 91.6151 84.8898 91.6151 97.2298C91.6151 106.88 87.1792 115.2 78.3174 122.17C69.4456 129.14 59.1252 132.63 47.3361 132.63C36.1365 132.63 26.7852 131.02 19.2921 127.8C11.7891 124.58 5.36503 120.29 0 114.93L16.0751 98.8398C21.4301 105.28 30.5417 109.03 43.3998 110.1C54.1198 110.1 60.8037 107.82 63.4512 103.26C66.0987 98.6998 66.0987 94.1398 63.4512 89.5898C60.8037 85.0298 54.1099 82.2198 43.3998 81.1398C33.7587 80.0698 24.9169 77.1198 16.8744 72.2898C8.84181 67.4598 4.81554 59.1498 4.81554 47.3498C4.81554 36.6798 9.38131 28.1098 18.5228 21.6498C27.6544 15.1898 37.0457 11.9598 46.6967 11.9598C57.8864 11.9498 66.5683 13.2898 72.7226 15.9698Z" fill="#545454"/>
+        <path d="M113.155 11.8699H137.183V132.62H113.155V11.8699Z" fill="#545454"/>
+        <path d="M172.18 115.28C160.631 103.78 154.856 89.3599 154.856 72.0399C154.906 55.0899 160.691 40.84 172.22 29.29C183.74 17.73 198.016 11.95 215.061 11.95C232.255 11.95 247.021 17.31 259.34 28.04L243.265 45.66C235.062 39.2199 225.661 36.0099 215.051 36.0099C204.231 36.0599 195.509 39.4399 188.895 46.1499C182.281 52.8599 178.974 61.43 178.974 71.89C179.024 83.1 182.371 92 189.025 98.6C195.669 105.2 204.401 108.49 215.221 108.49C223.902 108.49 230.566 106.77 235.232 103.34V82.67L219.157 82.7499V60.2199H259.34V116.53C247.071 127.26 232.305 132.62 215.061 132.62C198.026 132.56 183.73 126.79 172.18 115.28Z" fill="#545454"/>
+        <path d="M283.617 132.62V11.95H291.65L367.2 87.57V11.95H391.307V132.62H382.466L307.725 57.81V132.62H283.617Z" fill="#545454"/>
+        <path d="M416.874 24.78C419.012 22.61 421.909 21.52 425.556 21.52C429.412 21.52 432.409 22.61 434.557 24.78C436.695 26.95 437.774 29.65 437.774 32.86C437.774 36.08 436.705 38.76 434.557 40.9C432.409 43.05 429.462 44.12 425.715 44.12C421.969 44.12 419.012 43.05 416.874 40.9C414.726 38.76 413.657 36.07 413.657 32.86C413.667 29.65 414.736 26.95 416.874 24.78ZM436.965 132.62V52.09H414.466V132.61H436.965V132.62Z" fill="#6DA34A"/>
+        <path d="M528.6 0C488.517 0 456.027 32.52 456.027 72.64C456.027 112.76 488.517 145.28 528.6 145.28C568.683 145.28 601.173 112.76 601.173 72.64C601.173 32.52 568.673 0 528.6 0ZM549.681 119.92C548.252 119.92 547.223 119.62 546.893 118.9C545.195 116.43 529.05 90.9 528.001 89.28C526.942 90.91 510.757 116.42 509.048 118.88C508.719 119.59 507.699 119.89 506.281 119.89C500.586 119.89 488.108 114.7 488.278 112.73C488.357 111.77 491.664 105.42 497.998 96.46C504.692 86.71 515.252 73.52 515.662 73.44C512.455 71.14 490.565 38.95 490.535 36.68C490.505 34.84 502.494 30.39 508.169 30.39C509.628 30.39 510.717 30.67 511.146 31.33C511.606 31.56 527.461 57.56 528.38 59.29C529.349 57.56 544.475 32.13 545.165 31.39C545.584 30.72 546.663 30.45 548.122 30.45C553.757 30.45 565.676 34.87 565.636 36.74C565.586 39.14 543.596 71.84 540.369 74.11C540.759 74.17 551.299 87.19 558.003 96.79C564.347 105.63 567.764 111.85 567.764 112.75C567.774 114.76 555.405 119.92 549.681 119.92Z" fill="#6DA34A"/>
+      </svg>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 4 — CHANNELS & KEYWORDS
+  ═══════════════════════════════════════════════ -->
+  <div class="slide slide-body" id="slide-4">
+    <div class="top-bar"></div>
+    <div class="slide-header">
+      <div class="eyebrow">Channels &amp; Keywords</div>
+      <div class="slide-title-text">Google + LinkedIn: Reaching the Right Buyers</div>
+    </div>
+    <div class="slide-content">
+      <div class="two-col" style="align-items: start;">
+        <div>
+          <table class="kw-table">
+            <thead>
+              <tr>
+                <th>Google Bucket</th>
+                <th>Alloc.</th>
+                <th>Top Keywords</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="bucket">Competitor Displacement</td>
+                <td class="alloc">~$900</td>
+                <td>docusign alternative for banks, adobe sign alternative compliance</td>
+              </tr>
+              <tr>
+                <td class="bucket">Industry / Use-Case</td>
+                <td class="alloc">~$1,000</td>
+                <td>e-signature for credit unions, loan document electronic signature, e-sig NCUA compliant</td>
+              </tr>
+              <tr>
+                <td class="bucket">Authentication</td>
+                <td class="alloc">~$600</td>
+                <td>e-signature identity verification, KBA electronic signature, e-sig fraud prevention</td>
+              </tr>
+              <tr>
+                <td class="bucket">Flex API / Developer</td>
+                <td class="alloc">~$500</td>
+                <td>e-signature API financial services, white label e-signature API, embedded e-sign API</td>
+              </tr>
+              <tr>
+                <td class="bucket">RON Institutional</td>
+                <td class="alloc">~$300</td>
+                <td>RON platform financial institutions — individual notary terms dropped entirely</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div class="col-card">
+            <h3>LinkedIn — FI Audience ($800)</h3>
+            <ul>
+              <li>VP Operations, IT Director, Director of Lending, CCO</li>
+              <li>Banks, credit unions — 50–5,000 employees</li>
+              <li>Show them how SIGNiX stops fraud and proves compliance</li>
+            </ul>
+          </div>
+          <div class="col-card">
+            <h3>LinkedIn — ISV / Flex API ($700)</h3>
+            <ul>
+              <li>Product Manager, VP of Product, CTO, VP Engineering</li>
+              <li>Fintech, LOS platforms, banking software — 10–500 employees</li>
+              <li>Show them a white-label API built for regulated industries</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <svg width="90" height="26" viewBox="0 0 602 146" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="SIGNiX">
+        <path d="M72.7226 15.9698C78.8869 18.6498 84.6416 22.6698 90.0066 28.0398L73.9315 44.1298C68.5764 37.6898 61.0734 34.4798 51.4323 34.4798C41.7913 34.4798 35.627 36.7598 32.9495 41.3198C30.2719 45.8798 30.2719 49.7698 32.9495 52.9798C35.627 56.1998 41.7913 58.6098 51.4323 60.2198C61.6129 61.2898 70.8543 64.6398 79.1566 70.2798C87.459 75.9098 91.6151 84.8898 91.6151 97.2298C91.6151 106.88 87.1792 115.2 78.3174 122.17C69.4456 129.14 59.1252 132.63 47.3361 132.63C36.1365 132.63 26.7852 131.02 19.2921 127.8C11.7891 124.58 5.36503 120.29 0 114.93L16.0751 98.8398C21.4301 105.28 30.5417 109.03 43.3998 110.1C54.1198 110.1 60.8037 107.82 63.4512 103.26C66.0987 98.6998 66.0987 94.1398 63.4512 89.5898C60.8037 85.0298 54.1099 82.2198 43.3998 81.1398C33.7587 80.0698 24.9169 77.1198 16.8744 72.2898C8.84181 67.4598 4.81554 59.1498 4.81554 47.3498C4.81554 36.6798 9.38131 28.1098 18.5228 21.6498C27.6544 15.1898 37.0457 11.9598 46.6967 11.9598C57.8864 11.9498 66.5683 13.2898 72.7226 15.9698Z" fill="#545454"/>
+        <path d="M113.155 11.8699H137.183V132.62H113.155V11.8699Z" fill="#545454"/>
+        <path d="M172.18 115.28C160.631 103.78 154.856 89.3599 154.856 72.0399C154.906 55.0899 160.691 40.84 172.22 29.29C183.74 17.73 198.016 11.95 215.061 11.95C232.255 11.95 247.021 17.31 259.34 28.04L243.265 45.66C235.062 39.2199 225.661 36.0099 215.051 36.0099C204.231 36.0599 195.509 39.4399 188.895 46.1499C182.281 52.8599 178.974 61.43 178.974 71.89C179.024 83.1 182.371 92 189.025 98.6C195.669 105.2 204.401 108.49 215.221 108.49C223.902 108.49 230.566 106.77 235.232 103.34V82.67L219.157 82.7499V60.2199H259.34V116.53C247.071 127.26 232.305 132.62 215.061 132.62C198.026 132.56 183.73 126.79 172.18 115.28Z" fill="#545454"/>
+        <path d="M283.617 132.62V11.95H291.65L367.2 87.57V11.95H391.307V132.62H382.466L307.725 57.81V132.62H283.617Z" fill="#545454"/>
+        <path d="M416.874 24.78C419.012 22.61 421.909 21.52 425.556 21.52C429.412 21.52 432.409 22.61 434.557 24.78C436.695 26.95 437.774 29.65 437.774 32.86C437.774 36.08 436.705 38.76 434.557 40.9C432.409 43.05 429.462 44.12 425.715 44.12C421.969 44.12 419.012 43.05 416.874 40.9C414.726 38.76 413.657 36.07 413.657 32.86C413.667 29.65 414.736 26.95 416.874 24.78ZM436.965 132.62V52.09H414.466V132.61H436.965V132.62Z" fill="#6DA34A"/>
+        <path d="M528.6 0C488.517 0 456.027 32.52 456.027 72.64C456.027 112.76 488.517 145.28 528.6 145.28C568.683 145.28 601.173 112.76 601.173 72.64C601.173 32.52 568.673 0 528.6 0ZM549.681 119.92C548.252 119.92 547.223 119.62 546.893 118.9C545.195 116.43 529.05 90.9 528.001 89.28C526.942 90.91 510.757 116.42 509.048 118.88C508.719 119.59 507.699 119.89 506.281 119.89C500.586 119.89 488.108 114.7 488.278 112.73C488.357 111.77 491.664 105.42 497.998 96.46C504.692 86.71 515.252 73.52 515.662 73.44C512.455 71.14 490.565 38.95 490.535 36.68C490.505 34.84 502.494 30.39 508.169 30.39C509.628 30.39 510.717 30.67 511.146 31.33C511.606 31.56 527.461 57.56 528.38 59.29C529.349 57.56 544.475 32.13 545.165 31.39C545.584 30.72 546.663 30.45 548.122 30.45C553.757 30.45 565.676 34.87 565.636 36.74C565.586 39.14 543.596 71.84 540.369 74.11C540.759 74.17 551.299 87.19 558.003 96.79C564.347 105.63 567.764 111.85 567.764 112.75C567.774 114.76 555.405 119.92 549.681 119.92Z" fill="#6DA34A"/>
+      </svg>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 5 — MEASUREMENT
+  ═══════════════════════════════════════════════ -->
+  <div class="slide slide-body" id="slide-5">
+    <div class="top-bar"></div>
+    <div class="slide-header">
+      <div class="eyebrow">Measurement</div>
+      <div class="slide-title-text">60-Day Leading Signals · 90-Day Revenue Proof</div>
+    </div>
+    <div class="slide-content">
+      <div class="ind-grid">
+        <div class="ind-section">
+          <h3>Leading Indicators — Weekly</h3>
+          <ul>
+            <li><span class="tag">SIGNAL</span>Impression share &gt;40% on priority keyword buckets</li>
+            <li><span class="tag">SIGNAL</span>CTR &gt;3–6% on B2B search campaigns</li>
+            <li><span class="tag">SIGNAL</span>Landing page bounce rate &lt;60%</li>
+            <li><span class="tag">SIGNAL</span>Form fill / demo request rate &gt;2% of paid clicks</li>
+            <li><span class="tag">SIGNAL</span>LinkedIn engagement rate &gt;0.5% sponsored content</li>
+            <li><span class="tag">SIGNAL</span>More than 40% of leads match our target buyer</li>
+            <li><span class="tag">SIGNAL</span>Lead → first sales touchpoint &lt;48 hours</li>
+          </ul>
+        </div>
+        <div class="ind-section">
+          <h3>Lagging Indicators — Monthly / Quarterly</h3>
+          <ul>
+            <li><span class="tag lag">PROOF</span>Cost per qualified lead (CPL) vs. notary lead baseline</li>
+            <li><span class="tag lag">PROOF</span>MQLs per month (pipeline growth)</li>
+            <li><span class="tag lag">PROOF</span>Sales-accepted leads (SALs): did the team agree they were good?</li>
+            <li><span class="tag lag">PROOF</span>Pipeline sourced ($) attributed in HubSpot</li>
+            <li><span class="tag lag">PROOF</span>Average deal ACV vs. notary lead ACV</li>
+            <li><span class="tag lag">PROOF</span>Staff hours per closed deal: the number that shows real cost</li>
+            <li><span class="tag lag">PROOF</span>Transaction volume from new customers who found us through paid ads</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <svg width="90" height="26" viewBox="0 0 602 146" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="SIGNiX">
+        <path d="M72.7226 15.9698C78.8869 18.6498 84.6416 22.6698 90.0066 28.0398L73.9315 44.1298C68.5764 37.6898 61.0734 34.4798 51.4323 34.4798C41.7913 34.4798 35.627 36.7598 32.9495 41.3198C30.2719 45.8798 30.2719 49.7698 32.9495 52.9798C35.627 56.1998 41.7913 58.6098 51.4323 60.2198C61.6129 61.2898 70.8543 64.6398 79.1566 70.2798C87.459 75.9098 91.6151 84.8898 91.6151 97.2298C91.6151 106.88 87.1792 115.2 78.3174 122.17C69.4456 129.14 59.1252 132.63 47.3361 132.63C36.1365 132.63 26.7852 131.02 19.2921 127.8C11.7891 124.58 5.36503 120.29 0 114.93L16.0751 98.8398C21.4301 105.28 30.5417 109.03 43.3998 110.1C54.1198 110.1 60.8037 107.82 63.4512 103.26C66.0987 98.6998 66.0987 94.1398 63.4512 89.5898C60.8037 85.0298 54.1099 82.2198 43.3998 81.1398C33.7587 80.0698 24.9169 77.1198 16.8744 72.2898C8.84181 67.4598 4.81554 59.1498 4.81554 47.3498C4.81554 36.6798 9.38131 28.1098 18.5228 21.6498C27.6544 15.1898 37.0457 11.9598 46.6967 11.9598C57.8864 11.9498 66.5683 13.2898 72.7226 15.9698Z" fill="#545454"/>
+        <path d="M113.155 11.8699H137.183V132.62H113.155V11.8699Z" fill="#545454"/>
+        <path d="M172.18 115.28C160.631 103.78 154.856 89.3599 154.856 72.0399C154.906 55.0899 160.691 40.84 172.22 29.29C183.74 17.73 198.016 11.95 215.061 11.95C232.255 11.95 247.021 17.31 259.34 28.04L243.265 45.66C235.062 39.2199 225.661 36.0099 215.051 36.0099C204.231 36.0599 195.509 39.4399 188.895 46.1499C182.281 52.8599 178.974 61.43 178.974 71.89C179.024 83.1 182.371 92 189.025 98.6C195.669 105.2 204.401 108.49 215.221 108.49C223.902 108.49 230.566 106.77 235.232 103.34V82.67L219.157 82.7499V60.2199H259.34V116.53C247.071 127.26 232.305 132.62 215.061 132.62C198.026 132.56 183.73 126.79 172.18 115.28Z" fill="#545454"/>
+        <path d="M283.617 132.62V11.95H291.65L367.2 87.57V11.95H391.307V132.62H382.466L307.725 57.81V132.62H283.617Z" fill="#545454"/>
+        <path d="M416.874 24.78C419.012 22.61 421.909 21.52 425.556 21.52C429.412 21.52 432.409 22.61 434.557 24.78C436.695 26.95 437.774 29.65 437.774 32.86C437.774 36.08 436.705 38.76 434.557 40.9C432.409 43.05 429.462 44.12 425.715 44.12C421.969 44.12 419.012 43.05 416.874 40.9C414.726 38.76 413.657 36.07 413.657 32.86C413.667 29.65 414.736 26.95 416.874 24.78ZM436.965 132.62V52.09H414.466V132.61H436.965V132.62Z" fill="#6DA34A"/>
+        <path d="M528.6 0C488.517 0 456.027 32.52 456.027 72.64C456.027 112.76 488.517 145.28 528.6 145.28C568.683 145.28 601.173 112.76 601.173 72.64C601.173 32.52 568.673 0 528.6 0ZM549.681 119.92C548.252 119.92 547.223 119.62 546.893 118.9C545.195 116.43 529.05 90.9 528.001 89.28C526.942 90.91 510.757 116.42 509.048 118.88C508.719 119.59 507.699 119.89 506.281 119.89C500.586 119.89 488.108 114.7 488.278 112.73C488.357 111.77 491.664 105.42 497.998 96.46C504.692 86.71 515.252 73.52 515.662 73.44C512.455 71.14 490.565 38.95 490.535 36.68C490.505 34.84 502.494 30.39 508.169 30.39C509.628 30.39 510.717 30.67 511.146 31.33C511.606 31.56 527.461 57.56 528.38 59.29C529.349 57.56 544.475 32.13 545.165 31.39C545.584 30.72 546.663 30.45 548.122 30.45C553.757 30.45 565.676 34.87 565.636 36.74C565.586 39.14 543.596 71.84 540.369 74.11C540.759 74.17 551.299 87.19 558.003 96.79C564.347 105.63 567.764 111.85 567.764 112.75C567.774 114.76 555.405 119.92 549.681 119.92Z" fill="#6DA34A"/>
+      </svg>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+
+<!-- NAVIGATION -->
+<div class="nav">
+  <button id="btn-prev" onclick="navigate(-1)" disabled aria-label="Previous slide">&#8592;</button>
+  <span class="counter" id="counter">1 / 5</span>
+  <button id="btn-next" onclick="navigate(1)" aria-label="Next slide">&#8594;</button>
+</div>
+
+<script>
+  const total = 5;
+  let current = 1;
+
+  function navigate(dir) {
+    document.getElementById('slide-' + current).classList.remove('active');
+    current = Math.max(1, Math.min(total, current + dir));
+    document.getElementById('slide-' + current).classList.add('active');
+    document.getElementById('counter').textContent = current + ' / ' + total;
+    document.getElementById('btn-prev').disabled = current === 1;
+    document.getElementById('btn-next').disabled = current === total;
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') navigate(1);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') navigate(-1);
+  });
+</script>
+
+</body>
+</html>

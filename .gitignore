@@ -33,11 +33,6 @@ media/
 staticfiles/
 backups/
 
-# Distribution bundle for class (tracked so students can restore)
-!distribution/
-!distribution/db.sqlite3
-!distribution/media.tar.gz
-
 # Environment and secrets
 .env
 .env.local
@@ -50,6 +45,15 @@ backups/
 *.swo
 *~
 
+# Sensitive internal docs — never push to any remote
+PROJECT-DOCS/SIGNIX-CEO-PROFILE.md
+PROJECT-DOCS/COLLABORATION-AND-FEEDBACK.md
+PROJECT-DOCS/BRIEFING.md
+
 # OS
 .DS_Store
 Thumbs.db
+
+# Large binary installers
+wkhtmltox.pkg
+*.pkg

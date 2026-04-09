@@ -1,0 +1,268 @@
+{
+  "name": "SIGNiX Notary Lead Routing Demo",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "signix-notary-lead-demo",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1000001-0000-4000-8000-000000000001",
+      "name": "Lead Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "signix-notary-lead-demo"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const raw = $input.first().json;\nconst body = raw.body && typeof raw.body === 'object' && !Array.isArray(raw.body)\n  ? raw.body\n  : raw;\n\nconst product = String(body.product_interest || '').toLowerCase().trim();\nconst band = String(body.monthly_notary_volume || '').trim();\n\nconst isNotary = product === 'enotary';\n\nlet route = 'default';\nif (isNotary && band === '0-5') {\n  route = 'low';\n} else if (isNotary && band === '30+') {\n  route = 'high';\n}\n\nreturn [\n  {\n    json: {\n      first_name: body.first_name || '',\n      last_name: body.last_name || '',\n      email: body.email || '',\n      phone: body.phone || '',\n      company: body.company || '',\n      job_title: body.job_title || '',\n      product_interest: body.product_interest || '',\n      monthly_notary_volume: body.monthly_notary_volume || '',\n      route,\n      is_notary: isNotary,\n    },\n  },\n];"
+      },
+      "id": "a1000001-0000-4000-8000-000000000002",
+      "name": "Normalize and score",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "low"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "low_volume"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "high"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "high_volume"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "a1000001-0000-4000-8000-000000000003",
+      "name": "Route",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "REPLACE_WITH_YOUR_ALLOWED_SENDER@yourdomain.com",
+        "toEmail": "={{ $json.email }}",
+        "subject": "Recommended next steps for your SIGNiX eNotary journey",
+        "emailFormat": "text",
+        "text": "=Hi {{ $json.first_name }},\n\nThanks for reaching out about SIGNiX Remote Online Notarization (eNotary).\n\nBased on the volume you shared, many teams get up to speed fastest by using our Academy resources first—especially how to save and retrieve eNotary transactions—so you can explore the product without waiting on a live demo.\n\nSTART HERE (self-paced):\nhttps://www.signix.com/saving-and-retrieving-enotary-transactions\n\nThat Academy article walks through practical concepts that typically answer the most common “how do I get started?” questions in-product.\n\nWHAT TO DO NEXT ON YOUR OWN\n• Work through the steps above in a non-production workspace if you have one.\n• Note any compliance or integration constraints you hit—we address those fastest once we know your environment.\n\nWHEN TO ENGAGE THE SIGNiX TEAM\nIf you later need high-volume throughput, enterprise controls, or deep integrations, reply to this email and we’ll route you to the right specialist.\n\n— SIGNiX (demo automation)",
+        "options": {
+          "allowUnauthorizedCerts": false
+        }
+      },
+      "id": "a1000001-0000-4000-8000-000000000004",
+      "name": "Email self-serve (lead)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [920, 140],
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"ok\": true, \"route\": \"low\", \"message\": \"Self-serve email sent to lead.\" } }}",
+        "options": {}
+      },
+      "id": "a1000001-0000-4000-8000-000000000005",
+      "name": "Respond low",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1140, 140]
+    },
+    {
+      "parameters": {
+        "fromEmail": "REPLACE_WITH_YOUR_ALLOWED_SENDER@yourdomain.com",
+        "toEmail": "cteague@signix.com",
+        "subject": "=[HIGH VOLUME NOTARY] {{ $json.company }} — {{ $json.email }}",
+        "emailFormat": "text",
+        "text": "=Immediate follow-up recommended.\n\nDeclared volume: {{ $json.monthly_notary_volume }} / month\nProduct interest: {{ $json.product_interest }}\n\nName: {{ $json.first_name }} {{ $json.last_name }}\nEmail: {{ $json.email }}\nPhone: {{ $json.phone }}\nCompany: {{ $json.company }}\nTitle: {{ $json.job_title }}\n\n(route: high)",
+        "options": {}
+      },
+      "id": "a1000001-0000-4000-8000-000000000006",
+      "name": "Email sales (high priority)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [920, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"ok\": true, \"route\": \"high\", \"message\": \"Sales notified.\" } }}",
+        "options": {}
+      },
+      "id": "a1000001-0000-4000-8000-000000000007",
+      "name": "Respond high",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1140, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "REPLACE_WITH_YOUR_ALLOWED_SENDER@yourdomain.com",
+        "toEmail": "cteague@signix.com",
+        "subject": "=[LEAD REVIEW] {{ $json.company }} — {{ $json.email }}",
+        "emailFormat": "text",
+        "text": "=This lead did not match low (0–5) or high (30+) notary routing and needs manual review or nurture design.\n\nComputed route: {{ $json.route }}\nProduct: {{ $json.product_interest }}\nNotary volume (if any): {{ $json.monthly_notary_volume }}\n\nName: {{ $json.first_name }} {{ $json.last_name }}\nEmail: {{ $json.email }}\nPhone: {{ $json.phone }}\nCompany: {{ $json.company }}\nTitle: {{ $json.job_title }}",
+        "options": {}
+      },
+      "id": "a1000001-0000-4000-8000-000000000008",
+      "name": "Email internal review",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [920, 460]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"ok\": true, \"route\": \"default\", \"message\": \"Routed to internal review.\" } }}",
+        "options": {}
+      },
+      "id": "a1000001-0000-4000-8000-000000000009",
+      "name": "Respond default",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1140, 460]
+    }
+  ],
+  "connections": {
+    "Lead Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize and score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize and score": {
+      "main": [
+        [
+          {
+            "node": "Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route": {
+      "main": [
+        [
+          {
+            "node": "Email self-serve (lead)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email sales (high priority)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email internal review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email self-serve (lead)": {
+      "main": [
+        [
+          {
+            "node": "Respond low",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email sales (high priority)": {
+      "main": [
+        [
+          {
+            "node": "Respond high",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email internal review": {
+      "main": [
+        [
+          {
+            "node": "Respond default",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "pinData": {},
+  "versionId": "1",
+  "tags": []
+}

@@ -1,0 +1,21 @@
+# Local n8n for the SIGNiX lead-routing demo (not for production).
+# Usage: see run-local-demo.sh
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_API_KEY=${N8N_API_KEY}
+      # Public URL n8n embeds in Webhook nodes (must match how you open the UI)
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=America/New_York
+    volumes:
+      - n8n_demo_data:/home/node/.n8n
+
+volumes:
+  n8n_demo_data:

@@ -1,0 +1,52 @@
+Subject: 3 fraud trends worth 6 minutes (March)
+
+[Preheader: From Mike at SIGNiX: three fraud reads with Mike's use lines, PKI at consent, and a no-obligation look at your top transaction types. Full note below.]
+
+Quick read · Fraud & identity
+
+Mike · Client Success Manager, SIGNiX
+
+Hi «FIRST_NAME»,
+
+IF YOU SKIM, START HERE:
+Why you are hearing from me: I am your SIGNiX partner for client success. Risk and regulators keep asking for high assurance identity verification, which is what we help you deliver.
+What is below: Three quick links. Each has a short Mike's use line, so you see the SIGNiX tie-in fast.
+Want help? Reply with your top three transaction types. I will point to where authentication usually pays off. No obligation.
+
+---
+
+Fraud is moving faster and is more sophisticated than even a year ago. The same theme keeps coming from regulators: Implement enhanced authentication and security protocols in your digital signature process: audit trails and biometric authentication measures are increasingly becoming the standard for best practice in today's AI fraud world. Here are three reads my clients are forwarding internally this month.
+
+1) U.S. fraud and identity theft losses topped $12.7 billion in 2024 (Experian / FTC data)
+https://www.experian.com/blogs/ask-experian/identity-theft-statistics/
+This is a digestible snapshot of reported fraud and identity-theft volume. I find it helps when I am explaining why layered verification (how our system authenticates the signature and embeds a digital certificate) and stronger signer assurance keep showing up in risk and compliance conversations.
+Mike's use: grounds the case for stronger signer assurance when you brief leadership or ops.
+
+2) With AI's Help, Fraudsters Are Targeting Smaller Banks (U.S. News)
+https://www.usnews.com/banking/articles/with-ais-help-fraudsters-are-targeting-smaller-banks
+It makes a practical case that AI is compressing the time and cost of attacks, including pressure on smaller institutions. That pattern is usually what pushes teams beyond SMS- or email-only step-ups and toward more adaptive authentication when the signals change.
+Mike's use: explains why behavioral biometric authentication shows up when we talk about SIGNiX with admins and IT.
+
+3) How to recognize and avoid phishing scams (FTC)
+https://consumer.ftc.gov/articles/how-recognize-and-avoid-phishing-scams
+This is a practical resource for staff education. It is short, credible, and easy to forward when you are reinforcing basics on suspicious messages and escalation paths.
+Mike's use: neutral training link you can pair with internal talks on stopping fraud before it hits SIGNiX workflows.
+
+---
+
+FOR IT OR COMPLIANCE
+One link to share internally on how SIGNiX documents capabilities, including authentication paths for your workflows: SIGNiX Flex API capabilities.
+https://www.signix.com/flexible-digital-signature-api
+
+When fraud pressure ramps up, the painful miss is usually weak identity assurance during initial consent, not the headline alone. Public Key Infrastructure (PKI) is how we raise assurance before signature without turning every transaction into a special project, and it is central to how I help teams get value from SIGNiX.
+
+If you want a second set of eyes on your environment, I am happy to review your top three transaction types and suggest where an authentication step typically pays off. There is no obligation. It is simply a practical pass tailored to what you are sending today.
+
+Thanks for the partnership,
+
+Mike
+Client Success Manager, SIGNiX
+«MIKE_PHONE» · «MIKE_EMAIL»
+
+---
+You received this because you work with SIGNiX as part of your organization's integration. Links are for general awareness, not legal advice. Insights here draw on industry reporting (including Experian, U.S. News, and the FTC, consistent with the sources we track in our monthly fraud snapshot). If this is not useful, reply and tell me what would be, and I will adjust what I send.

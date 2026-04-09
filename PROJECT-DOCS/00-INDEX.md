@@ -1,137 +1,168 @@
-# Project Documentation Index
+# SIGNiX Marketing Toolkit — Document Index
 
-This index lists all project documentation and its location so you can find any document quickly. Paths are relative to the **PROJECT-DOCS** folder. The project follows a **lifecycle** (Ideation → Design → Implementation) with stage gates; see [20-APPROACH.md](20-APPROACH.md) Section 5.5 and Section 6 for the full flow. For implementation order, start with [70-PLAN-MASTER.md](70-PLAN-MASTER.md).
+This project is a strategy, content, and reporting toolkit for SIGNiX growth and marketing. Everything here supports Chris Teague's work as Head of Growth and Marketing.
 
----
-
-## Project-level documents (read in order)
-
-| Order | Path | Description |
-|-------|------|-------------|
-| 10 | [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md) | Why we are doing the project; stakeholder alignment |
-| 15 | [15-USER-PROFILES-VALUE-PROPOSITION.md](15-USER-PROFILES-VALUE-PROPOSITION.md) | User profiles (personas), jobs, pains, gains; mapping to requirements |
-| 20 | [20-APPROACH.md](20-APPROACH.md) | How we build and document; methodology |
-| 30 | [30-SCOPE.md](30-SCOPE.md) | What is in scope and out of scope |
-| 40 | [40-REQUIREMENTS.md](40-REQUIREMENTS.md) | What the system must do; phases |
-| 50 | [50-WBS.md](50-WBS.md) | Work-breakdown structure |
-| 60 | [60-LOE.md](60-LOE.md) | Level of effort estimate |
-| 70 | [70-PLAN-MASTER.md](70-PLAN-MASTER.md) | Implementation order (execution map) |
-| 80 | [80-FUTURE-ROADMAP.md](80-FUTURE-ROADMAP.md) | Future roadmap; post–initial-implementation direction (not committed) |
+For session context and active initiatives, start with **[BRIEFING.md](BRIEFING.md)**.
 
 ---
 
-## General knowledge (used by multiple phases)
+## Navigation
+
+| Section | What's there |
+|---------|-------------|
+| [Strategy docs](#strategy-and-planning) | Marketing framework, paid media plan, positioning, market research, growth strategy |
+| [Deliverables](#deliverables) | PDFs, DOCX, PPTX, XLSX, HTML — ready to use or share |
+| [Build scripts](#build-scripts) | Python scripts that generate every deliverable |
+| [Reference and setup](#reference-and-setup) | Design guidelines, writing voice, wkhtmltopdf, SIGNiX API |
+| [Demos](#demos) | n8n lead routing demo |
+| [Archive](#archive) | Older files kept for reference |
+
+---
+
+## Strategy and Planning
+
+| File | Description |
+|------|-------------|
+| **[BRIEFING.md](BRIEFING.md)** | **Living session briefing — active initiatives, decisions log, open questions. Read this first every session.** |
+| [SIGNIX-MARKETING-FRAMEWORK.md](SIGNIX-MARKETING-FRAMEWORK.md) | Source of truth for all campaigns — 6Bs applied to SIGNiX: brand, business category, five target segments, belief changes, behaviors, benchmarks, competitive landscape |
+| [SIGNIX-MARKETING-PLAN-2026.md](SIGNIX-MARKETING-PLAN-2026.md) | Executive marketing plan — three growth tracks (authentication activation, Flex API partners, omnichannel), keyword strategy, KPIs, budget summary |
+| [SIGNIX-PAID-MEDIA-PLAN-2026.md](SIGNIX-PAID-MEDIA-PLAN-2026.md) | Full paid media plan (Rev 3, April 6 2026) — budget reallocation rationale, Google keyword buckets, LinkedIn audiences, landing page strategy, 90-day launch plan |
+| [SIGNIX-PAID-MEDIA-EXEC-SUMMARY.md](SIGNIX-PAID-MEDIA-EXEC-SUMMARY.md) | One-page executive summary — current vs. proposed state, budget, target audiences, top keywords, measurement |
+| [SIGNIX-GROWTH-STRATEGY.md](SIGNIX-GROWTH-STRATEGY.md) | Living strategy doc — business problem, growth levers (depth + width), active initiatives, discovery call guide, opportunity map |
+| [SIGNIX-POSITIONING-STRATEGY.md](SIGNIX-POSITIONING-STRATEGY.md) | Multi-sector positioning — financial services, healthcare, lending; why security messaging failed; partnership-first angle; competitive positioning |
+| [SIGNIX-MARKET-RESEARCH-BUYER-JOURNEY.md](SIGNIX-MARKET-RESEARCH-BUYER-JOURNEY.md) | Market research and buyer journey — regulatory landscape, 4 buyer personas, 3 journey maps, messaging framework, keyword buckets |
+| [SIGNIX-TRUSTAGE-CSM-BRIEF.md](SIGNIX-TRUSTAGE-CSM-BRIEF.md) | TruStage email briefing and CSM game plan — three asks, three-action plan, suggested reply, strategic note for CEO |
+| [GOOGLE-ADS-SETUP-GUIDE.md](GOOGLE-ADS-SETUP-GUIDE.md) | Step-by-step Google Ads campaign setup guide — navigation tips, bidding strategy rationale, settings to fix post-launch, common pitfalls |
+
+---
+
+## Deliverables
+
+### Paid Media and Campaign Documents
+
+| File | Description |
+|------|-------------|
+| **[SIGNiX_PaidMedia_4.6.26.docx](SIGNiX_PaidMedia_4.6.26.docx)** | Paid media plan Word doc — Rev 3, April 6 2026. Updated keyword list, Legal/Debt Collection replaces Mortgage |
+| **[SIGNiX_PaidMedia_4.6.26.pptx](SIGNiX_PaidMedia_4.6.26.pptx)** | Paid media slides — Rev 3, 6 slides, ready to present |
+| [SIGNIX-PAID-MEDIA-SLIDES-CEO.pptx](SIGNIX-PAID-MEDIA-SLIDES-CEO.pptx) | CEO-trimmed version — simplified slide 4, 3 headline KPIs on slide 5 |
+| [SIGNIX-PAID-MEDIA-SLIDES.html](SIGNIX-PAID-MEDIA-SLIDES.html) | HTML presentation deck — keyboard/click navigation, PDF-exportable |
+| **[SIGNiX_Keyword_Master_4.6.26.xlsx](SIGNiX_Keyword_Master_4.6.26.xlsx)** | Keyword master Excel — 60+ keywords, color-coded status, search volume, CPC, budget allocation, negative keywords |
+| **[SIGNiX_CampaignMeasurement_April2026.docx](SIGNiX_CampaignMeasurement_April2026.docx)** | 90-day measurement framework — ROI targets, decision rules, phase-by-phase benchmarks |
+| **[SIGNiX_GoogleAds_4.9.26.docx](SIGNiX_GoogleAds_4.9.26.docx)** | Google Ads copy doc — full ad copy for 5 campaigns (Compliance/Legal, RON Institutional, Healthcare/Consent, Wealth Mgmt, Auth/PKI) |
+| **[SIGNiX_Dashboard_April2026.html](SIGNiX_Dashboard_April2026.html)** | Marketing dashboard — Google Ads + HubSpot + LinkedIn in one HTML file, open in any browser |
+
+### Sales and ABM Documents
+
+| File | Description |
+|------|-------------|
+| **[SIGNiX_MarketingPlan_4.7.26.pptx](SIGNiX_MarketingPlan_4.7.26.pptx)** | Leadership marketing plan deck — 6 slides, two-strategy framework, 5 segments, belief changes, active initiatives, 60-day benchmarks |
+| [SIGNiX_SlideC_Audiences.pptx](SIGNiX_SlideC_Audiences.pptx) | Standalone audience hub-and-spoke slide — Option C |
+| **[SIGNiX_ABM_Scorecard.docx](SIGNiX_ABM_Scorecard.docx)** | ABM scorecard — 35-account landscape tracker with weekly activity columns |
+| **[SIGNiX_CFO_PaidMedia_Brief_4.6.26.docx](SIGNiX_CFO_PaidMedia_Brief_4.6.26.docx)** | CFO one-pager — answers "will this generate enough leads?" with keyword data, volume math, ROI frame |
+| **[SIGNiX_CRO_PaidMedia_Brief_4.6.26.docx](SIGNiX_CRO_PaidMedia_Brief_4.6.26.docx)** | CRO one-pager — addresses lead volume and team activity concerns, 90-day projections, ROI math, 24-hr response ask |
+
+---
+
+## Deliverables folder (DELIVERABLES/)
+
+All collateral, email files, and print-ready PDFs live in **[DELIVERABLES/](DELIVERABLES/)**.
+
+### ABS / CoPilot Partner Collateral
+
+| File | Description |
+|------|-------------|
+| **[DELIVERABLES/SIGNiX_ABS_CoPilot_OnePager_v2_aspen.html](DELIVERABLES/SIGNiX_ABS_CoPilot_OnePager_v2_aspen.html)** | Source HTML — ABS CoPilot partner overview one-pager. Edit to regenerate PDF. |
+| **[DELIVERABLES/SIGNiX_ABS_CoPilot_OnePager_v2_aspen_DRAFT.pdf](DELIVERABLES/SIGNiX_ABS_CoPilot_OnePager_v2_aspen_DRAFT.pdf)** | PDF — partner overview one-pager. Corrected April 9 2026. |
+| **[DELIVERABLES/SIGNiX_ABS_CoPilot_Authentication_OnePager_aspen.html](DELIVERABLES/SIGNiX_ABS_CoPilot_Authentication_OnePager_aspen.html)** | Source HTML — authentication one-pager. Edit to regenerate PDF. |
+| **[DELIVERABLES/SIGNiX_ABS_CoPilot_Authentication_OnePager_aspen_DRAFT.pdf](DELIVERABLES/SIGNiX_ABS_CoPilot_Authentication_OnePager_aspen_DRAFT.pdf)** | PDF — authentication one-pager. Corrected April 9 2026. |
+| [DELIVERABLES/aspen-contact.png](DELIVERABLES/aspen-contact.png) | Aspen headshot used in the CTA section of both one-pagers. |
+
+### Mike's Fraud Insights Email Series
+
+| File | Description |
+|------|-------------|
+| [DELIVERABLES/PROJECT-MIKE-MARKET-INSIGHTS-EMAIL.md](DELIVERABLES/PROJECT-MIKE-MARKET-INSIGHTS-EMAIL.md) | Project brief — persona, pattern, source mapping |
+| **[DELIVERABLES/Mike-March-2026-Finalized-Fraud-Email-1.html](DELIVERABLES/Mike-March-2026-Finalized-Fraud-Email-1.html)** | Email 1 — final HTML send version |
+| [DELIVERABLES/Mike-March-2026-Fraud-Insights-Email1-SHORT.pdf](DELIVERABLES/Mike-March-2026-Fraud-Insights-Email1-SHORT.pdf) | Email 1 — PDF version |
+| **[DELIVERABLES/Mike-April-2026-Fraud-Email-2.html](DELIVERABLES/Mike-April-2026-Fraud-Email-2.html)** | Email 2 — final HTML send version |
+| [DELIVERABLES/Mike-April-2026-Fraud-Email2-Outlook.pdf](DELIVERABLES/Mike-April-2026-Fraud-Email2-Outlook.pdf) | Email 2 — PDF version |
+| [DELIVERABLES/mike-fraud-insights-email-TEMPLATE.html](DELIVERABLES/mike-fraud-insights-email-TEMPLATE.html) | Reusable template with «placeholders» for future emails |
+| [DELIVERABLES/mike-march-2026-fraud-insights-email.html](DELIVERABLES/mike-march-2026-fraud-insights-email.html) | Email 1 variant — original |
+| [DELIVERABLES/mike-march-2026-fraud-insights-email-SKIM.html](DELIVERABLES/mike-march-2026-fraud-insights-email-SKIM.html) | Email 1 variant — skim-optimized |
+| [DELIVERABLES/mike-march-2026-fraud-insights-email-BLEND.html](DELIVERABLES/mike-march-2026-fraud-insights-email-BLEND.html) | Email 1 variant — blend (v1 look + skim structure) |
+| [DELIVERABLES/mike-march-2026-fraud-insights-email-CONDENSED.html](DELIVERABLES/mike-march-2026-fraud-insights-email-CONDENSED.html) | Email 1 variant — condensed |
+
+### LinkedIn and Social
+
+| File | Description |
+|------|-------------|
+| [DELIVERABLES/SIGNiX-LinkedIn-DimeBank-April2026.md](DELIVERABLES/SIGNiX-LinkedIn-DimeBank-April2026.md) | LinkedIn post draft — Dime Bank angle, April 2026 |
+| [DELIVERABLES/SIGNiX-LinkedIn-PullQuote-April2026.png](DELIVERABLES/SIGNiX-LinkedIn-PullQuote-April2026.png) | Pull quote graphic for LinkedIn |
+
+### Executive Greeting Card
+
+| File | Description |
+|------|-------------|
+| [DELIVERABLES/SIGNiX-EXECUTIVE-GREETING-CARD-VISTAPRINT/](DELIVERABLES/SIGNiX-EXECUTIVE-GREETING-CARD-VISTAPRINT/) | Print-safe card files for Vistaprint — inside and outside spreads, README with print specs |
+
+---
+
+## Build Scripts
+
+All scripts live in **[build-scripts/](build-scripts/)**. Each generates a branded deliverable using SIGNiX brand tokens.
+
+| Script | Output |
+|--------|--------|
+| [build-scripts/build_signix_dashboard.py](build-scripts/build_signix_dashboard.py) | `SIGNiX_Dashboard_April2026.html` — reads CSV exports from Google Ads and LinkedIn |
+| [build-scripts/build_signix_keyword_master_xlsx.py](build-scripts/build_signix_keyword_master_xlsx.py) | `SIGNiX_Keyword_Master_4.6.26.xlsx` — keyword master with budget allocation |
+| [build-scripts/build_signix_google_ads_docx.py](build-scripts/build_signix_google_ads_docx.py) | `SIGNiX_GoogleAds_4.9.26.docx` — Google Ads copy for all 5 campaigns |
+| [build-scripts/build_signix_marketing_plan_pptx.py](build-scripts/build_signix_marketing_plan_pptx.py) | `SIGNiX_MarketingPlan_4.7.26.pptx` — leadership marketing plan deck |
+| [build-scripts/build_signix_paid_media_4_6_26_pptx.py](build-scripts/build_signix_paid_media_4_6_26_pptx.py) | `SIGNiX_PaidMedia_4.6.26.pptx` — paid media slides |
+| [build-scripts/build_signix_paid_media_4_6_26_docx.py](build-scripts/build_signix_paid_media_4_6_26_docx.py) | `SIGNiX_PaidMedia_4.6.26.docx` — paid media Word doc |
+| [build-scripts/build_signix_measurement_timeline_docx.py](build-scripts/build_signix_measurement_timeline_docx.py) | `SIGNiX_CampaignMeasurement_April2026.docx` — 90-day measurement framework |
+| [build-scripts/build_signix_abm_scorecard.py](build-scripts/build_signix_abm_scorecard.py) | `SIGNiX_ABM_Scorecard.docx` — 35-account ABM tracker |
+| [build-scripts/build_signix_cfo_brief_4_6_26.py](build-scripts/build_signix_cfo_brief_4_6_26.py) | `SIGNiX_CFO_PaidMedia_Brief_4.6.26.docx` — CFO one-pager |
+| [build-scripts/build_signix_cro_brief_4_6_26.py](build-scripts/build_signix_cro_brief_4_6_26.py) | `SIGNiX_CRO_PaidMedia_Brief_4.6.26.docx` — CRO one-pager |
+| [build-scripts/build_signix_docx.py](build-scripts/build_signix_docx.py) | Base template for new Word documents |
+| [build-scripts/build_signix_pptx.py](build-scripts/build_signix_pptx.py) | Base template for new PowerPoint decks |
+| [build-scripts/build_signix_slide_c.py](build-scripts/build_signix_slide_c.py) | `SIGNiX_SlideC_Audiences.pptx` — standalone audience hub slide |
+| [build-scripts/update_slide5_keyword_analysis.py](build-scripts/update_slide5_keyword_analysis.py) | Updates keyword analysis slide in the paid media deck |
+| [build-scripts/README.md](build-scripts/README.md) | How to use the build scripts — helper functions, brand tokens, usage instructions |
+
+---
+
+## Reference and Setup
+
+| File | Description |
+|------|-------------|
+| [DESIGN-GUIDELINES.md](DESIGN-GUIDELINES.md) | SIGNiX brand tokens — color palette, font stack, type scale, spacing, logo, design principles |
+| [SIGNIX-WRITING-VOICE.md](SIGNIX-WRITING-VOICE.md) | SIGNiX writing voice — plain language rules, human tone, words to avoid |
+| [COLLABORATION-AND-FEEDBACK.md](COLLABORATION-AND-FEEDBACK.md) | Working agreement — star feedback, partner-first messaging, deliverable standards *(local only — not pushed to GitHub)* |
+| [05-SETUP-WKHTMLTOPDF/SETUP-WKHTMLTOPDF.md](05-SETUP-WKHTMLTOPDF/SETUP-WKHTMLTOPDF.md) | wkhtmltopdf setup — how to install and use for HTML-to-PDF generation |
+| [GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md](GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md) | HTML-to-PDF reference — wkhtmltopdf, pdfkit options |
+| [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md) | SIGNiX Flex API reference — integration patterns, authentication types, API structure |
+
+---
+
+## Demos
 
 | Path | Description |
 |------|-------------|
-| [GENERAL-KNOWLEDGE/KNOWLEDGE-APP-FOUNDATION.md](GENERAL-KNOWLEDGE/KNOWLEDGE-APP-FOUNDATION.md) | Baseline capabilities; technology-agnostic |
-| [GENERAL-KNOWLEDGE/KNOWLEDGE-DOCUMENT-CENTRIC-APPS.md](GENERAL-KNOWLEDGE/KNOWLEDGE-DOCUMENT-CENTRIC-APPS.md) | Document-centric pattern; data, templates, deals |
-| [GENERAL-KNOWLEDGE/KNOWLEDGE-FILE-ASSETS-MEDIA.md](GENERAL-KNOWLEDGE/KNOWLEDGE-FILE-ASSETS-MEDIA.md) | File upload, storage, stable URLs |
-| [GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md](GENERAL-KNOWLEDGE/KNOWLEDGE-HTML-TO-PDF.md) | HTML-to-PDF; wkhtmltopdf, pdfkit |
-| [GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md](GENERAL-KNOWLEDGE/KNOWLEDGE-SIGNiX.md) | SIGNiX Flex API and integration |
+| [../demos/n8n-notary-lead-routing/README.md](../demos/n8n-notary-lead-routing/README.md) | SIGNiX-style lead form → n8n webhook; routes low/high notary volume and sends email alerts |
 
 ---
 
-## Phase 01: Baseline
+## Archive
 
-| Path | Description |
-|------|-------------|
-| [01-BASELINE/DESIGN-BASELINE.md](01-BASELINE/DESIGN-BASELINE.md) | Design: auth, profile, app shell, admin |
-| [01-BASELINE/10-PLAN-BASELINE.md](01-BASELINE/10-PLAN-BASELINE.md) | Plan: implementation order and batches |
+Older files kept for reference — not part of active work.
 
----
-
-## Phase 02: Business domain (Vehicles, Contacts, Deals)
-
-| Path | Description |
-|------|-------------|
-| [02-BIZ-DOMAIN/DESIGN-BIZ-DOMAIN.md](02-BIZ-DOMAIN/DESIGN-BIZ-DOMAIN.md) | Design: entities, relationships, UI conventions |
-| [02-BIZ-DOMAIN/PHASE-PLANS-BIZ-DOMAIN.md](02-BIZ-DOMAIN/PHASE-PLANS-BIZ-DOMAIN.md) | Phase plans: order of plans |
-| [02-BIZ-DOMAIN/KNOWLEDGE-LEASE-JETPACKS.md](02-BIZ-DOMAIN/KNOWLEDGE-LEASE-JETPACKS.md) | Knowledge: vehicle leasing domain |
-| [02-BIZ-DOMAIN/10-PLAN-ADD-VEHICLES.md](02-BIZ-DOMAIN/10-PLAN-ADD-VEHICLES.md) | Plan: Vehicles |
-| [02-BIZ-DOMAIN/20-PLAN-ADD-CONTACTS.md](02-BIZ-DOMAIN/20-PLAN-ADD-CONTACTS.md) | Plan: Contacts |
-| [02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md](02-BIZ-DOMAIN/30-PLAN-ADD-DEALS.md) | Plan: Deals |
+| Path | What it contains |
+|------|-----------------|
+| [ARCHIVE/README.md](ARCHIVE/README.md) | Index of archived files and why each was kept |
+| [ARCHIVE/20-APPROACH.md](ARCHIVE/20-APPROACH.md) | AI-assisted document-driven development methodology — useful template for extending this project |
+| [ARCHIVE/GENERAL-KNOWLEDGE/](ARCHIVE/GENERAL-KNOWLEDGE/) | App foundation, document-centric patterns, file/media handling — reference for future toolkit features |
+| [ARCHIVE/build_signix_pptx_ceo.py](ARCHIVE/build_signix_pptx_ceo.py) | CEO-trimmed paid media slide script — reference for CEO slide formatting |
 
 ---
 
-## Phase 03: Images
-
-| Path | Description |
-|------|-------------|
-| [03-IMAGES/DESIGN-IMAGES.md](03-IMAGES/DESIGN-IMAGES.md) | Design: image model, CRUD, media |
-| [03-IMAGES/10-PLAN-ADD-IMAGES.md](03-IMAGES/10-PLAN-ADD-IMAGES.md) | Plan: Images app |
-
----
-
-## Phase 04: Data interface
-
-| Path | Description |
-|------|-------------|
-| [04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md](04-DATA-INTERFACE/DESIGN-DATA-INTERFACE.md) | Design: schema, get_deal_data, viewer, Debug Data |
-| [04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md](04-DATA-INTERFACE/10-PLAN-DATA-INTERFACE.md) | Plan: data interface |
-
----
-
-## Phase 05: Setup — wkhtmltopdf
-
-| Path | Description |
-|------|-------------|
-| [05-SETUP-WKHTMLTOPDF/SETUP-WKHTMLTOPDF.md](05-SETUP-WKHTMLTOPDF/SETUP-WKHTMLTOPDF.md) | Setup: wkhtmltopdf + pdfkit for HTML-to-PDF |
-
----
-
-## Phase 06: Document templates and document sets
-
-| Path | Description |
-|------|-------------|
-| [06-DOCS/DESIGN-DOCS.md](06-DOCS/DESIGN-DOCS.md) | Design: templates, document sets, generation |
-| [06-DOCS/PHASE-PLANS-DOCS.md](06-DOCS/PHASE-PLANS-DOCS.md) | Phase plans: order of document plans |
-| [06-DOCS/10-PLAN-ADD-STATIC-DOC-TEMPLATES.md](06-DOCS/10-PLAN-ADD-STATIC-DOC-TEMPLATES.md) | Plan: static document templates |
-| [06-DOCS/20-PLAN-ADD-DYNAMIC-DOC-TEMPLATES.md](06-DOCS/20-PLAN-ADD-DYNAMIC-DOC-TEMPLATES.md) | Plan: dynamic document templates |
-| [06-DOCS/30-PLAN-ADD-DOC-SET-TEMPLATES.md](06-DOCS/30-PLAN-ADD-DOC-SET-TEMPLATES.md) | Plan: document set templates |
-| [06-DOCS/40-PLAN-ADD-DOCUMENT-SETS.md](06-DOCS/40-PLAN-ADD-DOCUMENT-SETS.md) | Plan: document sets |
-
----
-
-## Phase 07: SIGNiX submit flow
-
-| Path | Description |
-|------|-------------|
-| [07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md](07-SIGNiX-SUBMIT/DESIGN-SIGNiX-SUBMIT.md) | Design: submit flow, signers, packager, dashboard |
-| [07-SIGNiX-SUBMIT/PHASE-PLANS-SIGNiX-SUBMIT.md](07-SIGNiX-SUBMIT/PHASE-PLANS-SIGNiX-SUBMIT.md) | Phase plans: order of nine plans |
-| [07-SIGNiX-SUBMIT/10-PLAN-SIGNiX-CONFIG.md](07-SIGNiX-SUBMIT/10-PLAN-SIGNiX-CONFIG.md) | Plan: SIGNiX configuration |
-| [07-SIGNiX-SUBMIT/20-PLAN-SIGNiX-SIGNATURE-TRANSACTION.md](07-SIGNiX-SUBMIT/20-PLAN-SIGNiX-SIGNATURE-TRANSACTION.md) | Plan: SignatureTransaction model |
-| [07-SIGNiX-SUBMIT/30-PLAN-SIGNiX-SIGNER-SERVICE.md](07-SIGNiX-SUBMIT/30-PLAN-SIGNiX-SIGNER-SERVICE.md) | Plan: signer service |
-| [07-SIGNiX-SUBMIT/40-PLAN-SIGNiX-SIGNERS-TABLE.md](07-SIGNiX-SUBMIT/40-PLAN-SIGNiX-SIGNERS-TABLE.md) | Plan: Signers table |
-| [07-SIGNiX-SUBMIT/50-PLAN-SIGNiX-BUILD-BODY.md](07-SIGNiX-SUBMIT/50-PLAN-SIGNiX-BUILD-BODY.md) | Plan: build SubmitDocument body |
-| [07-SIGNiX-SUBMIT/60-PLAN-SIGNiX-SEND-AND-PERSIST.md](07-SIGNiX-SUBMIT/60-PLAN-SIGNiX-SEND-AND-PERSIST.md) | Plan: send and persist |
-| [07-SIGNiX-SUBMIT/70-PLAN-SIGNiX-SEND-FOR-SIGNATURE.md](07-SIGNiX-SUBMIT/70-PLAN-SIGNiX-SEND-FOR-SIGNATURE.md) | Plan: Send for Signature button |
-| [07-SIGNiX-SUBMIT/80-PLAN-SIGNiX-DASHBOARD.md](07-SIGNiX-SUBMIT/80-PLAN-SIGNiX-DASHBOARD.md) | Plan: signature transactions dashboard |
-| [07-SIGNiX-SUBMIT/90-PLAN-SIGNiX-DEAL-VIEW-TRANSACTIONS.md](07-SIGNiX-SUBMIT/90-PLAN-SIGNiX-DEAL-VIEW-TRANSACTIONS.md) | Plan: related transactions on Deal View |
-
----
-
-## Phase 08: ngrok (push enabler)
-
-| Path | Description |
-|------|-------------|
-| [08-NGROK/10-PLAN-NGROK.md](08-NGROK/10-PLAN-NGROK.md) | Plan: ngrok tunnel and codebase changes |
-
----
-
-## Phase 09: SIGNiX dashboard, sync, and download
-
-| Path | Description |
-|------|-------------|
-| [09-SIGNiX-DASHBOARD-SYNC/DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md](09-SIGNiX-DASHBOARD-SYNC/DESIGN-SIGNiX-DASHBOARD-AND-SYNC.md) | Design: push, status, download, transaction detail |
-| [09-SIGNiX-DASHBOARD-SYNC/PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md](09-SIGNiX-DASHBOARD-SYNC/PHASE-PLANS-SIGNiX-DASHBOARD-SYNC.md) | Phase plans: order of six plans |
-| [09-SIGNiX-DASHBOARD-SYNC/10-PLAN-SIGNiX-SYNC-MODEL.md](09-SIGNiX-DASHBOARD-SYNC/10-PLAN-SIGNiX-SYNC-MODEL.md) | Plan: sync model |
-| [09-SIGNiX-DASHBOARD-SYNC/20-PLAN-SIGNiX-PUSH-LISTENER.md](09-SIGNiX-DASHBOARD-SYNC/20-PLAN-SIGNiX-PUSH-LISTENER.md) | Plan: push listener |
-| [09-SIGNiX-DASHBOARD-SYNC/30-PLAN-SIGNiX-SUBMIT-PUSH-URL.md](09-SIGNiX-DASHBOARD-SYNC/30-PLAN-SIGNiX-SUBMIT-PUSH-URL.md) | Plan: push URL in SubmitDocument |
-| [09-SIGNiX-DASHBOARD-SYNC/40-PLAN-SIGNiX-DASHBOARD-SIGNERS.md](09-SIGNiX-DASHBOARD-SYNC/40-PLAN-SIGNiX-DASHBOARD-SIGNERS.md) | Plan: Signers column |
-| [09-SIGNiX-DASHBOARD-SYNC/50-PLAN-SIGNiX-DOWNLOAD-ON-COMPLETE.md](09-SIGNiX-DASHBOARD-SYNC/50-PLAN-SIGNiX-DOWNLOAD-ON-COMPLETE.md) | Plan: download on complete |
-| [09-SIGNiX-DASHBOARD-SYNC/60-PLAN-SIGNiX-TRANSACTION-DETAIL.md](09-SIGNiX-DASHBOARD-SYNC/60-PLAN-SIGNiX-TRANSACTION-DETAIL.md) | Plan: signature transaction detail page |
-
----
-
-*Start with [70-PLAN-MASTER.md](70-PLAN-MASTER.md) for implementation order. For methodology and document order, read [10-PROJECT-PITCH.md](10-PROJECT-PITCH.md) through [60-LOE.md](60-LOE.md) as in the table above.*
+*Last updated: April 9, 2026 — project restructured from lease origination app to SIGNiX Marketing Toolkit*

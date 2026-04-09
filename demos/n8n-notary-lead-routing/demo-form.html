@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Demo — Contact SIGNiX (mirrors live form fields)</title>
+  <style>
+    :root {
+      --signix-green: #6da34a;
+      --ink: #2e3440;
+      --muted: #545454;
+      --line: #d8dee9;
+      --bg: #f8fafb;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--muted);
+      background: var(--bg);
+      line-height: 1.5;
+    }
+    .wrap {
+      max-width: 36rem;
+      margin: 2rem auto;
+      padding: 0 1.25rem 3rem;
+    }
+    h1 {
+      color: var(--ink);
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin: 0 0 0.35rem;
+    }
+    .sub {
+      margin: 0 0 1.25rem;
+      font-size: 0.95rem;
+    }
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ink);
+      margin: 0.85rem 0 0.3rem;
+    }
+    input, select {
+      width: 100%;
+      padding: 0.55rem 0.65rem;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+    .row2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+        gap: 0.65rem;
+    }
+    @media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+    button {
+      margin-top: 1.25rem;
+      width: 100%;
+      padding: 0.65rem 1rem;
+      background: var(--signix-green);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(1.05); }
+    .note {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font-size: 0.82rem;
+    }
+    .banner {
+      font-size: 0.75rem;
+      color: #b45309;
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+    code { font-size: 0.8em; color: var(--ink); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="banner">
+      <strong>Demo only.</strong> Paste your n8n webhook URL in <code>WEBHOOK_URL</code> below (or <code>?webhook=</code> in the page URL). This does not post to HubSpot.
+    </div>
+    <h1>Get a demo or ask us questions</h1>
+    <p class="sub">Interested in getting started with SIGNiX? Fill out the form below — this demo sends JSON to your n8n workflow.</p>
+
+    <form id="lead-form">
+      <div class="row2">
+        <div>
+          <label for="first_name">First name</label>
+          <input id="first_name" name="first_name" required autocomplete="given-name" />
+        </div>
+        <div>
+          <label for="last_name">Last name</label>
+          <input id="last_name" name="last_name" required autocomplete="family-name" />
+        </div>
+      </div>
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" required autocomplete="email" />
+
+      <label for="phone">Phone</label>
+      <input id="phone" name="phone" type="tel" autocomplete="tel" />
+
+      <label for="company">Company</label>
+      <input id="company" name="company" required autocomplete="organization" />
+
+      <label for="job_title">Job title</label>
+      <input id="job_title" name="job_title" autocomplete="organization-title" />
+
+      <label for="product_interest">What are you interested in?</label>
+      <select id="product_interest" name="product_interest" required>
+        <option value="">Select one</option>
+        <option value="mydox">MyDoX — digital signatures</option>
+        <option value="enotary">Remote Online Notarization (eNotary)</option>
+        <option value="api">Digital Signature API / integrations</option>
+        <option value="other">Other / not sure yet</option>
+      </select>
+
+      <div id="notary-block" hidden>
+        <label for="monthly_notary_volume">Approximate online notarizations per month</label>
+        <select id="monthly_notary_volume" name="monthly_notary_volume">
+          <option value="N/A">N/A</option>
+          <option value="0-5">0–5</option>
+          <option value="6-29">6–29</option>
+          <option value="30+">30+</option>
+        </select>
+      </div>
+
+      <button type="submit">Submit</button>
+    </form>
+    <p id="status" class="note" hidden></p>
+  </div>
+
+  <script>
+    /** Replace with your n8n production webhook URL after you activate the workflow */
+    const DEFAULT_WEBHOOK = "http://localhost:5678/webhook/signix-notary-lead-demo";
+    const UNSET_WEBHOOK_SENTINEL = "YOUR_N8N_WEBHOOK_URL";
+
+    const params = new URLSearchParams(window.location.search);
+    const WEBHOOK_URL = params.get("webhook") || DEFAULT_WEBHOOK;
+
+    const product = document.getElementById("product_interest");
+    const notaryBlock = document.getElementById("notary-block");
+    const volume = document.getElementById("monthly_notary_volume");
+
+    function syncNotaryFields() {
+      const isNotary = product.value === "enotary";
+      notaryBlock.hidden = !isNotary;
+      volume.required = isNotary;
+      if (!isNotary) volume.value = "N/A";
+    }
+    product.addEventListener("change", syncNotaryFields);
+    syncNotaryFields();
+
+    document.getElementById("lead-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const status = document.getElementById("status");
+      status.hidden = false;
+      if (!WEBHOOK_URL || WEBHOOK_URL === UNSET_WEBHOOK_SENTINEL) {
+        status.textContent = "Set WEBHOOK_URL in this file or add ?webhook=https://... to the page URL.";
+        return;
+      }
+
+      const payload = {
+        first_name: document.getElementById("first_name").value.trim(),
+        last_name: document.getElementById("last_name").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        company: document.getElementById("company").value.trim(),
+        job_title: document.getElementById("job_title").value.trim(),
+        product_interest: product.value,
+        monthly_notary_volume: volume.value,
+      };
+
+      status.textContent = "Submitting…";
+      try {
+        const res = await fetch(WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const text = await res.text();
+        let extra = text;
+        try {
+          extra = JSON.stringify(JSON.parse(text), null, 2);
+        } catch (_) {}
+        status.textContent = res.ok
+          ? "Success (HTTP " + res.status + "). Response:\\n" + extra
+          : "Error HTTP " + res.status + " — " + text;
+      } catch (err) {
+        status.textContent = "Request failed: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>

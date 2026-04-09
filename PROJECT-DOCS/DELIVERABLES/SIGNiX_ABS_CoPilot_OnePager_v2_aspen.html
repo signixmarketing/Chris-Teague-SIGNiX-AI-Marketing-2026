@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ABS CoPilot · SIGNiX · Partner overview</title>
+  <style>
+    :root {
+      --signix-green: #6DA34A;
+      --ink: #2E3440;
+      --body: #545454;
+      --line: #D8DEE9;
+      --canvas: #F8FAFB;
+      --panel: #ECEFF4;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    @page {
+      size: letter portrait;
+      margin: 0.5in;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font);
+      color: var(--body);
+      background: var(--canvas);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .sheet {
+      max-width: 8.5in;
+      margin: 0 auto;
+      padding: 0.48in 0.55in 0.38in;
+      background: var(--canvas);
+    }
+
+    .masthead {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: 0.78rem;
+      border-bottom: 3px solid var(--signix-green);
+    }
+
+    .partner-lockup {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      max-width: 48%;
+    }
+
+    .partner-logo-slot {
+      min-height: 2.25rem;
+      font-size: 0.7rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink);
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .partner-logo-slot span {
+      display: block;
+      font-weight: 500;
+      color: var(--body);
+      letter-spacing: 0.04em;
+      margin-top: 0.15rem;
+    }
+
+    .signix-logo {
+      width: 200px;
+      height: auto;
+      flex-shrink: 0;
+    }
+
+    .eyebrow {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--signix-green);
+      margin: 0.85rem 0 0.4rem;
+    }
+
+    h1 {
+      margin: 0 0 0.4rem;
+      font-size: 1.42rem;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.22;
+      max-width: 95%;
+    }
+
+    .subhead {
+      margin: 0 0 0.7rem;
+      font-size: 0.94rem;
+      line-height: 1.45;
+      color: var(--body);
+      max-width: 96%;
+    }
+
+    .workflow {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0.55rem 0.65rem 0.62rem;
+      margin-bottom: 0.72rem;
+    }
+
+    .workflow-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink);
+      margin-bottom: 0.55rem;
+    }
+
+    .workflow-steps {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .step {
+      flex: 1 1 20%;
+      min-width: 5rem;
+      text-align: center;
+      padding: 0 0.2rem;
+      border-right: 1px solid var(--line);
+    }
+
+    .step:last-child {
+      border-right: none;
+    }
+
+    .step-num {
+      width: 1.85rem;
+      height: 1.85rem;
+      margin: 0 auto 0.35rem;
+      border-radius: 50%;
+      background: var(--signix-green);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      line-height: 1.85rem;
+      text-align: center;
+    }
+
+    .step p {
+      margin: 0;
+      font-size: 0.68rem;
+      line-height: 1.25;
+      color: var(--body);
+      font-weight: 500;
+    }
+
+    .columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7rem;
+      margin-bottom: 0.7rem;
+    }
+
+    @media (max-width: 640px) {
+      .columns { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0.65rem 0.75rem;
+      border-left: 4px solid var(--signix-green);
+    }
+
+    .card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .card ul {
+      margin: 0;
+      padding-left: 1rem;
+      font-size: 0.78rem;
+      line-height: 1.4;
+    }
+
+    .card li { margin-bottom: 0.25rem; }
+
+    .capabilities {
+      background: var(--ink);
+      color: #ECEFF4;
+      border-radius: 6px;
+      padding: 0.55rem 0.68rem;
+      margin-bottom: 0.62rem;
+    }
+
+    .capabilities h3 {
+      margin: 0 0 0.45rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #fff;
+    }
+
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .pill {
+      font-size: 0.68rem;
+      padding: 0.28rem 0.5rem;
+      background: rgba(109, 163, 74, 0.25);
+      border: 1px solid rgba(109, 163, 74, 0.55);
+      border-radius: 4px;
+      color: #ECEFF4;
+      font-weight: 600;
+    }
+
+    .pill-note {
+      margin: 0.4rem 0 0;
+      font-size: 0.66rem;
+      line-height: 1.35;
+      color: #D8DEE9;
+      opacity: 0.95;
+    }
+
+    .cta-person {
+      display: flex;
+      align-items: center;
+      gap: 0.72rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .cta-avatar {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: center 22%;
+      flex-shrink: 0;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1px var(--line), 0 2px 8px rgba(46, 52, 64, 0.1);
+    }
+
+    .cta-person .cta-copy {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .cta-primary {
+      margin: 0 0 0.15rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      line-height: 1.38;
+      color: var(--ink);
+    }
+
+    .cta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.85rem;
+      padding: 0.5rem 0.65rem;
+      background: linear-gradient(180deg, #fff 0%, var(--panel) 100%);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+
+    .cta-body {
+      margin: 0;
+      font-size: 0.74rem;
+      line-height: 1.38;
+      color: var(--body);
+    }
+
+    .cta-body strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .cta-draft {
+      margin: 0.4rem 0 0;
+      font-size: 0.6rem;
+      line-height: 1.3;
+      color: #6b7280;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .cta-qr {
+      flex-shrink: 0;
+      text-align: center;
+    }
+
+    .cta-qr .img-wrap {
+      display: inline-block;
+      line-height: 0;
+    }
+
+    .cta-qr img {
+      display: block;
+      width: 96px;
+      height: 96px;
+    }
+
+    .cta-link {
+      display: inline-block;
+      margin-top: 0.25rem;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: var(--signix-green);
+      text-decoration: none;
+      max-width: 7.5rem;
+      line-height: 1.25;
+      word-break: break-all;
+    }
+
+    .cta-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <article class="sheet">
+    <header class="masthead">
+      <div class="partner-lockup">
+        <div class="partner-logo-slot">
+          American Bank Systems
+          <span>CoPilot® · Integrated loan &amp; deposit platform</span>
+        </div>
+      </div>
+      <div class="signix-logo" aria-label="SIGNiX">
+        <svg width="200" height="49" viewBox="0 0 588 143" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g clip-path="url(#clip_signix)">
+            <path d="M71.0972 15.6416C77.1237 18.2666 82.7498 22.204 87.9949 27.4636L72.2791 43.223C67.0437 36.9153 59.7084 33.7713 50.2828 33.7713C40.8572 33.7713 34.8307 36.0045 32.213 40.4708C29.5953 44.9371 29.5953 48.7471 32.213 51.8912C34.8307 55.045 40.8572 57.4055 50.2828 58.9824C60.2358 60.0304 69.2707 63.3116 77.3874 68.8357C85.5042 74.35 89.5674 83.1455 89.5674 95.2319C89.5674 104.684 85.2307 112.833 76.567 119.66C67.8935 126.486 57.8037 129.905 46.2781 129.905C35.3288 129.905 26.1865 128.328 18.8609 125.174C11.5256 122.02 5.24512 117.818 0 112.568L15.7158 96.8088C20.9512 103.117 29.8591 106.79 42.4298 107.838C52.9102 107.838 59.4446 105.605 62.033 101.138C64.6214 96.6717 64.6214 92.2054 62.033 87.7489C59.4446 83.2826 52.9005 80.5303 42.4298 79.4725C33.0042 78.4245 24.36 75.5351 16.4972 70.8044C8.64419 66.0736 4.70791 57.9344 4.70791 46.3769C4.70791 35.9261 9.17163 27.5322 18.1088 21.2049C27.0363 14.8777 36.2177 11.714 45.653 11.714C56.5926 11.7042 65.0805 13.0167 71.0972 15.6416Z" fill="#545454"/>
+            <path d="M110.626 11.626H134.117V129.895H110.626V11.626Z" fill="#545454"/>
+            <path d="M168.332 112.911C157.041 101.648 151.395 87.5237 151.395 70.5596C151.444 53.9579 157.1 40.0008 168.371 28.6882C179.633 17.3657 193.591 11.7045 210.254 11.7045C227.064 11.7045 241.5 16.9543 253.543 27.4638L237.827 44.7218C229.808 38.414 220.617 35.27 210.244 35.27C199.666 35.3189 191.139 38.6295 184.673 45.2016C178.207 51.7737 174.974 60.1677 174.974 70.4128C175.023 81.3925 178.295 90.1096 184.8 96.574C191.295 103.038 199.832 106.261 210.41 106.261C218.898 106.261 225.413 104.576 229.974 101.217V80.9713L214.259 81.0496V58.9825H253.543V114.136C241.549 124.645 227.113 129.895 210.254 129.895C193.6 129.836 179.623 124.185 168.332 112.911Z" fill="#545454"/>
+            <path d="M277.278 129.895V11.7045H285.131L358.993 85.7706V11.7045H382.561V129.895H373.917L300.847 56.6221V129.895H277.278Z" fill="#545454"/>
+            <path d="M407.556 24.2708C409.647 22.1454 412.479 21.0778 416.044 21.0778C419.814 21.0778 422.745 22.1454 424.845 24.2708C426.935 26.3962 427.99 29.0408 427.99 32.1848C427.99 35.3386 426.945 37.9636 424.845 40.0596C422.745 42.1654 419.863 43.2134 416.2 43.2134C412.538 43.2134 409.647 42.1654 407.556 40.0596C405.456 37.9636 404.411 35.3288 404.411 32.1848C404.421 29.0408 405.466 26.3962 407.556 24.2708ZM427.199 129.895V51.0197H405.202V129.885H427.199V129.895Z" fill="#6DA34A"/>
+            <path d="M516.786 0C477.599 0 445.835 31.8518 445.835 71.1474C445.835 110.443 477.599 142.295 516.786 142.295C555.973 142.295 587.736 110.443 587.736 71.1474C587.736 31.8518 555.963 0 516.786 0ZM537.395 117.456C535.998 117.456 534.992 117.162 534.67 116.457C533.009 114.038 517.225 89.0322 516.2 87.4455C515.164 89.042 499.341 114.028 497.671 116.437C497.348 117.133 496.352 117.427 494.965 117.427C489.398 117.427 477.198 112.343 477.364 110.414C477.442 109.473 480.675 103.254 486.868 94.4779C493.412 84.9283 503.736 72.0093 504.137 71.931C501.001 69.6782 479.601 38.1497 479.572 35.9263C479.542 34.1241 491.263 29.7655 496.811 29.7655C498.237 29.7655 499.302 30.0398 499.722 30.6862C500.171 30.9115 515.672 56.3773 516.571 58.0717C517.518 56.3773 532.306 31.4698 532.98 30.745C533.39 30.0888 534.445 29.8243 535.871 29.8243C541.38 29.8243 553.033 34.1535 552.993 35.9851C552.945 38.3358 531.447 70.3638 528.292 72.5872C528.673 72.646 538.977 85.3984 545.531 94.8012C551.734 103.46 555.074 109.552 555.074 110.433C555.084 112.402 542.992 117.456 537.395 117.456Z" fill="#6DA34A"/>
+          </g>
+          <defs>
+            <clipPath id="clip_signix">
+              <rect width="588" height="143" fill="white"/>
+            </clipPath>
+          </defs>
+        </svg>
+      </div>
+    </header>
+
+    <p class="eyebrow">For institutions adopting or expanding ABS CoPilot</p>
+
+    <h1>Keep signing inside your CoPilot workflow, with partners who stay with you after the sale.</h1>
+    <p class="subhead">
+      You get bank-grade trust and clear document control when American Bank Systems and SIGNiX work as an extension of your team.
+    </p>
+
+    <section class="workflow" aria-label="Workflow">
+      <div class="workflow-title">Uninterrupted workflow</div>
+      <div class="workflow-steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <p>Prepare and package documents in your familiar CoPilot process</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <p>Route agreements for signature without breaking the chain of custody</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <p>Sign with solutions designed for regulated financial services</p>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <p>Retain records your teams and auditors can stand behind</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="columns">
+      <div class="card">
+        <h3>Partnership first, not vendor first</h3>
+        <ul>
+          <li>Your ABS team knows your institution. SIGNiX aligns with that relationship for implementation and support.</li>
+          <li>Integrated thinking: not a bolt-on tool your staff has to force into daily work.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Trust, security and ownership</h3>
+        <ul>
+          <li>Digital signatures built for environments where accountability matters.</li>
+          <li>Emphasis on document integrity and control appropriate for loan and deposit operations.</li>
+        </ul>
+      </div>
+    </div>
+
+    <section class="capabilities">
+      <h3>Extend CoPilot with SIGNiX capabilities</h3>
+      <div class="pills">
+        <span class="pill">ID Verify™</span>
+        <span class="pill">Digital Billboard</span>
+        <span class="pill">eNotary DoX®</span>
+        <span class="pill">MyDoX®</span>
+      </div>
+      <p class="pill-note">
+        Your ABS representative can map which options fit your workflows, channels, and compliance review, so you adopt what you need when you need it.
+      </p>
+    </section>
+
+    <div class="cta" role="region" aria-label="Contact Aspen about SIGNiX">
+      <div class="cta-person">
+        <img class="cta-avatar" src="aspen-contact.png" width="76" height="76" alt="Aspen" />
+        <div class="cta-copy">
+          <p class="cta-primary">Contact Aspen to learn more about SIGNiX.</p>
+          <p class="cta-draft">Draft · Internal review only</p>
+        </div>
+      </div>
+      <div class="cta-qr">
+        <a class="img-wrap" href="https://www.signix.com/contact" target="_blank" rel="noopener noreferrer" aria-label="Open SIGNiX contact form">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIQAAACECAIAAADeJhTwAAADHElEQVR4nO2dS27dMAwAk6L30aoH6MlzgK58opdltKgAESTjkTOzTBz54Q1IRv/31+v1Jgx+3f0B5AtlgFAGCGWAUAYIZYBQBojfq1+MP3/LX3b9+/hv+zs/32H1mTPv7f4eZowMEMoAoYwTasZMNHfPRHPulXjXKtdX1afu78HIAKEMEMo4rWZEc1+mf3AlcvpOPyP6GaLvir53xsgAoQwQyji5ZlSxyqcjMRYU7WfQMDJAKAOEMkDcVjOq/k8fwRqT6Yt0Y2SAUAYIZZxcM6pya3QMaiye2Zmv7ph776gxRgYIZYBQxmk1o2PtUMccxtW83qmjzRkjA4QyQCgDxDttT99IrLMijzvtYGSAUAYIZZxQM6LjRRmi41GjqC+SeT7Tv3F/xgGYpkAo4yeNTXXv14s+X7UeN8pO+0YGCGWAUMYJNaMqp3fs917xnWNTHfPkRgYIZYBQxslnh0Tz4Op5wv6MUbRWKjOWNWNkgFAGCGWc3M/YWfO6en6n/Zlomx37wHfarOrHGBkglAFCGU85ozCaTzN9iJEY++roM3WsuzUyQCgDhDKeeEbhTo7e+dur+ezbqjNuO9ZTGRkglAFCGU9cN9WdW0fRnEHH+ivHph6IaQqEMk7e01e1LyFzzsdMVZ+g41zeKEYGCGWAUMZp8xk78xMd62ivhrmQ6DquaJuZOmRkgFAGCGU8ZWyq6k6LqvGfkegDRetfVX9oxsgAoQwQyjjt7JCZjv5E5ryN0XBXUhXu6TsY0xQIZZxcM7rXII3mc2q7z86KvnfGyAChDBDKeOLZIVXzBDt03P+6aj/ajnPgD8E0BUIZT9nTF6X7XMIV3fPnVRgZIJQBQhlP3NPXvZ98JOaxM21+5519RgYIZYBQxsl3u1bl2QyjeX6+ah97FCMDhDJAKOPkmnEXV9H8SmZfRfddT0YGCGWAUAaI22pG950Zd81zZPaaGBkglAFCGSfXDMK4E6EOZfooK4wMEMoAoYyfdLdrtM0rsScjWm+q9ofvvMuxqcMwTYFQxslnFEofRgYIZYBQBghlgFAGCGWAUMYbh0/aOROWo8VrYAAAAABJRU5ErkJggg==" width="96" height="96" alt="QR code: opens SIGNiX contact form at signix.com" />
+        </a>
+        <a class="cta-link" href="https://www.signix.com/contact" target="_blank" rel="noopener noreferrer">signix.com/contact</a>
+      </div>
+    </div>
+
+  </article>
+</body>
+</html>

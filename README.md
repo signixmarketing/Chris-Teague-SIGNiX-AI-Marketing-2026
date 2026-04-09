@@ -11,8 +11,8 @@ Everything here was built using **[Cursor](https://cursor.com)** and a custom AI
 ### Sales Collateral (ABS / CoPilot)
 Two one-pagers built for our sales rep covering Banks and Credit Unions. Corrected April 9, 2026.
 
-- [SIGNiX_ABS_CoPilot_OnePager_v2_aspen_DRAFT.pdf](PROJECT-DOCS/06-DOCS/SIGNiX_ABS_CoPilot_OnePager_v2_aspen_DRAFT.pdf) — Partner overview one-pager
-- [SIGNiX_ABS_CoPilot_Authentication_OnePager_aspen_DRAFT.pdf](PROJECT-DOCS/06-DOCS/SIGNiX_ABS_CoPilot_Authentication_OnePager_aspen_DRAFT.pdf) — Authentication one-pager
+- [SIGNiX_ABS_CoPilot_OnePager_v2_aspen_DRAFT.pdf](PROJECT-DOCS/DELIVERABLES/SIGNiX_ABS_CoPilot_OnePager_v2_aspen_DRAFT.pdf) — Partner overview one-pager
+- [SIGNiX_ABS_CoPilot_Authentication_OnePager_aspen_DRAFT.pdf](PROJECT-DOCS/DELIVERABLES/SIGNiX_ABS_CoPilot_Authentication_OnePager_aspen_DRAFT.pdf) — Authentication one-pager
 
 ### Marketing Dashboard
 A live HTML dashboard that pulls from Google Ads, HubSpot, and LinkedIn exports and renders all three in one view. Open in any browser — no server needed.
@@ -32,8 +32,8 @@ A 90-day measurement framework with ROI targets, decision rules, and phase-by-ph
 ### Mike's Fraud Insights Email — Email 1 and Email 2
 Operator-voice email series sent to 70 TruStage Financial Institution customers.
 
-- [Mike-March-2026-Fraud-Insights-Email1-SHORT.pdf](PROJECT-DOCS/06-DOCS/Mike-March-2026-Fraud-Insights-Email1-SHORT.pdf) — Email 1 (March 2026)
-- [Mike-April-2026-Fraud-Email2-Outlook.pdf](PROJECT-DOCS/06-DOCS/Mike-April-2026-Fraud-Email2-Outlook.pdf) — Email 2 (April 2026)
+- [Mike-March-2026-Fraud-Insights-Email1-SHORT.pdf](PROJECT-DOCS/DELIVERABLES/Mike-March-2026-Fraud-Insights-Email1-SHORT.pdf) — Email 1 (March 2026)
+- [Mike-April-2026-Fraud-Email2-Outlook.pdf](PROJECT-DOCS/DELIVERABLES/Mike-April-2026-Fraud-Email2-Outlook.pdf) — Email 2 (April 2026)
 
 **Email 1 results (sent March 2026):**
 - Open rate: 19.7% (industry avg: 14%)

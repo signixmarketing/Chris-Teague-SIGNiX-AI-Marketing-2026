@@ -1,0 +1,47 @@
+Subject: 3 fraud trends worth 6 minutes (March)
+
+[Preheader: Mike, SIGNiX: three reads, one Flex link, reply for a quick workflow pass.]
+
+Quick read · Fraud & identity
+
+Mike · Client Success Manager, SIGNiX
+
+Hi «FIRST_NAME»,
+
+IF YOU SKIM, START HERE
+Why you are hearing from me: I am your SIGNiX partner for client success. Risk and regulators keep asking for layered assurance at consent, which is what we help you deliver.
+What is below: Three quick links. Each has a short Mike's use line so you see the SIGNiX tie-in fast.
+Want help? Reply with your top three transaction types. I will point to where authentication usually pays off. No obligation.
+
+---
+
+Fraud is moving faster and looks more engineered than even a year ago. The same theme keeps coming from regulators: prove layered authentication across the identity lifecycle, not one-and-done checks. Here are three reads my clients are forwarding internally this month.
+
+1) U.S. fraud and identity theft losses topped $12.7 billion in 2024 (Experian / FTC data)
+https://www.experian.com/blogs/ask-experian/identity-theft-statistics/
+Scale of reported fraud and ID theft. Mike's use: backs layered verification when you brief risk or compliance.
+
+2) With AI's Help, Fraudsters Are Targeting Smaller Banks (U.S. News)
+https://www.usnews.com/banking/articles/with-ais-help-fraudsters-are-targeting-smaller-banks
+AI-accelerated fraud against smaller institutions. Mike's use: shows why teams move past SMS or email-only to adaptive authentication with SIGNiX.
+
+3) How to recognize and avoid phishing scams (FTC)
+https://consumer.ftc.gov/articles/how-recognize-and-avoid-phishing-scams
+Short, credible phishing primer. Mike's use: easy staff training to pair with your SIGNiX rollout.
+
+---
+
+For IT or compliance:
+https://www.signix.com/flexible-digital-signature-api
+SIGNiX Flex API capabilities (authentication paths and technical overview).
+
+The gap I still see most is weak identity assurance at consent, not missing the nightly news. SIGNiX is how my clients add layered authentication without turning every transaction into a project. Want a second opinion? Tell me your top three transaction types and I will suggest where a control step usually lands. No obligation.
+
+Thanks for the partnership,
+
+Mike
+Client Success Manager, SIGNiX
+«MIKE_PHONE» · «MIKE_EMAIL»
+
+---
+You work with SIGNiX through your institution's integration. Links are general awareness only, not legal advice (Experian, U.S. News, FTC sources). Reply if you want a different format.

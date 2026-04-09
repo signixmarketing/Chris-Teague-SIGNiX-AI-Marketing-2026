@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>SIGNiX · Inside spread · Blank for handwriting · VistaPrint bleed</title>
+  <style>
+    /*
+      Blank inside for reps to hand-write or print a short note on a label.
+      Same bleed geometry as outside: 10.25" × 7.25", two 5" panels.
+    */
+    :root {
+      --paper: #ffffff;
+      --panel-w: 5.125in;
+      --spread-w: 10.25in;
+      --spread-h: 7.25in;
+    }
+
+    * { box-sizing: border-box; }
+
+    @page {
+      size: 10.25in 7.25in;
+      margin: 0;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: var(--spread-w);
+      height: var(--spread-h);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .spread {
+      width: var(--spread-w);
+      height: var(--spread-h);
+      display: flex;
+      flex-direction: row;
+      background: var(--paper);
+    }
+
+    .panel {
+      width: var(--panel-w);
+      height: var(--spread-h);
+      background: var(--paper);
+    }
+
+    .guides {
+      display: none;
+    }
+
+    @media screen {
+      body { background: #888; padding: 12px; width: auto; height: auto; }
+      .spread { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25); }
+      .guides {
+        display: block;
+        max-width: var(--spread-w);
+        margin: 8px auto 0;
+        font-size: 11px;
+        color: #222;
+        background: #fff;
+        padding: 10px 12px;
+        border-radius: 6px;
+        font-family: system-ui, sans-serif;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="spread" aria-label="Inside: blank writing area, left and right panels">
+    <div class="panel" aria-hidden="true"></div>
+    <div class="panel" aria-hidden="true"></div>
+  </div>
+
+  <div class="guides">
+    <strong>Preview.</strong> Both panels are <strong>blank white</strong> for handwriting.
+  </div>
+</body>
+</html>
