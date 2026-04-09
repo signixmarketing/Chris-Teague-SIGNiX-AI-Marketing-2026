@@ -17,7 +17,7 @@ Two one-pagers built for our sales rep covering Banks and Credit Unions. Correct
 ### Marketing Dashboard
 A live HTML dashboard that pulls from Google Ads, HubSpot, and LinkedIn exports and renders all three in one view. Open in any browser — no server needed.
 
-- [SIGNiX_Dashboard_April2026.html](PROJECT-DOCS/SIGNiX_Dashboard_April2026.html)
+- [SIGNiX_Dashboard_April2026.html](PROJECT-DOCS/DELIVERABLES/SIGNiX_Dashboard_April2026.html)
 
 **What it shows:**
 - Google Ads: spend, clicks, conversions, CPC, cost-per-lead, campaign comparison, keyword performance, off-hours spend analysis
@@ -27,7 +27,7 @@ A live HTML dashboard that pulls from Google Ads, HubSpot, and LinkedIn exports 
 ### Campaign Measurement Doc
 A 90-day measurement framework with ROI targets, decision rules, and phase-by-phase benchmarks.
 
-- [SIGNiX_CampaignMeasurement_April2026.docx](PROJECT-DOCS/SIGNiX_CampaignMeasurement_April2026.docx)
+- [SIGNiX_CampaignMeasurement_April2026.docx](PROJECT-DOCS/DELIVERABLES/SIGNiX_CampaignMeasurement_April2026.docx)
 
 ### Mike's Fraud Insights Email — Email 1 and Email 2
 Operator-voice email series sent to 70 TruStage Financial Institution customers.
