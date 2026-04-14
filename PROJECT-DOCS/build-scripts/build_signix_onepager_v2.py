@@ -355,7 +355,7 @@ for html_name in [
         "--disable-gpu",
         "--no-sandbox",
         f"--print-to-pdf={pdf_path}",
-        "--print-to-pdf-no-header",
+        "--no-pdf-header-footer",
         f"file://{html_path}",
     ]
     print(f"\n  Generating {pdf_name} ...")
