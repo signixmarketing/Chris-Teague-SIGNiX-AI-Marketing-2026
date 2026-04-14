@@ -24,6 +24,27 @@ A live HTML dashboard that pulls from Google Ads, HubSpot, and LinkedIn exports 
 - HubSpot: lead response time per rep (color-coded by urgency)
 - LinkedIn: impressions, engagement rate, post-by-post performance
 
+### PDF Signature Inspector — Sales Demo Tool
+An interactive browser-based tool that compares what lives inside a SIGNiX-signed document versus a DocuSign-signed document at the PKI level. Built for sales reps to use in front of prospects. No server, no login — open the file in Chrome.
+
+- [SIGNiX_PDF_Inspector.html](PROJECT-DOCS/DELIVERABLES/SIGNiX_PDF_Inspector.html)
+- Build script: [build_signix_pdf_inspector.py](PROJECT-DOCS/build-scripts/build_signix_pdf_inspector.py)
+
+**What it shows:**
+- Certificate chains for both documents (GlobalSign AATL for SIGNiX vs. DigiCert DS Technical Operations for DocuSign)
+- ByteRange tamper coverage (how much of the PDF is cryptographically sealed)
+- Signer metadata embedded in the SIGNiX document: IP address, device, transaction ID, signing time
+- What DocuSign's document does not contain: no signer IP, no device, no transaction ID in the PDF
+- Evidence Layer 2: SIGNiX's PKI-signed audit trail (2 signatures, GlobalSign chain) vs. DocuSign's standard Certificate of Completion (no PKI signatures)
+- Drag-and-drop to inspect any PDF live
+
+**Seven audience scenarios (one-click switch):**
+Elder Financial Protection, Banks and Credit Unions, Wealth Management / RIA, Government / County, Healthcare, Legal, Debt Buying / Affidavit. Each scenario frames the same technical comparison around a real dispute situation relevant to that buyer.
+
+**The core argument:** A SIGNiX-signed document can prove who signed it, on what device, from what IP, at what time — from the file itself, without calling SIGNiX. A DocuSign-signed document cannot.
+
+---
+
 ### Campaign Measurement Doc
 A 90-day measurement framework with ROI targets, decision rules, and phase-by-phase benchmarks.
 
