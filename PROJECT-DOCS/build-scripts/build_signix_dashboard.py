@@ -24,7 +24,7 @@ F_KEYWORDS    = os.path.join(DATA_DIR, "Search keyword report.csv")
 F_DAILY_CLICK = os.path.join(DATA_DIR, "Time_series_chart(2026.03.09-2026.04.07) (1).csv")
 F_DAILY_CONV  = os.path.join(DATA_DIR, "Time_series_chart(2026.03.09-2026.04.07) (2).csv")
 F_HUBSPOT     = os.path.join(DATA_DIR, "hubspot-core-report-custom-contacts-report-2026-04-08.csv")
-F_LINKEDIN    = os.path.join(DATA_DIR, "signix_content_1775677168102.xls")
+F_LINKEDIN    = os.path.join(DATA_DIR, "signix_content_1775825335754.xls")
 
 # ── Brand tokens ───────────────────────────────────────────────────────────────
 GREEN      = "#6da34a"
@@ -833,7 +833,7 @@ html = f"""<!DOCTYPE html>
 <div class="header">
   <div>
     <h1><span>SIGNiX</span> Marketing Dashboard</h1>
-    <div style="font-size:13px; color:{MUTED}; margin-top:4px;">Google Ads &nbsp;·&nbsp; HubSpot Lead Response &nbsp;·&nbsp; {date_range}</div>
+    <div style="font-size:13px; color:{MUTED}; margin-top:4px;">Google Ads &nbsp;·&nbsp; HubSpot Lead Response &nbsp;·&nbsp; LinkedIn &nbsp;·&nbsp; {date_range}</div>
   </div>
   <div class="header-meta">
     Prepared by Chris Teague<br>
@@ -898,7 +898,7 @@ html = f"""<!DOCTYPE html>
 
   <!-- LinkedIn Section -->
   {"" if not li_daily else f"""
-  <div class="section-title">LinkedIn Engagement — March 8 – April 6, 2026</div>
+  <div class="section-title">LinkedIn Engagement — March 10 – April 8, 2026</div>
   <div class="kpi-row" style="grid-template-columns: repeat(4, 1fr);">
     {kpi_card("Total Impressions", f"{int(li_total_impr):,}", "Organic only")}
     {kpi_card("Total Clicks", f"{int(li_total_clicks):,}", "All posts")}

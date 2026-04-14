@@ -55,6 +55,7 @@ All output files live in **[DELIVERABLES/](DELIVERABLES/)**. This is the single 
 | **[DELIVERABLES/SIGNiX_CampaignMeasurement_April2026.docx](DELIVERABLES/SIGNiX_CampaignMeasurement_April2026.docx)** | 90-day measurement framework — ROI targets, decision rules, phase-by-phase benchmarks |
 | **[DELIVERABLES/SIGNiX_GoogleAds_4.9.26.docx](DELIVERABLES/SIGNiX_GoogleAds_4.9.26.docx)** | Google Ads copy — full ad copy for 5 campaigns |
 | **[DELIVERABLES/SIGNiX_Dashboard_April2026.html](DELIVERABLES/SIGNiX_Dashboard_April2026.html)** | Marketing dashboard — Google Ads + HubSpot + LinkedIn, open in any browser |
+| **[DELIVERABLES/SIGNiX_TruStage_Dashboard_April2026.html](DELIVERABLES/SIGNiX_TruStage_Dashboard_April2026.html)** | TruStage portfolio dashboard — transaction volume, auth tier by account, CSM priority table, revenue opportunity. Internal only. |
 
 ### Sales and ABM Documents
 
@@ -76,6 +77,21 @@ All output files live in **[DELIVERABLES/](DELIVERABLES/)**. This is the single 
 | **[DELIVERABLES/SIGNiX_ABS_CoPilot_Authentication_OnePager_aspen_DRAFT.pdf](DELIVERABLES/SIGNiX_ABS_CoPilot_Authentication_OnePager_aspen_DRAFT.pdf)** | PDF — authentication one-pager. Corrected April 9 2026. |
 | [DELIVERABLES/aspen-contact.png](DELIVERABLES/aspen-contact.png) | Aspen headshot used in CTA section of both one-pagers |
 
+### CCISDA Conference 2026 — Government Lead Nurture
+
+| File | Description |
+|------|-------------|
+| **[DELIVERABLES/CCISDA-2026-Lead-Capture.html](DELIVERABLES/CCISDA-2026-Lead-Capture.html)** | Mobile-friendly conference lead capture form — fills out on phone, generates a HubSpot-ready lead card. Use at the booth. |
+| **[DELIVERABLES/CCISDA-Email-1-PKI-Fear.html](DELIVERABLES/CCISDA-Email-1-PKI-Fear.html)** | Email 1 (Day 1) — PKI/AI fear hook. AI can fake a signature; here is why PKI holds up. |
+| **[DELIVERABLES/CCISDA-Email-2-Data-Custody.html](DELIVERABLES/CCISDA-Email-2-Data-Custody.html)** | Email 2 (Day 4) — No data custody. Adobe and DocuSign hold your documents. SIGNiX does not. |
+| **[DELIVERABLES/CCISDA-Email-3-LA-County-Proof.html](DELIVERABLES/CCISDA-Email-3-LA-County-Proof.html)** | Email 3 (Day 9) — LA County social proof. LA County runs SIGNiX alongside Adobe Sign and DocuSign. |
+| **[DELIVERABLES/CCISDA-Email-4-Calendar-Ask.html](DELIVERABLES/CCISDA-Email-4-Calendar-Ask.html)** | Email 4 (Day 14) — Direct calendar ask. Final email. One ask, no new content. |
+
+**Placeholders to fill before sending:** `«REP_NAME»`, `«REP_TITLE»`, `«REP_PHONE»`, `«REP_EMAIL»`, `«FIRST_NAME»`, `[[CALENDAR_LINK]]`, `[[UNSUBSCRIBE_LINK]]`
+**Note on Email 3:** Confirm LA County use case or quote with Jesse or the account team before sending. Placeholder marked in the file.
+
+---
+
 ### Mike's Fraud Insights Email Series
 
 | File | Description |
@@ -90,6 +106,14 @@ All output files live in **[DELIVERABLES/](DELIVERABLES/)**. This is the single 
 | [DELIVERABLES/mike-march-2026-fraud-insights-email-SKIM.html](DELIVERABLES/mike-march-2026-fraud-insights-email-SKIM.html) | Email 1 variant — skim-optimized |
 | [DELIVERABLES/mike-march-2026-fraud-insights-email-BLEND.html](DELIVERABLES/mike-march-2026-fraud-insights-email-BLEND.html) | Email 1 variant — blend |
 | [DELIVERABLES/mike-march-2026-fraud-insights-email-CONDENSED.html](DELIVERABLES/mike-march-2026-fraud-insights-email-CONDENSED.html) | Email 1 variant — condensed |
+
+### Sales Demo Tools
+
+| File | Description |
+|------|-------------|
+| **[DELIVERABLES/SIGNiX_PDF_Inspector.html](DELIVERABLES/SIGNiX_PDF_Inspector.html)** | PDF Signature Inspector — side-by-side comparison of SIGNiX vs. DocuSign PKI signatures. Drop any PDF to inspect its certificate chain, ByteRange coverage, and embedded signer metadata. Demo tool for John (CTO). Internal only. |
+
+---
 
 ### LinkedIn and Social
 
@@ -113,6 +137,7 @@ All scripts live in **[build-scripts/](build-scripts/)**. Each generates a brand
 | Script | Output |
 |--------|--------|
 | [build-scripts/build_signix_dashboard.py](build-scripts/build_signix_dashboard.py) | `DELIVERABLES/SIGNiX_Dashboard_April2026.html` |
+| [build-scripts/build_signix_trustage_dashboard.py](build-scripts/build_signix_trustage_dashboard.py) | `DELIVERABLES/SIGNiX_TruStage_Dashboard_April2026.html` |
 | [build-scripts/build_signix_keyword_master_xlsx.py](build-scripts/build_signix_keyword_master_xlsx.py) | `DELIVERABLES/SIGNiX_Keyword_Master_4.6.26.xlsx` |
 | [build-scripts/build_signix_google_ads_docx.py](build-scripts/build_signix_google_ads_docx.py) | `DELIVERABLES/SIGNiX_GoogleAds_4.9.26.docx` |
 | [build-scripts/build_signix_marketing_plan_pptx.py](build-scripts/build_signix_marketing_plan_pptx.py) | `DELIVERABLES/SIGNiX_MarketingPlan_4.7.26.pptx` |
@@ -122,6 +147,7 @@ All scripts live in **[build-scripts/](build-scripts/)**. Each generates a brand
 | [build-scripts/build_signix_abm_scorecard.py](build-scripts/build_signix_abm_scorecard.py) | `DELIVERABLES/SIGNiX_ABM_Scorecard.docx` |
 | [build-scripts/build_signix_cfo_brief_4_6_26.py](build-scripts/build_signix_cfo_brief_4_6_26.py) | `DELIVERABLES/SIGNiX_CFO_PaidMedia_Brief_4.6.26.docx` |
 | [build-scripts/build_signix_cro_brief_4_6_26.py](build-scripts/build_signix_cro_brief_4_6_26.py) | `DELIVERABLES/SIGNiX_CRO_PaidMedia_Brief_4.6.26.docx` |
+| [build-scripts/build_signix_pdf_inspector.py](build-scripts/build_signix_pdf_inspector.py) | `DELIVERABLES/SIGNiX_PDF_Inspector.html` — PDF signature inspector demo tool |
 | [build-scripts/build_signix_docx.py](build-scripts/build_signix_docx.py) | Base template for new Word documents |
 | [build-scripts/build_signix_pptx.py](build-scripts/build_signix_pptx.py) | Base template for new PowerPoint decks |
 | [build-scripts/build_signix_slide_c.py](build-scripts/build_signix_slide_c.py) | `DELIVERABLES/SIGNiX_SlideC_Audiences.pptx` |
