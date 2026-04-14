@@ -51,18 +51,17 @@ Two dashboards built to support the TruStage depth-play strategy: activate authe
 ---
 
 ### One-Pagers — Signer-Level PKI Positioning (v2)
-Two headline versions for team feedback. Both updated with the PKI distinction (server export vs. signer-level), broadened subhead for any regulated institution, and Aspen's contact details filled in.
+Two headline versions for team feedback. Both updated with the PKI distinction (server export vs. signer-level), broadened subhead for any regulated institution, and Aspen's contact details filled in. PDFs generated via Chrome headless for accurate rendering.
 
-- [SIGNiX-OnePager-VersionA-Aspen.html](PROJECT-DOCS/DELIVERABLES/SIGNiX-OnePager-VersionA-Aspen.html) — "When the signature gets challenged, SIGNiX holds up."
-- [SIGNiX-OnePager-VersionB-Aspen.html](PROJECT-DOCS/DELIVERABLES/SIGNiX-OnePager-VersionB-Aspen.html) — "When authority is questioned, SIGNiX answers." (recommended)
+- [SIGNiX-OnePager-VersionA-Aspen.html](PROJECT-DOCS/DELIVERABLES/SIGNiX-OnePager-VersionA-Aspen.html) / [PDF](PROJECT-DOCS/DELIVERABLES/SIGNiX-OnePager-VersionA-Aspen.pdf) — "When the signature gets challenged, SIGNiX holds up."
+- [SIGNiX-OnePager-VersionB-Aspen.html](PROJECT-DOCS/DELIVERABLES/SIGNiX-OnePager-VersionB-Aspen.html) / [PDF](PROJECT-DOCS/DELIVERABLES/SIGNiX-OnePager-VersionB-Aspen.pdf) — "When authority is questioned, SIGNiX answers." (recommended)
 - Build script: [build_signix_onepager_v2.py](PROJECT-DOCS/build-scripts/build_signix_onepager_v2.py)
 
 ---
 
 ### CCISDA Conference Package
-Full conference marketing package for the California County Information Services Directors Association (CCISDA) 2026. Audience: county IT directors and CIOs. Attendees: Aspen Arias and Pem.
+Full conference marketing package for the California County Information Services Directors Association (CCISDA) 2026. Audience: county IT directors and CIOs. Attendees: Aspen Arias and Pem. One-pager replaced by the v2 PKI positioning pieces above.
 
-- [CCISDA-2026-OnePager-Aspen.html](PROJECT-DOCS/DELIVERABLES/CCISDA-2026-OnePager-Aspen.html) — Print-ready one-pager (PDF also included)
 - [CCISDA-2026-Lead-Capture.html](PROJECT-DOCS/DELIVERABLES/CCISDA-2026-Lead-Capture.html) — Mobile-friendly booth lead capture form. Generates a HubSpot-ready lead card on tap.
 - [CCISDA-Email-1-PKI-Fear.html](PROJECT-DOCS/DELIVERABLES/CCISDA-Email-1-PKI-Fear.html) — Day 1: PKI / AI fear hook
 - [CCISDA-Email-2-Data-Custody.html](PROJECT-DOCS/DELIVERABLES/CCISDA-Email-2-Data-Custody.html) — Day 4: No data custody
@@ -76,8 +75,8 @@ Full conference marketing package for the California County Information Services
 **Mike's Fraud Insights — TruStage Drip Sequence**
 Operator-voice email series sent to TruStage Financial Institution customers. Designed to drive authentication activation conversations with Mike (CSM).
 
-- [Mike-March-2026-Fraud-Insights-Email1-SHORT.pdf](PROJECT-DOCS/DELIVERABLES/Mike-March-2026-Fraud-Insights-Email1-SHORT.pdf) — Email 1 (March 2026): 19.7% open rate, 15.38% CTR
-- [Mike-April-2026-Fraud-Email2-Outlook.pdf](PROJECT-DOCS/DELIVERABLES/Mike-April-2026-Fraud-Email2-Outlook.pdf) — Email 2: Loan dispute scenario
+- [Mike-March-2026-Finalized-Fraud-Email-1.html](PROJECT-DOCS/DELIVERABLES/Mike-March-2026-Finalized-Fraud-Email-1.html) — Email 1 (March 2026): 19.7% open rate, 15.38% CTR
+- [Mike-April-2026-Fraud-Email-2.html](PROJECT-DOCS/DELIVERABLES/Mike-April-2026-Fraud-Email-2.html) — Email 2: Loan dispute scenario
 - [Mike-April-2026-Fraud-Email-3.html](PROJECT-DOCS/DELIVERABLES/Mike-April-2026-Fraud-Email-3.html) — Email 3: Social proof (Margaret Glover, Atlanta Postal Credit Union)
 
 **ACS eNotary Auto-Response Sequence**
@@ -101,10 +100,19 @@ Two posts drafted for the SIGNiX LinkedIn page, paired with the Mike fraud email
 ---
 
 ### Sales Collateral (ABS / CoPilot)
-Two one-pagers for the American Bank Systems CoPilot integration.
+Two one-pagers for the American Bank Systems CoPilot integration. Rebuilt with Chrome headless. Contact info updated to Aspen's direct phone, email, and calendar link. "Draft" label removed.
 
-- [SIGNiX_ABS_CoPilot_OnePager_v2_aspen_DRAFT.pdf](PROJECT-DOCS/DELIVERABLES/SIGNiX_ABS_CoPilot_OnePager_v2_aspen_DRAFT.pdf) — Partner overview
-- [SIGNiX_ABS_CoPilot_Authentication_OnePager_aspen_DRAFT.pdf](PROJECT-DOCS/DELIVERABLES/SIGNiX_ABS_CoPilot_Authentication_OnePager_aspen_DRAFT.pdf) — Authentication focus
+- [SIGNiX_ABS_CoPilot_OnePager_v2_aspen.html](PROJECT-DOCS/DELIVERABLES/SIGNiX_ABS_CoPilot_OnePager_v2_aspen.html) / [PDF](PROJECT-DOCS/DELIVERABLES/SIGNiX_ABS_CoPilot_OnePager_v2_aspen.pdf) — Partner overview (workflow, trust, capabilities)
+- [SIGNiX_ABS_CoPilot_Authentication_OnePager_aspen.html](PROJECT-DOCS/DELIVERABLES/SIGNiX_ABS_CoPilot_Authentication_OnePager_aspen.html) / [PDF](PROJECT-DOCS/DELIVERABLES/SIGNiX_ABS_CoPilot_Authentication_OnePager_aspen.pdf) — Authentication focus (ID Verify, KBA, OTP, risk tiers)
+- Build script: [build_abs_onepagers.py](PROJECT-DOCS/build-scripts/build_abs_onepagers.py)
+
+---
+
+### Meeting Talking Points
+Internal prep doc for stakeholder meetings.
+
+- [SIGNiX_MeetingTalkingPoints_4.13.26.docx](PROJECT-DOCS/DELIVERABLES/SIGNiX_MeetingTalkingPoints_4.13.26.docx)
+- Build script: [build_signix_meeting_talking_points_4.13.26.py](PROJECT-DOCS/build-scripts/build_signix_meeting_talking_points_4.13.26.py)
 
 ---
 
@@ -117,7 +125,7 @@ A 90-day measurement framework with ROI targets, decision rules, and phase-by-ph
 
 ## How it was built
 
-All deliverables were generated using Python build scripts in `PROJECT-DOCS/build-scripts/`. Each script produces a `.docx`, `.pptx`, `.xlsx`, or `.html` file using SIGNiX brand tokens. The dashboard scripts read CSV exports from Google Ads and LinkedIn directly — no API keys required.
+All deliverables were generated using Python build scripts in `PROJECT-DOCS/build-scripts/`. Each script produces a `.docx`, `.pptx`, `.xlsx`, `.html`, or `.pdf` file using SIGNiX brand tokens. The dashboard scripts read CSV exports from Google Ads and LinkedIn directly — no API keys required. PDFs for designed collateral (one-pagers, ABS brochures) are generated via Chrome headless for accurate CSS rendering.
 
 The AI workflow (Cursor + custom rules) handled strategy, copywriting, data analysis, and document generation. Chris directed, reviewed, and refined everything.
 

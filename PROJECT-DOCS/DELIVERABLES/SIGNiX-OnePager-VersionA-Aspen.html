@@ -9,10 +9,7 @@
     Version A
     Headline: When the signature gets challenged, SIGNiX holds up.
 
-    TO EXPORT PDF (run from DELIVERABLES/ folder):
-    wkhtmltopdf --page-size Letter --print-media-type --enable-local-file-access \
-      --margin-top 0 --margin-bottom 0 --margin-left 0 --margin-right 0 \
-      SIGNiX-OnePager-VersionA-Aspen.html SIGNiX-OnePager-VersionA-Aspen.pdf
+    PDF is generated automatically by the build script using Chrome headless.
 
     NOTE: "a major California county" — update to "Los Angeles County" once
     Jesse or the account team confirms the reference is approved for print.
@@ -74,7 +71,8 @@
     /* TABLE */
     .comparison-wrap { flex-shrink: 0; }
     .section-label { font-size: 7pt; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--green); margin-bottom: 0.07in; }
-    .comparison-table { width: 100%; border-collapse: collapse; border: 1pt solid var(--rule); border-radius: 5pt; overflow: hidden; font-size: 8.5pt; }
+    .table-outer { border: 1pt solid var(--rule); border-radius: 5pt; overflow: hidden; }
+    .comparison-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
     .comparison-table th { padding: 7pt 10pt; font-weight: 700; font-size: 8pt; letter-spacing: 0.04em; text-align: left; border-bottom: 1pt solid var(--rule); }
     .comparison-table th.col-others { background: #eceff4; color: var(--muted); width: 40%; border-right: 1pt solid var(--rule); }
     .comparison-table th.col-signix { background: var(--ink); color: var(--green); width: 38%; }
@@ -98,6 +96,7 @@
     /* CONTACT */
     .contact { background: var(--canvas); border: 1pt solid var(--rule); border-radius: 5pt; padding: 0.12in 0.18in; display: flex; align-items: center; gap: 0.16in; flex-shrink: 0; }
     .contact-photo { width: 48pt; height: 48pt; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2pt solid var(--green); }
+    .contact-info { flex: 1; }
     .contact-name { font-size: 11pt; font-weight: 800; color: var(--ink); line-height: 1.2; }
     .contact-title { font-size: 8.5pt; color: var(--muted); margin-bottom: 4pt; }
     .contact-details { font-size: 8.5pt; color: var(--body); line-height: 1.6; }
@@ -192,6 +191,7 @@
     <!-- COMPARISON TABLE -->
     <div class="comparison-wrap">
       <div class="section-label">How we compare</div>
+      <div class="table-outer">
       <table class="comparison-table">
         <thead>
           <tr>
@@ -223,6 +223,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <!-- PROOF STRIP -->

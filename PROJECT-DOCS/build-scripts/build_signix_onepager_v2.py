@@ -22,6 +22,7 @@ Output:
 """
 
 import os
+import subprocess
 
 OUTPUT_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "DELIVERABLES"
@@ -89,7 +90,8 @@ CSS = """
     /* TABLE */
     .comparison-wrap { flex-shrink: 0; }
     .section-label { font-size: 7pt; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--green); margin-bottom: 0.07in; }
-    .comparison-table { width: 100%; border-collapse: collapse; border: 1pt solid var(--rule); border-radius: 5pt; overflow: hidden; font-size: 8.5pt; }
+    .table-outer { border: 1pt solid var(--rule); border-radius: 5pt; overflow: hidden; }
+    .comparison-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
     .comparison-table th { padding: 7pt 10pt; font-weight: 700; font-size: 8pt; letter-spacing: 0.04em; text-align: left; border-bottom: 1pt solid var(--rule); }
     .comparison-table th.col-others { background: #eceff4; color: var(--muted); width: 40%; border-right: 1pt solid var(--rule); }
     .comparison-table th.col-signix { background: var(--ink); color: var(--green); width: 38%; }
@@ -113,6 +115,7 @@ CSS = """
     /* CONTACT */
     .contact { background: var(--canvas); border: 1pt solid var(--rule); border-radius: 5pt; padding: 0.12in 0.18in; display: flex; align-items: center; gap: 0.16in; flex-shrink: 0; }
     .contact-photo { width: 48pt; height: 48pt; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2pt solid var(--green); }
+    .contact-info { flex: 1; }
     .contact-name { font-size: 11pt; font-weight: 800; color: var(--ink); line-height: 1.2; }
     .contact-title { font-size: 8.5pt; color: var(--muted); margin-bottom: 4pt; }
     .contact-details { font-size: 8.5pt; color: var(--body); line-height: 1.6; }
@@ -190,6 +193,7 @@ BODY_HTML = f"""
     <!-- COMPARISON TABLE -->
     <div class="comparison-wrap">
       <div class="section-label">How we compare</div>
+      <div class="table-outer">
       <table class="comparison-table">
         <thead>
           <tr>
@@ -221,6 +225,7 @@ BODY_HTML = f"""
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <!-- PROOF STRIP -->
@@ -282,10 +287,7 @@ def build(version, headline_html, filename):
     Version {version}
     Headline: {headline_html.replace('<br />', ' ').replace('<span>', '').replace('</span>', '')}
 
-    TO EXPORT PDF (run from DELIVERABLES/ folder):
-    wkhtmltopdf --page-size Letter --print-media-type --enable-local-file-access \\
-      --margin-top 0 --margin-bottom 0 --margin-left 0 --margin-right 0 \\
-      {filename} {filename.replace('.html', '.pdf')}
+    PDF is generated automatically by the build script using Chrome headless.
 
     NOTE: "a major California county" — update to "Los Angeles County" once
     Jesse or the account team confirms the reference is approved for print.
@@ -336,7 +338,32 @@ build(
     filename="SIGNiX-OnePager-VersionB-Aspen.html",
 )
 
-print(f"\nBoth versions written to {OUTPUT_DIR}")
-print("To generate PDFs, run from DELIVERABLES/:")
-print("  wkhtmltopdf --page-size Letter --print-media-type --enable-local-file-access --margin-top 0 --margin-bottom 0 --margin-left 0 --margin-right 0 SIGNiX-OnePager-VersionA-Aspen.html SIGNiX-OnePager-VersionA-Aspen.pdf")
-print("  wkhtmltopdf --page-size Letter --print-media-type --enable-local-file-access --margin-top 0 --margin-bottom 0 --margin-left 0 --margin-right 0 SIGNiX-OnePager-VersionB-Aspen.html SIGNiX-OnePager-VersionB-Aspen.pdf")
+print(f"\nBoth HTML versions written to {OUTPUT_DIR}")
+
+CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+
+for html_name in [
+    "SIGNiX-OnePager-VersionA-Aspen.html",
+    "SIGNiX-OnePager-VersionB-Aspen.html",
+]:
+    pdf_name = html_name.replace(".html", ".pdf")
+    html_path = os.path.join(OUTPUT_DIR, html_name)
+    pdf_path  = os.path.join(OUTPUT_DIR, pdf_name)
+    cmd = [
+        CHROME,
+        "--headless=new",
+        "--disable-gpu",
+        "--no-sandbox",
+        f"--print-to-pdf={pdf_path}",
+        "--print-to-pdf-no-header",
+        f"file://{html_path}",
+    ]
+    print(f"\n  Generating {pdf_name} ...")
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if os.path.exists(pdf_path):
+        print(f"  PDF written: {pdf_path}")
+    else:
+        print(f"  ERROR generating PDF:")
+        print(result.stderr[-600:] if result.stderr else "(no stderr)")
+
+print("\nDone.")
