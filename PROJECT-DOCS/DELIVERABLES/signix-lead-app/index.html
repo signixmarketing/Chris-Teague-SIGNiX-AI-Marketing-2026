@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>SIGNiX Lead Capture</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#2e3440" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SIGNiX Leads" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    :root {
+      --green:  #6da34a;
+      --ink:    #2e3440;
+      --body:   #545454;
+      --muted:  #6b7280;
+      --white:  #ffffff;
+      --canvas: #f8fafb;
+      --rule:   #d8dee9;
+      --red:    #c0392b;
+    }
+
+    html, body {
+      margin: 0; padding: 0;
+      background: var(--canvas);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      color: var(--body);
+      -webkit-text-size-adjust: 100%;
+    }
+
+    .header {
+      background: var(--ink);
+      padding: 16px 20px 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-bottom: 3px solid var(--green);
+    }
+    .header svg { display: block; flex-shrink: 0; }
+    .header-text { flex: 1; }
+    .header-title {
+      font-size: 13px; font-weight: 700;
+      color: var(--white); line-height: 1.2; margin: 0;
+    }
+    .header-sub {
+      font-size: 11px; color: var(--green); font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase; margin: 2px 0 0;
+    }
+
+    .counter-bar {
+      background: var(--green); color: var(--white);
+      text-align: center; font-size: 12px; font-weight: 700;
+      padding: 6px 20px; letter-spacing: 0.05em;
+    }
+
+    .form-wrap {
+      padding: 16px 16px 40px;
+      max-width: 560px; margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--green);
+      margin: 22px 0 10px; padding-bottom: 6px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block; font-size: 13px; font-weight: 600;
+      color: var(--ink); margin-bottom: 5px;
+    }
+    .field label .req { color: var(--green); margin-left: 2px; }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    textarea,
+    select {
+      width: 100%; padding: 12px 14px;
+      border: 1.5px solid var(--rule); border-radius: 8px;
+      font-size: 16px; color: var(--ink); background: var(--white);
+      appearance: none; -webkit-appearance: none; outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--green); }
+    textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
+    }
+
+    .check-group, .radio-group {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
+    }
+    .check-group label, .radio-group label {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--white); border: 1.5px solid var(--rule);
+      border-radius: 8px; padding: 10px 14px;
+      font-size: 14px; font-weight: 500; color: var(--ink);
+      cursor: pointer; flex: 1 1 auto; min-width: 140px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .check-group input[type="checkbox"],
+    .radio-group input[type="radio"] {
+      width: 18px; height: 18px;
+      accent-color: var(--green); flex-shrink: 0; cursor: pointer;
+    }
+    .check-group label:has(input:checked),
+    .radio-group label:has(input:checked) { border-color: var(--green); background: #f0f7eb; }
+
+    .radio-group label.interest-hot:has(input:checked)    { border-color: #c0392b; background: #fdf2f2; }
+    .radio-group label.interest-warm:has(input:checked)   { border-color: #d97706; background: #fef9ec; }
+    .radio-group label.interest-nurture:has(input:checked) { border-color: var(--muted); background: #f4f5f7; }
+
+    .btn {
+      display: block; width: 100%; padding: 16px;
+      background: var(--green); color: var(--white);
+      font-size: 16px; font-weight: 700; border: none;
+      border-radius: 10px; cursor: pointer; text-align: center;
+      margin-top: 24px; letter-spacing: 0.02em;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:active { opacity: 0.88; }
+    .btn-outline {
+      background: transparent; color: var(--green);
+      border: 2px solid var(--green); margin-top: 12px;
+    }
+    .btn-reset {
+      background: var(--canvas); color: var(--muted);
+      border: 1.5px solid var(--rule); margin-top: 12px; font-weight: 600;
+    }
+
+    #card-section {
+      display: none; margin-top: 28px; background: var(--white);
+      border: 1.5px solid var(--rule); border-left: 4px solid var(--green);
+      border-radius: 10px; overflow: hidden;
+    }
+    #card-section .card-header {
+      background: var(--ink); color: var(--white);
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; padding: 10px 16px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    #card-section .card-header .card-badge {
+      background: var(--green); border-radius: 4px; padding: 2px 8px; font-size: 10px;
+    }
+    #card-output {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12px; line-height: 1.7; color: var(--ink);
+      padding: 14px 16px; white-space: pre-wrap; word-break: break-word;
+      background: var(--canvas);
+    }
+    .copy-feedback {
+      display: none; text-align: center; font-size: 13px;
+      font-weight: 700; color: var(--green); padding: 8px;
+      background: #f0f7eb; border-top: 1px solid var(--rule);
+    }
+
+    .field.error input,
+    .field.error textarea,
+    .field.error select { border-color: var(--red); }
+    .field .err-msg { display: none; font-size: 12px; color: var(--red); margin-top: 4px; }
+    .field.error .err-msg { display: block; }
+
+    /* Install banner */
+    #install-bar {
+      display: none; background: var(--green); color: var(--white);
+      padding: 10px 16px; font-size: 13px; font-weight: 600;
+      text-align: center; cursor: pointer; letter-spacing: 0.03em;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Install prompt (shows on Android when installable) -->
+  <div id="install-bar" onclick="installApp()">
+    Tap to install SIGNiX Leads on your home screen
+  </div>
+
+  <div class="header">
+    <svg width="110" height="27" viewBox="0 0 588 143" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M71.1 15.6C77.1 18.3 82.7 22.2 88 27.5L72.3 43.2C67 36.9 59.7 33.8 50.3 33.8C40.9 33.8 34.8 36 32.2 40.5C29.6 44.9 29.6 48.7 32.2 51.9C34.8 55 40.9 57.4 50.3 59C60.2 60 69.3 63.3 77.4 68.8C85.5 74.4 89.6 83.1 89.6 95.2C89.6 104.7 85.2 112.8 76.6 119.7C67.9 126.5 57.8 129.9 46.3 129.9C35.3 129.9 26.2 128.3 18.9 125.2C11.5 122 5.2 117.8 0 112.6L15.7 96.8C21 103.1 29.9 106.8 42.4 107.8C52.9 107.8 59.4 105.6 62 101.1C64.6 96.7 64.6 92.2 62 87.7C59.4 83.3 52.9 80.5 42.4 79.5C33 78.4 24.4 75.5 16.5 70.8C8.6 66.1 4.7 57.9 4.7 46.4C4.7 35.9 9.2 27.5 18.1 21.2C27 14.9 36.2 11.7 45.7 11.7C56.6 11.7 65.1 13 71.1 15.6Z" fill="#545454"/>
+  <path d="M110.6 11.6H134.1V129.9H110.6V11.6Z" fill="#545454"/>
+  <path d="M168.3 112.9C157 101.6 151.4 87.5 151.4 70.6C151.4 54 157.1 40 168.4 28.7C179.6 17.4 193.6 11.7 210.3 11.7C227.1 11.7 241.5 17 253.5 27.5L237.8 44.7C229.8 38.4 220.6 35.3 210.2 35.3C199.7 35.3 191.1 38.6 184.7 45.2C178.2 51.8 175 60.2 175 70.4C175 81.4 178.3 90.1 184.8 96.6C191.3 103 199.8 106.3 210.4 106.3C218.9 106.3 225.4 104.6 230 101.2V81L214.3 81.1V59H253.5V114.1C241.5 124.6 227.1 129.9 210.3 129.9C193.6 129.8 179.6 124.2 168.3 112.9Z" fill="#545454"/>
+  <path d="M277.3 129.9V11.7H285.1L359 85.8V11.7H382.6V129.9H373.9L300.8 56.6V129.9H277.3Z" fill="#545454"/>
+  <path d="M407.6 24.3C409.6 22.1 412.5 21.1 416 21.1C419.8 21.1 422.7 22.1 424.8 24.3C426.9 26.4 428 29 428 32.2C428 35.3 426.9 38 424.8 40.1C422.7 42.2 419.9 43.2 416.2 43.2C412.5 43.2 409.6 42.2 407.6 40.1C405.5 38 404.4 35.3 404.4 32.2C404.4 29 405.5 26.4 407.6 24.3ZM427.2 129.9V51H405.2V129.9H427.2Z" fill="#6DA34A"/>
+  <path d="M516.8 0C477.6 0 445.8 31.9 445.8 71.1C445.8 110.4 477.6 142.3 516.8 142.3C556 142.3 587.7 110.4 587.7 71.1C587.7 31.9 556 0 516.8 0ZM537.4 117.5C536 117.5 535 117.2 534.7 116.5C533 114 517.2 89 516.2 87.4C515.2 89 499.3 114 497.7 116.4C497.3 117.1 496.4 117.4 495 117.4C489.4 117.4 477.2 112.3 477.4 110.4C477.4 109.5 480.7 103.3 486.9 94.5C493.4 84.9 503.7 72 504.1 71.9C501 69.7 479.6 38.1 479.6 35.9C479.5 34.1 491.3 29.8 496.8 29.8C498.2 29.8 499.3 30.1 499.7 30.7C500.2 30.9 515.7 56.4 516.6 58.1C517.5 56.4 532.3 31.5 533 30.7C533.4 30.1 534.4 29.8 535.9 29.8C541.4 29.8 553 34.2 553 35.9C552.9 38.3 531.4 70.4 528.3 72.6C528.7 72.6 539 85.4 545.5 94.8C551.7 103.5 555.1 109.6 555.1 110.4C555.1 112.4 543 117.5 537.4 117.5Z" fill="#6DA34A"/>
+</svg>
+    <div class="header-text">
+      <p class="header-title">SIGNiX Lead Capture</p>
+      <p class="header-sub">Conference Tool</p>
+    </div>
+  </div>
+
+  <div class="counter-bar">
+    Leads captured this session: <span id="lead-count">0</span>
+  </div>
+
+  <div class="form-wrap">
+
+    <p class="section-label">Contact info</p>
+
+    <div class="field" id="f-name">
+      <label for="name">Full name <span class="req">*</span></label>
+      <input type="text" id="name" placeholder="Jane Smith" autocomplete="name" />
+      <span class="err-msg">Name is required.</span>
+    </div>
+
+    <div class="field" id="f-title">
+      <label for="title">Job title</label>
+      <input type="text" id="title" placeholder="CIO, IT Director, CISO&hellip;" autocomplete="organization-title" />
+    </div>
+
+    <div class="field" id="f-org">
+      <label for="org">Organization <span class="req">*</span></label>
+      <input type="text" id="org" placeholder="Los Angeles County / ABC Credit Union&hellip;" />
+      <span class="err-msg">Organization is required.</span>
+    </div>
+
+    <div class="field" id="f-email">
+      <label for="email">Email <span class="req">*</span></label>
+      <input type="email" id="email" placeholder="jane@org.gov" autocomplete="email" />
+      <span class="err-msg">A valid email is required.</span>
+    </div>
+
+    <div class="field" id="f-phone">
+      <label for="phone">Phone</label>
+      <input type="tel" id="phone" placeholder="(310) 555-0100" autocomplete="tel" />
+    </div>
+
+    <p class="section-label">Current vendor</p>
+
+    <div class="field">
+      <label>Which e-sign tools do they use today?</label>
+      <div class="check-group">
+        <label><input type="checkbox" name="vendor" value="Adobe Sign" /> Adobe Sign</label>
+        <label><input type="checkbox" name="vendor" value="DocuSign" /> DocuSign</label>
+        <label><input type="checkbox" name="vendor" value="SIGNiX (existing)" /> SIGNiX already</label>
+        <label><input type="checkbox" name="vendor" value="None" /> None yet</label>
+        <label><input type="checkbox" name="vendor" value="Other" /> Other</label>
+      </div>
+    </div>
+
+    <p class="section-label">What they need</p>
+
+    <div class="field">
+      <label>Products discussed</label>
+      <div class="check-group">
+        <label><input type="checkbox" name="product" value="ID Verify" /> ID Verify</label>
+        <label><input type="checkbox" name="product" value="Fraud Alert" /> Fraud Alert</label>
+        <label><input type="checkbox" name="product" value="PKI Digital Signature" /> PKI Signature</label>
+        <label><input type="checkbox" name="product" value="eNotary / RON" /> eNotary / RON</label>
+        <label><input type="checkbox" name="product" value="Authentication (KBA/OTP)" /> Auth (KBA/OTP)</label>
+        <label><input type="checkbox" name="product" value="Flex API" /> Flex API</label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="pain">Key pain point or quote from conversation</label>
+      <textarea id="pain" placeholder="What did they say? What problem are they trying to solve?"></textarea>
+    </div>
+
+    <p class="section-label">Priority</p>
+
+    <div class="field" id="f-interest">
+      <label>Interest level <span class="req">*</span></label>
+      <div class="radio-group">
+        <label class="interest-hot"><input type="radio" name="interest" value="HOT" /> HOT &mdash; book now</label>
+        <label class="interest-warm"><input type="radio" name="interest" value="WARM" /> WARM &mdash; follow up this week</label>
+        <label class="interest-nurture"><input type="radio" name="interest" value="NURTURE" /> NURTURE &mdash; drip sequence</label>
+      </div>
+      <span class="err-msg" id="interest-err">Select an interest level.</span>
+    </div>
+
+    <div class="field">
+      <label for="nextstep">Agreed next step</label>
+      <input type="text" id="nextstep" placeholder="Send demo link, book 30-min call, connect on LinkedIn&hellip;" />
+    </div>
+
+    <div class="field" id="f-rep">
+      <label for="rep">Captured by <span class="req">*</span></label>
+      <select id="rep">
+        <option value="">Select&hellip;</option>
+        <option value="Aspen Arias">Aspen Arias</option>
+        <option value="Pem">Pem</option>
+        <option value="Jesse">Jesse</option>
+        <option value="Chris Teague">Chris Teague</option>
+        <option value="Other">Other</option>
+      </select>
+      <span class="err-msg">Select who captured this lead.</span>
+    </div>
+
+    <button class="btn" onclick="generateCard()">Generate Lead Card</button>
+
+    <div id="card-section">
+      <div class="card-header">
+        HubSpot-ready lead card
+        <span class="card-badge">COPY &amp; PASTE</span>
+      </div>
+      <pre id="card-output"></pre>
+      <div class="copy-feedback" id="copy-feedback">Copied to clipboard!</div>
+    </div>
+
+    <button class="btn btn-outline" id="copy-btn" style="display:none;" onclick="copyCard()">Copy to Clipboard</button>
+    <button class="btn btn-reset"   id="reset-btn" style="display:none;" onclick="resetForm()">Capture Another Lead</button>
+
+  </div>
+
+  <script>
+    // ── Service worker registration ──────────────────────────────────────────
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .catch(err => console.warn('SW registration failed:', err));
+      });
+    }
+
+    // ── Install prompt (Android) ─────────────────────────────────────────────
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('install-bar').style.display = 'block';
+    });
+
+    function installApp() {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => {
+        deferredPrompt = null;
+        document.getElementById('install-bar').style.display = 'none';
+      });
+    }
+
+    // ── Form logic ───────────────────────────────────────────────────────────
+    let sessionLeads = 0;
+
+    function getChecked(name) {
+      return Array.from(document.querySelectorAll('input[name="' + name + '"]:checked'))
+                  .map(el => el.value).join(', ') || 'None selected';
+    }
+
+    function getRadio(name) {
+      const el = document.querySelector('input[name="' + name + '"]:checked');
+      return el ? el.value : '';
+    }
+
+    function validate() {
+      let ok = true;
+      const req = (id, fieldId) => {
+        const el  = document.getElementById(id);
+        const fEl = document.getElementById(fieldId);
+        if (!el.value.trim()) { fEl.classList.add('error'); ok = false; }
+        else fEl.classList.remove('error');
+      };
+      req('name',  'f-name');
+      req('org',   'f-org');
+
+      const email  = document.getElementById('email');
+      const fEmail = document.getElementById('f-email');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
+        fEmail.classList.add('error'); ok = false;
+      } else fEmail.classList.remove('error');
+
+      const interest  = getRadio('interest');
+      const fInterest = document.getElementById('f-interest');
+      if (!interest) { fInterest.classList.add('error'); ok = false; }
+      else fInterest.classList.remove('error');
+
+      const rep  = document.getElementById('rep');
+      const fRep = document.getElementById('f-rep');
+      if (!rep.value) { fRep.classList.add('error'); ok = false; }
+      else fRep.classList.remove('error');
+
+      return ok;
+    }
+
+    function generateCard() {
+      if (!validate()) { window.scrollTo({top: 0, behavior: 'smooth'}); return; }
+
+      const now     = new Date();
+      const dateStr = now.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+      const timeStr = now.toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit'});
+
+      const name     = document.getElementById('name').value.trim();
+      const title    = document.getElementById('title').value.trim()    || '—';
+      const org      = document.getElementById('org').value.trim();
+      const email    = document.getElementById('email').value.trim();
+      const phone    = document.getElementById('phone').value.trim()    || '—';
+      const vendors  = getChecked('vendor');
+      const products = getChecked('product');
+      const pain     = document.getElementById('pain').value.trim()     || '—';
+      const interest = getRadio('interest');
+      const nextstep = document.getElementById('nextstep').value.trim() || '—';
+      const rep      = document.getElementById('rep').value;
+
+      const card =
+`SIGNIX CONFERENCE LEAD — ${dateStr} ${timeStr}
+${`=`.repeat(44)}
+
+CONTACT
+  Name:         ${name}
+  Title:        ${title}
+  Organization: ${org}
+  Email:        ${email}
+  Phone:        ${phone}
+
+QUALIFICATION
+  Current vendor(s):  ${vendors}
+  Products discussed: ${products}
+
+  Pain point / notes:
+  ${pain}
+
+PRIORITY
+  Interest level: ${interest}
+  Next step:      ${nextstep}
+
+CAPTURE
+  Captured by: ${rep}
+  Tool:        SIGNiX Lead Capture PWA
+
+${`=`.repeat(44)}
+HUBSPOT FIELDS
+  First Name / Last Name: ${name}
+  Company:        ${org}
+  Email:          ${email}
+  Phone:          ${phone}
+  Lead Source:    Tradeshow — Conference 2026
+  Lead Owner:     ${rep}
+  Lifecycle Stage: Lead
+  Deal Stage:     (set per interest level above)
+  Notes:          [paste pain point above]
+${`=`.repeat(44)}`;
+
+      document.getElementById('card-output').textContent = card;
+      document.getElementById('card-section').style.display = 'block';
+      document.getElementById('copy-btn').style.display    = 'block';
+      document.getElementById('reset-btn').style.display   = 'block';
+      document.getElementById('copy-feedback').style.display = 'none';
+
+      sessionLeads++;
+      document.getElementById('lead-count').textContent = sessionLeads;
+
+      setTimeout(() => {
+        document.getElementById('card-section').scrollIntoView({behavior:'smooth',block:'start'});
+      }, 100);
+    }
+
+    function copyCard() {
+      const text = document.getElementById('card-output').textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(showCopied);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+        showCopied();
+      }
+    }
+
+    function showCopied() {
+      const fb = document.getElementById('copy-feedback');
+      fb.style.display = 'block';
+      setTimeout(() => { fb.style.display = 'none'; }, 2500);
+    }
+
+    function resetForm() {
+      ['name','title','org','email','phone','pain','nextstep'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('rep').value = '';
+      document.querySelectorAll('input[type="checkbox"], input[type="radio"]')
+              .forEach(el => el.checked = false);
+      document.getElementById('card-section').style.display  = 'none';
+      document.getElementById('copy-btn').style.display      = 'none';
+      document.getElementById('reset-btn').style.display     = 'none';
+      document.querySelectorAll('.field.error').forEach(el => el.classList.remove('error'));
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+  </script>
+
+</body>
+</html>

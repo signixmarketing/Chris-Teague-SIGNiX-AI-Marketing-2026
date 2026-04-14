@@ -1,0 +1,24 @@
+{
+  "name": "SIGNiX Lead Capture",
+  "short_name": "SIGNiX Leads",
+  "description": "Conference lead capture tool for the SIGNiX sales team.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#2e3440",
+  "theme_color": "#2e3440",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
