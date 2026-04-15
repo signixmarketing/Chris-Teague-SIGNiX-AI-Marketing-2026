@@ -167,7 +167,7 @@ HTML = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>SIGNiX — Your Signature Proves Itself</title>
+  <title>SIGNiX: Your Signature Proves Itself</title>
   <style>
 {CSS}
   </style>
@@ -194,7 +194,7 @@ HTML = f"""<!DOCTYPE html>
   <div class="body">
 
     <!-- SECTION LABEL -->
-    <div class="section-label">What a signed document actually contains &mdash; a direct comparison</div>
+    <div class="section-label">What a signed document actually contains: a direct comparison</div>
 
     <!-- SIDE-BY-SIDE DOCUMENT PANELS -->
     <div class="compare-grid">
@@ -203,7 +203,7 @@ HTML = f"""<!DOCTYPE html>
       <div class="doc-panel">
         <div class="panel-header signix">
           <div class="panel-platform signix">&#x2713;&nbsp; SIGNiX</div>
-          <div class="panel-cert signix">GlobalSign AATL &mdash; Signer-Level Certificate</div>
+          <div class="panel-cert signix">GlobalSign AATL, Signer-Level Certificate</div>
           <div class="panel-cert-owner signix">Certificate belongs to: SIGNiX Signature Authority on behalf of the signer</div>
         </div>
         <div class="panel-rows">
@@ -240,14 +240,14 @@ HTML = f"""<!DOCTYPE html>
             <span class="row-val yes"><span class="check">&#10003;</span>ByteRange-protected</span>
           </div>
         </div>
-        <div class="verdict-row signix">Document is self-proving &mdash; open in any PDF reader to verify</div>
+        <div class="verdict-row signix">Document is self-proving. Open any PDF reader to verify.</div>
       </div>
 
       <!-- DOCUSIGN PANEL -->
       <div class="doc-panel">
         <div class="panel-header docusign">
           <div class="panel-platform docusign">DocuSign (standard)</div>
-          <div class="panel-cert docusign">DigiCert AATL &mdash; Server Export Certificate</div>
+          <div class="panel-cert docusign">DigiCert AATL, Server Export Certificate</div>
           <div class="panel-cert-owner docusign">Certificate belongs to: DS Technical Operations (DocuSign server)</div>
         </div>
         <div class="panel-rows">
@@ -261,15 +261,15 @@ HTML = f"""<!DOCTYPE html>
           </div>
           <div class="panel-row">
             <span class="row-label">Signer IP address in PDF</span>
-            <span class="row-val no"><span class="cross">&#10007;</span>Cloud only &mdash; requires DocuSign</span>
+            <span class="row-val no"><span class="cross">&#10007;</span>In DocuSign cloud only</span>
           </div>
           <div class="panel-row">
             <span class="row-label">Signer device in PDF</span>
-            <span class="row-val no"><span class="cross">&#10007;</span>Cloud only &mdash; requires DocuSign</span>
+            <span class="row-val no"><span class="cross">&#10007;</span>In DocuSign cloud only</span>
           </div>
           <div class="panel-row">
             <span class="row-label">Transaction ID in PDF</span>
-            <span class="row-val no"><span class="cross">&#10007;</span>Cloud only &mdash; requires DocuSign</span>
+            <span class="row-val no"><span class="cross">&#10007;</span>In DocuSign cloud only</span>
           </div>
           <div class="panel-row">
             <span class="row-label">Authentication method in file</span>
@@ -284,7 +284,7 @@ HTML = f"""<!DOCTYPE html>
             <span class="row-val no"><span class="cross">&#10007;</span>No ByteRange protection</span>
           </div>
         </div>
-        <div class="verdict-row docusign">Proof requires DocuSign&rsquo;s cooperation &mdash; platform dependency</div>
+        <div class="verdict-row docusign">Proof requires DocuSign&rsquo;s cooperation. Platform dependency.</div>
       </div>
 
     </div>
