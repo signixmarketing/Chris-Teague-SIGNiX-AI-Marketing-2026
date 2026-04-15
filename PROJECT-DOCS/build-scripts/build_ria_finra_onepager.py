@@ -1,0 +1,320 @@
+#!/usr/bin/env python3
+"""
+Build SIGNiX RIA / Broker-Dealer FINRA Compliance One-Pager.
+
+Core argument: FINRA is examining e-signature supervision and firms are
+failing. The pattern is not a software failure. It is the absence of
+controls to detect red flags before the examiner does. SIGNiX Fraud
+Alert and ID Verify close those gaps.
+
+Framing: No competitor or firm names are used. All enforcement data is
+framed as industry pattern, not attributed to specific organizations.
+
+Run from any directory:
+  python3 "PROJECT-DOCS/build-scripts/build_ria_finra_onepager.py"
+
+Output:
+  PROJECT-DOCS/DELIVERABLES/SIGNiX-RIA-FINRA-OnePager-Aspen.html
+  PROJECT-DOCS/DELIVERABLES/SIGNiX-RIA-FINRA-OnePager-Aspen.pdf
+"""
+
+import os
+import subprocess
+
+OUTPUT_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "DELIVERABLES"
+)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+ASPEN_PHONE    = "(423) 635-7112"
+ASPEN_EMAIL    = "aarias@signix.com"
+ASPEN_CALENDAR = "https://www.signix.com/meetings/aarias5?uuid=83e31d03-9c7e-41ec-b8a0-feb138363f27"
+
+LOGO_URL = ("https://www.signix.com/hs-fs/hubfs/"
+            "SIGNiX%20Logo%20Main-Jan-05-2023-02-38-25-2345-AM-1.png?width=200")
+
+CSS = """
+    @page { size: Letter; margin: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green:       #6da34a;
+      --green2:      #5a8c3b;
+      --ink:         #2e3440;
+      --body:        #545454;
+      --muted:       #6b7280;
+      --white:       #ffffff;
+      --canvas:      #f8fafb;
+      --rule:        #d8dee9;
+      --green-light: #f0f7eb;
+      --amber:       #d97706;
+      --amber-light: #fffbeb;
+      --red:         #dc2626;
+      --red-light:   #fef2f2;
+    }
+    html, body {
+      width: 8.5in; height: 11in;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: var(--body); background: var(--white);
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .page { width: 8.5in; height: 11in; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* HEADER */
+    .header { background-color: var(--ink); padding: 0.30in 0.5in 0.26in; flex-shrink: 0; }
+    .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.16in; }
+    .logo img { height: 30pt; width: auto; display: block; }
+    .header-badge { font-size: 7pt; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase;
+                    color: var(--ink); background: var(--green); padding: 3pt 8pt; border-radius: 3pt; }
+    .header-eyebrow { font-size: 7.5pt; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+                      color: var(--green); margin-bottom: 0.07in; }
+    .header-headline { font-size: 22pt; font-weight: 800; color: var(--white); line-height: 1.15;
+                       letter-spacing: -0.01em; margin-bottom: 0.08in; }
+    .header-headline span { color: var(--green); }
+    .header-rule { width: 0.4in; height: 3pt; background: var(--green); border-radius: 2pt; margin-bottom: 0.08in; }
+    .header-sub { font-size: 9pt; color: rgba(255,255,255,0.72); line-height: 1.5; max-width: 6.2in; }
+    .header-sub strong { color: var(--white); }
+
+    /* BODY */
+    .body { flex: 1; display: flex; flex-direction: column; padding: 0.20in 0.5in 0.16in; gap: 0.14in; }
+
+    /* SECTION LABEL */
+    .section-label { font-size: 7pt; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase;
+                     color: var(--green); margin-bottom: 0.07in; }
+
+    /* FINE STAT STRIP */
+    .stat-strip { display: flex; gap: 0.14in; flex-shrink: 0; }
+    .stat-card {
+      flex: 1; background: var(--ink); border-radius: 5pt;
+      padding: 0.11in 0.14in; display: flex; flex-direction: column; gap: 4pt;
+    }
+    .stat-number { font-size: 22pt; font-weight: 800; color: var(--green); line-height: 1; }
+    .stat-label  { font-size: 7.5pt; font-weight: 600; color: rgba(255,255,255,0.75); line-height: 1.4; }
+    .stat-source { font-size: 6.5pt; color: rgba(255,255,255,0.4); margin-top: 2pt; }
+
+    /* RED FLAGS GRID */
+    .flags-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.10in; flex-shrink: 0; }
+    .flag-card {
+      background: var(--red-light); border: 1pt solid #fca5a5; border-radius: 5pt;
+      padding: 0.09in 0.12in;
+    }
+    .flag-title { font-size: 8pt; font-weight: 800; color: var(--red); margin-bottom: 3pt; }
+    .flag-body  { font-size: 7.5pt; color: var(--body); line-height: 1.45; }
+
+    /* SOLUTION STRIP */
+    .solution-strip {
+      background: var(--canvas); border: 1.5pt solid var(--rule); border-radius: 5pt;
+      padding: 0.13in 0.18in; flex-shrink: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.18in;
+    }
+    .solution-block { }
+    .solution-product { font-size: 9pt; font-weight: 800; color: var(--green); margin-bottom: 4pt; }
+    .solution-title  { font-size: 8.5pt; font-weight: 700; color: var(--ink); margin-bottom: 4pt; }
+    .solution-body   { font-size: 7.5pt; color: var(--body); line-height: 1.5; }
+    .solution-bullets { list-style: none; margin-top: 5pt; display: flex; flex-direction: column; gap: 3pt; }
+    .solution-bullets li { font-size: 7.5pt; color: var(--body); line-height: 1.4; padding-left: 12pt; position: relative; }
+    .solution-bullets li::before { content: "\\2713"; color: var(--green); font-weight: 700;
+                                    position: absolute; left: 0; }
+
+    /* RULE BOX */
+    .rule-box {
+      background: var(--amber-light); border: 1pt solid #fcd34d; border-radius: 5pt;
+      padding: 0.09in 0.14in; flex-shrink: 0;
+      display: flex; align-items: flex-start; gap: 0.10in;
+    }
+    .rule-icon { font-size: 16pt; line-height: 1; flex-shrink: 0; margin-top: 1pt; }
+    .rule-text { font-size: 7.5pt; color: var(--body); line-height: 1.5; }
+    .rule-text strong { color: var(--ink); }
+
+    /* CONTACT */
+    .contact { background: var(--canvas); border: 1pt solid var(--rule); border-radius: 5pt;
+               padding: 0.09in 0.18in; display: flex; align-items: center; gap: 0.15in; flex-shrink: 0; }
+    .contact-info { flex: 1; }
+    .contact-name  { font-size: 10pt; font-weight: 800; color: var(--ink); line-height: 1.2; }
+    .contact-title { font-size: 7.5pt; color: var(--muted); margin-bottom: 3pt; }
+    .contact-details { font-size: 7.5pt; color: var(--body); line-height: 1.6; }
+    .contact-details a { color: var(--green); text-decoration: none; font-weight: 600; }
+    .contact-right { text-align: right; flex-shrink: 0; }
+    .contact-cta  { font-size: 7pt; font-weight: 700; color: var(--muted); text-transform: uppercase;
+                    letter-spacing: 0.08em; margin-bottom: 3pt; }
+    .contact-url a { font-size: 8.5pt; font-weight: 800; color: var(--green); text-decoration: none; }
+
+    /* FOOTER */
+    .footer { padding: 0.07in 0.5in; border-top: 1pt solid var(--rule);
+              display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+    .footer-left  { font-size: 6.5pt; color: var(--muted); }
+    .footer-right { font-size: 6.5pt; color: var(--muted); }
+"""
+
+HTML = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>SIGNiX: Is Your E-Signature Process FINRA-Ready?</title>
+  <style>
+{CSS}
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-top">
+      <div class="logo"><img src="{LOGO_URL}" alt="SIGNiX" /></div>
+      <div class="header-badge">RIA &amp; Broker-Dealer Compliance</div>
+    </div>
+    <div class="header-eyebrow">Fraud Alert &trade; &nbsp;&middot;&nbsp; ID Verify &nbsp;&middot;&nbsp; FINRA Rule 3110</div>
+    <div class="header-headline">Is your e-signature process<br /><span>ready for a FINRA exam?</span></div>
+    <div class="header-rule"></div>
+    <div class="header-sub">
+      FINRA is examining how firms supervise electronic signatures.
+      Firms are failing. The pattern is not a software failure.
+      <strong>It is the absence of controls to detect red flags before the examiner does.</strong>
+      SIGNiX is engineered to close those gaps.
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- STAT STRIP -->
+    <div class="section-label">Recent FINRA enforcement actions tied to e-signature supervision failures</div>
+    <div class="stat-strip">
+      <div class="stat-card">
+        <div class="stat-number">$3.6M+</div>
+        <div class="stat-label">in FINRA fines across three enforcement actions in three years</div>
+        <div class="stat-source">2022&ndash;2025 &middot; RIA and broker-dealer firms</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">15+</div>
+        <div class="stat-label">representatives found to have signed for clients in a single action</div>
+        <div class="stat-source">FINRA enforcement action, 2024</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">Rule 3110</div>
+        <div class="stat-label">requires firms to supervise e-signature use and respond to red flags</div>
+        <div class="stat-source">FINRA Regulatory Notice 22-18, August 2022</div>
+      </div>
+    </div>
+
+    <!-- RED FLAGS -->
+    <div class="section-label">The four red flags FINRA examiners look for</div>
+    <div class="flags-grid">
+      <div class="flag-card">
+        <div class="flag-title">Shared IP addresses</div>
+        <div class="flag-body">Multiple clients signed from the same IP address. A single advisor IP appearing across different client documents is a primary exam trigger.</div>
+      </div>
+      <div class="flag-card">
+        <div class="flag-title">Email redirection</div>
+        <div class="flag-body">Signature links sent to a representative's own email or an address they control, then signed on the client's behalf.</div>
+      </div>
+      <div class="flag-card">
+        <div class="flag-title">Rapid sequential signing</div>
+        <div class="flag-body">Multiple parties signing within seconds of each other. It is not physically possible for two people to independently read and sign that fast.</div>
+      </div>
+      <div class="flag-card">
+        <div class="flag-title">Authentication bypass</div>
+        <div class="flag-body">Representatives using client file data to answer Knowledge-Based Authentication questions on behalf of the client, effectively "verifying" the signature themselves.</div>
+      </div>
+    </div>
+
+    <!-- SOLUTION STRIP -->
+    <div class="section-label">How SIGNiX closes the gaps</div>
+    <div class="solution-strip">
+      <div class="solution-block">
+        <div class="solution-product">Fraud Alert&#8482;</div>
+        <div class="solution-title">Catch red flags before the examiner does</div>
+        <div class="solution-body">Fraud Alert automatically scans your e-signature audit trails for the same patterns FINRA examiners look for.</div>
+        <ul class="solution-bullets">
+          <li>Flags shared IP addresses across signers</li>
+          <li>Detects suspicious email and phone patterns</li>
+          <li>Notifies your compliance team before an exam</li>
+          <li>Built for FINRA Rule 3110 supervisory requirements</li>
+        </ul>
+      </div>
+      <div class="solution-block">
+        <div class="solution-product">ID Verify</div>
+        <div class="solution-title">Close the front door to unauthorized signing</div>
+        <div class="solution-body">ID Verify requires biometric identity confirmation before a document can even be viewed, making it harder for a representative to sign on a client's behalf.</div>
+        <ul class="solution-bullets">
+          <li>Government ID scan and biometric facial match</li>
+          <li>Liveness check confirms a real person is present</li>
+          <li>Authentication method embedded in the signed file</li>
+          <li>Signer identity tied to document, not stored in cloud</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- RULE BOX -->
+    <div class="rule-box">
+      <div class="rule-icon">&#9888;</div>
+      <div class="rule-text">
+        <strong>FINRA Regulatory Notice 22-18 (August 2022)</strong> reinforces that firms must establish and maintain a supervisory system
+        for electronic signatures. Regulators fine firms not for the bypass itself, but for failing to have systems that
+        review audit trails and respond to red flags. The controls must exist before the exam, not after.
+      </div>
+    </div>
+
+    <!-- CONTACT BLOCK -->
+    <div class="contact">
+      <div class="contact-info">
+        <div class="contact-name">Aspen Arias</div>
+        <div class="contact-title">Account Executive, SIGNiX</div>
+        <div class="contact-details">
+          {ASPEN_PHONE} &nbsp;&nbsp;|&nbsp;&nbsp;
+          <a href="mailto:{ASPEN_EMAIL}">{ASPEN_EMAIL}</a>
+        </div>
+      </div>
+      <div class="contact-right">
+        <div class="contact-cta">Review your signing workflows</div>
+        <div class="contact-url">
+          <a href="{ASPEN_CALENDAR}">signix.com/meetings/aarias5</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <!-- /BODY -->
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-left">SIGNiX &middot; 1110 Market St, Suite 400, Chattanooga, TN 37402 &middot; signix.com</div>
+    <div class="footer-right">Enforcement data sourced from public FINRA records. No firm names used. For informational purposes only.</div>
+  </div>
+
+</div>
+</body>
+</html>"""
+
+# Write HTML
+html_filename = "SIGNiX-RIA-FINRA-OnePager-Aspen.html"
+pdf_filename  = "SIGNiX-RIA-FINRA-OnePager-Aspen.pdf"
+html_path = os.path.join(OUTPUT_DIR, html_filename)
+pdf_path  = os.path.join(OUTPUT_DIR, pdf_filename)
+
+with open(html_path, "w", encoding="utf-8") as f:
+    f.write(HTML)
+print(f"  Written: {html_filename}")
+
+# Generate PDF via Chrome headless
+CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+
+cmd = [
+    CHROME,
+    "--headless=new",
+    "--disable-gpu",
+    "--no-sandbox",
+    f"--print-to-pdf={pdf_path}",
+    "--no-pdf-header-footer",
+    f"file://{html_path}",
+]
+print(f"\n  Generating {pdf_filename} ...")
+result = subprocess.run(cmd, capture_output=True, text=True)
+
+if os.path.exists(pdf_path):
+    print(f"  PDF written: {pdf_path}")
+else:
+    print("  ERROR generating PDF:")
+    print(result.stderr[-600:] if result.stderr else "(no stderr)")
+
+print("\nDone.")
