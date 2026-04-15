@@ -1196,6 +1196,17 @@
     if (e) e.value = '';
     if (a) a.value = '';
     if (b) b.classList.remove('visible');
+
+    // Reset all checkboxes and radio buttons
+    document.querySelectorAll('.demo-shell input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.demo-shell input[type="radio"]').forEach(rb => rb.checked = false);
+
+    // Restore default radio selections
+    const demoYes = document.querySelector('input[name="demo"]');
+    const consentAccept = document.querySelector('input[name="consent"]');
+    if (demoYes) demoYes.checked = true;
+    if (consentAccept) consentAccept.checked = true;
+
     goTo(1);
   }
 </script>
