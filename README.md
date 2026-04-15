@@ -28,6 +28,23 @@ Elder Financial Protection, Banks and Credit Unions, Wealth Management / RIA, Go
 
 ---
 
+### MyDox Interactive Demo — Sales Demo Tool
+An 11-screen offline HTML demo simulating the full MyDox signing workflow. Built for Aspen and Pem to walk prospects through at in-person meetings and conferences. No internet required — open the file in Chrome.
+
+- [SIGNiX_MyDox_Demo.html](PROJECT-DOCS/DELIVERABLES/SIGNiX_MyDox_Demo.html)
+
+**What it shows:**
+- Full transaction creation flow: Dashboard → Add Signer → Documents → Send → Signer Email → Legal Consent → ID Verify → Document View → Signature Placed → Confirmation
+- Authentication dropdown with ID Verify, KBA, 2FA, and Password options — ID Verify triggers a "highest assurance" badge
+- "I Am The Signer" checkbox auto-fills presenter info and sets authentication in one click
+- Signer name and email carry through all 11 screens dynamically
+- Speaker notes panel (toggle on/off) with separate guidance for Aspen (sales) and Pem (executive)
+- All decorative UI buttons are non-hoverable — nothing breaks mid-demo
+
+**The core argument:** Before anyone signs, SIGNiX verifies who they are. The signature is PKI-embedded and cryptographically tied to the document. You own and control your documents.
+
+---
+
 ### Marketing Dashboard
 A live HTML dashboard combining Google Ads, HubSpot lead response, LinkedIn performance, and sales pipeline in one view. Open in any browser — no server needed.
 
