@@ -1,10 +1,69 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-<title>SIGNiX MyDox — Interactive Demo v2</title>
-<style>
+#!/usr/bin/env python3
+"""
+Build SIGNiX MyDox Interactive Demo v2
+
+New in v2 vs v1:
+  - Screen  5: Signature Tagging (sender wizard — Signatures tab, HTML-rendered)
+  - Screens 10-18: Full ID Verify / Persona sub-screens (HTML-rendered, Full Flow only)
+  - Screen 19: SIGNiX — ID documents passed
+  - Screen 20: SIGNiX — Let's Create Your Signature
+  - Screen 23: Confirmation includes QR code for Aspen's calendar + contact info
+  - Control bar: Quick View / Full Flow toggle
+  - Quick View (default): 14 screens
+  - Full Flow:            23 screens — shows every Persona step
+
+Run:
+  python3 "PROJECT-DOCS/build-scripts/build_mydox_demo_v2.py"
+
+Output:
+  PROJECT-DOCS/DELIVERABLES/SIGNiX_MyDox_Demo.html
+"""
+
+import os, base64, subprocess
+from io import BytesIO
+
+SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
+OUTPUT_DIR  = os.path.join(PROJECT_DIR, "DELIVERABLES")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# ── Contact — update here if Aspen is reassigned ──────────────────────────────
+ASPEN_CALENDAR = "https://www.signix.com/meetings/aarias5?uuid=83e31d03-9c7e-41ec-b8a0-feb138363f27"
+ASPEN_PHONE    = "(423) 635-7112"
+ASPEN_EMAIL    = "aarias@signix.com"
+
+# ── QR Code ────────────────────────────────────────────────────────────────────
+qr_b64 = None
+try:
+    import qrcode
+    qr = qrcode.QRCode(version=2, box_size=6, border=4,
+                        error_correction=qrcode.constants.ERROR_CORRECT_M)
+    qr.add_data(ASPEN_CALENDAR)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="#2e3440", back_color="white")
+    buf = BytesIO()
+    qr_img.save(buf, format="PNG")
+    qr_b64 = base64.b64encode(buf.getvalue()).decode()
+    print("QR code: generated OK")
+except Exception as exc:
+    print(f"QR code: skipped ({exc}) — using text fallback")
+
+if qr_b64:
+    QR_BLOCK = f'''<div class="confirm-qr-block">
+        <div class="confirm-qr-label">Book a Meeting</div>
+        <img src="data:image/png;base64,{qr_b64}" style="width:130px;height:130px;display:block;margin:0 auto;border-radius:6px;" alt="Aspen Calendar" />
+        <div class="confirm-qr-contact"><strong>Aspen Arias</strong><br>Account Executive<br>{ASPEN_PHONE}<br>{ASPEN_EMAIL}</div>
+      </div>'''
+else:
+    QR_BLOCK = f'''<div class="confirm-qr-block">
+        <div class="confirm-qr-label">Connect with Aspen</div>
+        <div style="width:130px;height:130px;display:flex;align-items:center;justify-content:center;background:var(--canvas);border:1px solid var(--rule);border-radius:6px;margin:0 auto;font-size:11px;color:var(--muted);text-align:center;padding:8px;">
+          signix.com/<br>meetings/<br>aarias5</div>
+        <div class="confirm-qr-contact"><strong>Aspen Arias</strong><br>Account Executive<br>{ASPEN_PHONE}<br>{ASPEN_EMAIL}</div>
+      </div>'''
+
+# ── CSS ────────────────────────────────────────────────────────────────────────
+CSS = """
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --green:#6da34a; --green2:#5a8c3b; --ink:#2e3440; --body:#545454;
@@ -270,7 +329,24 @@
     .tagging-shell { flex-direction:column; }
     .tagging-sidebar { width:100%; flex-direction:row; flex-wrap:wrap; }
   }
-</style>
+"""
+
+# ── Persona progress dots ──────────────────────────────────────────────────────
+def pdots(current_idx, total=9):
+    dots = ""
+    for i in range(total):
+        cls = "done" if i < current_idx else ("current" if i == current_idx else "")
+        dots += f'<div class="persona-dot {cls}"></div>'
+    return f'<div class="persona-dots">{dots}</div>'
+
+# ── Build HTML ─────────────────────────────────────────────────────────────────
+HTML = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>SIGNiX MyDox — Interactive Demo v2</title>
+<style>{CSS}</style>
 </head>
 <body>
 <div class="demo-shell">
@@ -780,7 +856,7 @@
           <span class="persona-secure">&#128274; Encrypted &amp; Secure</span>
         </div>
         <div class="persona-card-body">
-          <div class="persona-dots"><div class="persona-dot current"></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div></div>
+          {pdots(0)}
           <div class="persona-step-label">Identity Verification · Step 1 of 9</div>
           <div class="persona-title">Let's verify your identity</div>
           <div class="persona-subtitle">To complete your request, we need to verify your identity. This process is quick and secure. Your data is used only to confirm who you are.</div>
@@ -815,7 +891,7 @@
           <span class="persona-secure">&#128274; Encrypted &amp; Secure</span>
         </div>
         <div class="persona-card-body">
-          <div class="persona-dots"><div class="persona-dot done"></div><div class="persona-dot current"></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div></div>
+          {pdots(1)}
           <div class="persona-step-label">Identity Verification · Step 2 of 9</div>
           <div class="persona-title">What country issued your ID?</div>
           <div class="persona-subtitle">Select the country that issued your government photo ID.</div>
@@ -853,7 +929,7 @@
           <span class="persona-secure">&#128274; Encrypted &amp; Secure</span>
         </div>
         <div class="persona-card-body">
-          <div class="persona-dots"><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot current"></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div></div>
+          {pdots(2)}
           <div class="persona-step-label">Identity Verification · Step 3 of 9</div>
           <div class="persona-title">Upload a photo ID</div>
           <div class="persona-subtitle">Select the type of government-issued photo ID you'll use.</div>
@@ -889,7 +965,7 @@
           <span class="persona-secure">&#128274; Encrypted &amp; Secure</span>
         </div>
         <div class="persona-card-body">
-          <div class="persona-dots"><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot current"></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div></div>
+          {pdots(3)}
           <div class="persona-step-label">Identity Verification · Step 4 of 9</div>
           <div class="persona-title">Enter your expiration date</div>
           <div class="persona-subtitle">Enter the expiration date on the front of your Driver License. Expired IDs will be rejected.</div>
@@ -926,7 +1002,7 @@
           <span class="persona-secure">&#128274; Encrypted &amp; Secure</span>
         </div>
         <div class="persona-card-body">
-          <div class="persona-dots"><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot current"></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div></div>
+          {pdots(4)}
           <div class="persona-step-label">Identity Verification · Step 5 of 9</div>
           <div class="persona-title">Take a photo of the front of your ID</div>
           <div class="persona-subtitle">Position your Driver License in the frame below and tap the button to capture.</div>
@@ -965,7 +1041,7 @@
           <span class="persona-secure">&#128274; Encrypted &amp; Secure</span>
         </div>
         <div class="persona-card-body">
-          <div class="persona-dots"><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot current"></div><div class="persona-dot "></div><div class="persona-dot "></div><div class="persona-dot "></div></div>
+          {pdots(5)}
           <div class="persona-step-label">Identity Verification · Step 6 of 9</div>
           <div class="persona-title">Now take a photo of the back</div>
           <div class="persona-subtitle">Flip your Driver License over and photograph the back side. The barcode will be scanned and verified.</div>
@@ -1004,7 +1080,7 @@
           <span class="persona-secure">&#128274; Encrypted &amp; Secure</span>
         </div>
         <div class="persona-card-body">
-          <div class="persona-dots"><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot current"></div><div class="persona-dot "></div><div class="persona-dot "></div></div>
+          {pdots(6)}
           <div class="persona-step-label">Identity Verification · Step 7 of 9</div>
           <div class="persona-title">Let's make sure you're you</div>
           <div class="persona-subtitle">We'll take a short selfie video to confirm you are physically present — not a photo or recording. This defeats impersonation and deepfake attempts.</div>
@@ -1042,7 +1118,7 @@
           <span class="persona-secure">&#128274; Encrypted &amp; Secure</span>
         </div>
         <div class="persona-card-body">
-          <div class="persona-dots"><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot current"></div><div class="persona-dot "></div></div>
+          {pdots(7)}
           <div class="persona-step-label">Identity Verification · Step 8 of 9</div>
           <div class="persona-title">Look slightly left</div>
           <div class="persona-subtitle">Slowly turn your head left and right as indicated. Keep your face within the oval.</div>
@@ -1084,7 +1160,7 @@
           <span class="persona-secure">&#128274; Encrypted &amp; Secure</span>
         </div>
         <div class="persona-card-body">
-          <div class="persona-dots"><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot done"></div><div class="persona-dot current"></div></div>
+          {pdots(8)}
           <div class="persona-step-label">Identity Verification · Step 9 of 9</div>
           <div class="persona-success-icon">&#9989;</div>
           <div class="persona-title" style="text-align:center;">Congratulations, you're done!</div>
@@ -1343,11 +1419,7 @@
               <button class="btn-sm btn-green" style="padding:10px 20px;" onclick="resetDemo()">&#8635; New Demo</button>
             </div>
           </div>
-          <div class="confirm-qr-block">
-        <div class="confirm-qr-label">Book a Meeting</div>
-        <img src="data:image/png;base64,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" style="width:130px;height:130px;display:block;margin:0 auto;border-radius:6px;" alt="Aspen Calendar" />
-        <div class="confirm-qr-contact"><strong>Aspen Arias</strong><br>Account Executive<br>(423) 635-7112<br>aarias@signix.com</div>
-      </div>
+          {QR_BLOCK}
         </div>
       </div>
     </div>
@@ -1377,15 +1449,15 @@
   var FULL_SCREENS  = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23];
   var ALL_SCREENS   = 23;
 
-  function getScreenList() { return fullFlow ? FULL_SCREENS : QUICK_SCREENS; }
-  function getDisplayStep(id) {
+  function getScreenList() {{ return fullFlow ? FULL_SCREENS : QUICK_SCREENS; }}
+  function getDisplayStep(id) {{
     var list = getScreenList();
     var idx  = list.indexOf(id);
     return idx === -1 ? 1 : idx + 1;
-  }
-  function getTotalSteps() { return getScreenList().length; }
+  }}
+  function getTotalSteps() {{ return getScreenList().length; }}
 
-  function goTo(n) {
+  function goTo(n) {{
     if (!fullFlow && n >= 10 && n <= 18) n = 19;
     document.getElementById('screen-' + currentScreen).classList.remove('active');
     currentScreen = n;
@@ -1395,8 +1467,8 @@
 
     var full  = (signerFirst + ' ' + signerLast).trim() || 'Jane Smith';
     var first = signerFirst || 'Jane';
-    function setEl(id, v)  { var e = document.getElementById(id); if (e) e.textContent = v; }
-    function setVal(id, v) { var e = document.getElementById(id); if (e) e.value = v; }
+    function setEl(id, v)  {{ var e = document.getElementById(id); if (e) e.textContent = v; }}
+    function setVal(id, v) {{ var e = document.getElementById(id); if (e) e.value = v; }}
     setEl('signer-display-name', full);
     setEl('signer-display-email', signerEmail);
     setEl('signer-display-auth', authMethod);
@@ -1409,96 +1481,96 @@
     setEl('sig-display-name', full);
     setEl('sig-printed-name', full);
     setVal('doc-name-field', full);
-    ['sig-style-preview-1','sig-style-preview-2','sig-style-preview-3','sig-style-preview-4'].forEach(function(id) { setEl(id, full); });
-    var today = new Date().toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+    ['sig-style-preview-1','sig-style-preview-2','sig-style-preview-3','sig-style-preview-4'].forEach(function(id) {{ setEl(id, full); }});
+    var today = new Date().toLocaleDateString('en-US', {{month:'short',day:'numeric',year:'numeric'}});
     setEl('sig-date', today);
     updateNotesPanel();
     window.scrollTo(0, 0);
-  }
+  }}
 
-  function goBackFrom19() { goTo(fullFlow ? 18 : 9); }
-  function goToAfterIDVerify() { goTo(fullFlow ? 10 : 19); }
+  function goBackFrom19() {{ goTo(fullFlow ? 18 : 9); }}
+  function goToAfterIDVerify() {{ goTo(fullFlow ? 10 : 19); }}
 
-  function toggleFlow() {
+  function toggleFlow() {{
     fullFlow = !fullFlow;
     var btn = document.getElementById('btn-flow');
     btn.classList.toggle('active', fullFlow);
     btn.textContent = fullFlow ? 'Full Flow ON' : 'Full Flow';
     document.getElementById('step-counter').textContent =
       'Step ' + getDisplayStep(currentScreen) + ' of ' + getTotalSteps();
-  }
+  }}
 
-  function iAmTheSigner(checked) {
+  function iAmTheSigner(checked) {{
     var f = document.getElementById('signer-first');
     var l = document.getElementById('signer-last');
     var e = document.getElementById('signer-email');
     var a = document.getElementById('auth-select');
-    if (checked) {
+    if (checked) {{
       f.value = 'Aspen'; l.value = 'Arias'; e.value = 'aarias@signix.com';
       a.value = 'idverify'; handleAuthChange();
-    } else {
+    }} else {{
       f.value = ''; l.value = ''; e.value = ''; a.value = '';
       document.getElementById('auth-badge').classList.remove('visible');
       authMethod = 'ID Verify';
-    }
+    }}
     updateSignerName();
-  }
+  }}
 
-  function updateSignerName() {
+  function updateSignerName() {{
     signerFirst = document.getElementById('signer-first').value.trim();
     signerLast  = document.getElementById('signer-last').value.trim();
     signerEmail = document.getElementById('signer-email').value.trim() || 'jane.smith@lacounty.gov';
-  }
+  }}
 
-  function handleAuthChange() {
+  function handleAuthChange() {{
     var sel   = document.getElementById('auth-select');
     var badge = document.getElementById('auth-badge');
-    if (sel.value === 'idverify') {
+    if (sel.value === 'idverify') {{
       badge.classList.add('visible'); authMethod = 'ID Verify';
-    } else if (sel.value === 'kba') {
+    }} else if (sel.value === 'kba') {{
       badge.classList.remove('visible'); authMethod = 'KBA-ID';
-    } else if (sel.value === '2fa') {
+    }} else if (sel.value === '2fa') {{
       badge.classList.remove('visible'); authMethod = '2FA (SMS)';
-    } else {
+    }} else {{
       badge.classList.remove('visible');
       authMethod = sel.options[sel.selectedIndex].text || 'Password';
-    }
+    }}
     updateSignerName();
-  }
+  }}
 
-  function addSigner() {
+  function addSigner() {{
     updateSignerName();
-    if (!document.getElementById('signer-first').value.trim()) {
+    if (!document.getElementById('signer-first').value.trim()) {{
       document.getElementById('signer-first').value = 'Jane'; signerFirst = 'Jane';
-    }
-    if (!document.getElementById('signer-last').value.trim()) {
+    }}
+    if (!document.getElementById('signer-last').value.trim()) {{
       document.getElementById('signer-last').value = 'Smith'; signerLast = 'Smith';
-    }
-    if (!document.getElementById('auth-select').value) {
+    }}
+    if (!document.getElementById('auth-select').value) {{
       document.getElementById('auth-select').value = 'idverify'; handleAuthChange();
-    }
-  }
+    }}
+  }}
 
-  function addSignerAndAdvance() { addSigner(); goTo(3); }
+  function addSignerAndAdvance() {{ addSigner(); goTo(3); }}
 
-  function toggleNotes() { notesVisible = !notesVisible; updateNotesPanel(); }
+  function toggleNotes() {{ notesVisible = !notesVisible; updateNotesPanel(); }}
 
-  function updateNotesPanel() {
-    for (var i = 1; i <= ALL_SCREENS; i++) {
+  function updateNotesPanel() {{
+    for (var i = 1; i <= ALL_SCREENS; i++) {{
       var p = document.getElementById('notes-' + i);
       if (p) p.classList.toggle('visible', notesVisible && i === currentScreen);
-    }
-  }
+    }}
+  }}
 
-  function resetDemo() {
+  function resetDemo() {{
     signerFirst = 'Jane'; signerLast = 'Smith';
     signerEmail = 'jane.smith@lacounty.gov'; authMethod = 'ID Verify';
-    ['signer-first','signer-last','signer-email','auth-select'].forEach(function(id) {
+    ['signer-first','signer-last','signer-email','auth-select'].forEach(function(id) {{
       var el = document.getElementById(id); if (el) el.value = '';
-    });
+    }});
     var b = document.getElementById('auth-badge'); if (b) b.classList.remove('visible');
-    document.querySelectorAll('.demo-shell input[type="checkbox"]').forEach(function(cb) { cb.checked = false; });
-    document.querySelectorAll('.demo-shell input[type="radio"]').forEach(function(rb) { rb.checked = false; });
+    document.querySelectorAll('.demo-shell input[type="checkbox"]').forEach(function(cb) {{ cb.checked = false; }});
+    document.querySelectorAll('.demo-shell input[type="radio"]').forEach(function(rb) {{ rb.checked = false; }});
     var demoYes = document.querySelector('input[name="demo"]');
     var consent  = document.querySelector('input[name="consent"]');
     if (demoYes) demoYes.checked = true;
@@ -1506,8 +1578,14 @@
     fullFlow = false;
     var btn = document.getElementById('btn-flow'); btn.classList.remove('active'); btn.textContent = 'Full Flow';
     goTo(1);
-  }
+  }}
 </script>
 
 </body>
-</html>
+</html>"""
+
+OUT = os.path.join(OUTPUT_DIR, "SIGNiX_MyDox_Demo.html")
+with open(OUT, "w", encoding="utf-8") as fh:
+    fh.write(HTML)
+print(f"Written: {OUT}")
+print("Done.")

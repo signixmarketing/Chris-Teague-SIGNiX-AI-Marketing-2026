@@ -28,20 +28,43 @@ Elder Financial Protection, Banks and Credit Unions, Wealth Management / RIA, Go
 
 ---
 
-### MyDox Interactive Demo — Sales Demo Tool
-An 11-screen offline HTML demo simulating the full MyDox signing workflow. Built for Aspen and Pem to walk prospects through at in-person meetings and conferences. No internet required — open the file in Chrome.
+### MyDox Interactive Demo v2 — Sales Demo Tool
+A 23-screen offline HTML demo simulating the full MyDox signing workflow including signature tagging and the complete ID Verify authentication flow. Built for Aspen, Pem, and ABS partner reps. No internet required — open the file in Chrome.
 
 - [SIGNiX_MyDox_Demo.html](PROJECT-DOCS/DELIVERABLES/SIGNiX_MyDox_Demo.html)
+- Build script: [build_mydox_demo_v2.py](PROJECT-DOCS/build-scripts/build_mydox_demo_v2.py)
 
 **What it shows:**
-- Full transaction creation flow: Dashboard → Add Signer → Documents → Send → Signer Email → Legal Consent → ID Verify → Document View → Signature Placed → Confirmation
+- Full transaction creation flow: Dashboard → Add Signer → Documents → **Signature Tagging** → Send → Signer Email → Legal Consent → ID Verify → **Full Persona Flow** → **ID Passed** → **Create Signature** → Document View → Signature Placed → Confirmation
+- **Quick View / Full Flow toggle** in the control bar. Quick View (14 steps, default) is built for rep-led demos. Full Flow (23 steps) shows every step of the Persona ID Verify sub-flow — built for ABS partner reps doing self-sufficient customer demos.
+- **Signature Tagging screen:** Rendered Signatures wizard tab with document, draggable field toolbar (Signature, Initial, Date, Text, Checkbox, Acknowledge), and live-placed fields.
+- **Full Persona ID Verify flow (9 sub-screens):** Getting Started → Country → ID Type → Expiry Date → Front of ID → Back of ID → Liveness Check → Face Scan → Verification Complete. Persona-branded UI rendered in HTML.
+- **Create Your Signature:** Password creation and four signature style options — signer name carries through all previews.
+- **Confirmation screen with QR code:** Inline QR code links to Aspen's calendar. Contact name, phone, and email appear beside it. Update the calendar URL in the build script variable to change the link.
 - Authentication dropdown with ID Verify, KBA, 2FA, and Password options — ID Verify triggers a "highest assurance" badge
-- "I Am The Signer" checkbox auto-fills presenter info and sets authentication in one click
-- Signer name and email carry through all 11 screens dynamically
-- Speaker notes panel (toggle on/off) with separate guidance for Aspen (sales) and Pem (executive)
+- "I Am The Signer" checkbox auto-fills presenter info in one click
+- Signer name and email carry through all 23 screens dynamically
+- Speaker notes panel (toggle on/off) with guidance for Aspen (sales), Pem (executive), and ABS reps (partner)
 - All decorative UI buttons are non-hoverable — nothing breaks mid-demo
+- Fully self-contained, works offline on phone, tablet, or laptop
 
 **The core argument:** Before anyone signs, SIGNiX verifies who they are. The signature is PKI-embedded and cryptographically tied to the document. You own and control your documents.
+
+---
+
+### PDF Signature Inspector One-Pager
+Print-ready one-pager explaining the PDF Signature Inspector tool. Focuses on signer-level PKI differentiation. Contact: Aspen Arias.
+
+- [SIGNiX-PDFInspector-OnePager-Aspen.html](PROJECT-DOCS/DELIVERABLES/SIGNiX-PDFInspector-OnePager-Aspen.html) / [PDF](PROJECT-DOCS/DELIVERABLES/SIGNiX-PDFInspector-OnePager-Aspen.pdf)
+- Build script: [build_pdf_inspector_onepager.py](PROJECT-DOCS/build-scripts/build_pdf_inspector_onepager.py)
+
+---
+
+### Self-Proving Signatures One-Pager (DocuSign Comparison)
+Print-ready one-pager comparing SIGNiX's PKI-based signature technology to DocuSign's server export seal. Side-by-side visual from the Inspector tool. Core message: you don't need SIGNiX to prove your document. If we ever go out of business, your document still proves itself. Contact: Aspen Arias.
+
+- [SIGNiX-SelfProving-OnePager-Aspen.html](PROJECT-DOCS/DELIVERABLES/SIGNiX-SelfProving-OnePager-Aspen.html) / [PDF](PROJECT-DOCS/DELIVERABLES/SIGNiX-SelfProving-OnePager-Aspen.pdf)
+- Build script: [build_self_proving_onepager.py](PROJECT-DOCS/build-scripts/build_self_proving_onepager.py)
 
 ---
 
