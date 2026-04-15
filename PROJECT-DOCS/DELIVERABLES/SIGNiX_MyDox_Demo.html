@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>SIGNiX MyDox — Interactive Demo</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green:  #6da34a;
+    --green2: #5a8c3b;
+    --ink:    #2e3440;
+    --body:   #545454;
+    --muted:  #6b7280;
+    --white:  #ffffff;
+    --canvas: #f8fafb;
+    --rule:   #d8dee9;
+    --yellow: #fffbcc;
+    --red:    #c0392b;
+    --blue:   #2980b9;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #e8edf2;
+    color: var(--body);
+    font-size: 14px;
+  }
+
+  /* ── Shell ─────────────────────────────────────────────── */
+  .demo-shell {
+    max-width: 1024px;
+    margin: 0 auto;
+    background: var(--white);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 40px rgba(0,0,0,0.15);
+  }
+
+  /* ── Demo control bar ───────────────────────────────────── */
+  .ctrl-bar {
+    background: var(--ink);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .ctrl-bar .demo-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--green);
+  }
+  .ctrl-bar .step-counter {
+    font-size: 12px; color: rgba(255,255,255,0.6);
+  }
+  .ctrl-bar .btn-reset {
+    font-size: 11px; font-weight: 700; padding: 4px 12px;
+    background: transparent; border: 1px solid rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.7); border-radius: 4px; cursor: pointer;
+  }
+  .ctrl-bar .btn-reset:hover { border-color: var(--green); color: var(--green); }
+  .ctrl-bar .btn-notes {
+    font-size: 11px; font-weight: 700; padding: 4px 10px;
+    background: var(--green); border: none; color: var(--white);
+    border-radius: 4px; cursor: pointer;
+  }
+
+  /* ── Screen container ───────────────────────────────────── */
+  .screen { display: none; flex-direction: column; flex: 1; }
+  .screen.active { display: flex; }
+
+  /* ── Speaker notes ──────────────────────────────────────── */
+  .notes-panel {
+    display: none;
+    background: #fffbeb;
+    border-top: 2px solid #f59e0b;
+    padding: 12px 20px;
+  }
+  .notes-panel.visible { display: block; }
+  .notes-panel .notes-title {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.12em;
+    text-transform: uppercase; color: #92400e; margin-bottom: 6px;
+  }
+  .notes-panel .note-main {
+    font-size: 14px; font-weight: 600; color: #1c1917; line-height: 1.5;
+  }
+  .notes-panel .note-deep {
+    font-size: 12px; color: #78716c; margin-top: 4px; line-height: 1.5;
+  }
+
+  /* ── Nav buttons ────────────────────────────────────────── */
+  .nav-bar {
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--rule);
+    background: var(--canvas);
+  }
+  .btn-nav {
+    padding: 10px 28px; font-size: 14px; font-weight: 700;
+    border-radius: 6px; cursor: pointer; border: none;
+  }
+  .btn-back { background: var(--white); border: 1.5px solid var(--rule); color: var(--muted); }
+  .btn-back:hover { border-color: var(--body); color: var(--body); }
+  .btn-next { background: var(--green); color: var(--white); }
+  .btn-next:hover { background: var(--green2); }
+  .btn-ghost { background: transparent; border: none; padding: 0; cursor: pointer; }
+
+  /* Decorative/inert buttons — no hover, no pointer */
+  .btn-inert { cursor: default !important; pointer-events: none !important; }
+
+  /* ── SIGNiX top bar ─────────────────────────────────────── */
+  .signix-bar {
+    background: var(--white);
+    border-bottom: 1px solid var(--rule);
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .signix-logo {
+    font-size: 22px; font-weight: 900; letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .signix-logo span { color: var(--green); }
+  .signix-nav { display: flex; gap: 20px; align-items: center; }
+  .signix-nav a {
+    font-size: 13px; color: var(--blue); text-decoration: none; cursor: default;
+    pointer-events: none;
+  }
+  .btn-logout {
+    font-size: 12px; padding: 5px 14px; background: var(--ink);
+    color: var(--white); border: none; border-radius: 4px; cursor: default;
+    font-weight: 600; pointer-events: none;
+  }
+
+  /* ── Wizard tabs ─────────────────────────────────────────── */
+  .wizard-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    padding: 14px 20px 0;
+    background: var(--canvas);
+    border-bottom: 1px solid var(--rule);
+  }
+  .wizard-tab {
+    padding: 8px 20px; font-size: 13px; font-weight: 600;
+    border: none; border-radius: 6px 6px 0 0; cursor: default;
+    background: #d1d5db; color: var(--muted);
+  }
+  .wizard-tab.active {
+    background: var(--green); color: var(--white);
+  }
+  .wizard-tab.done {
+    background: #c6ddb5; color: var(--green2);
+  }
+
+  /* ── Content area ───────────────────────────────────────── */
+  .content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  /* ── Dashboard ──────────────────────────────────────────── */
+  .dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .dash-workgroup {
+    font-size: 13px; color: var(--body);
+  }
+  .dash-workgroup select {
+    margin-left: 8px; font-size: 13px; padding: 3px 8px;
+    border: 1px solid var(--rule); border-radius: 4px; color: var(--blue);
+  }
+  .btn-create {
+    padding: 10px 20px; background: var(--green); color: var(--white);
+    border: none; border-radius: 6px; font-size: 14px; font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-create:hover { background: var(--green2); }
+  .dash-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .dash-panel {
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .dash-panel-header {
+    padding: 10px 14px;
+    background: var(--canvas);
+    border-bottom: 1px solid var(--rule);
+    font-size: 13px; font-weight: 700; color: var(--ink);
+  }
+  .dash-panel-body { padding: 14px; }
+  .dash-chart {
+    height: 80px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 8px;
+  }
+  .dash-bar-group { display: flex; flex-direction: column; align-items: center; flex: 1; gap: 4px; }
+  .dash-bar { width: 100%; background: var(--green); border-radius: 3px 3px 0 0; opacity: 0.7; }
+  .dash-bar-label { font-size: 9px; color: var(--muted); text-align: center; }
+  .dash-table { width: 100%; border-collapse: collapse; }
+  .dash-table th { font-size: 11px; font-weight: 700; color: var(--muted); text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--rule); }
+  .dash-table td { font-size: 12px; padding: 8px 8px; border-bottom: 1px solid var(--rule); }
+  .dash-table td a { color: var(--blue); text-decoration: none; }
+  .dash-status-badge {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 12px; background: #dcfce7; color: #166534;
+  }
+  .dash-status-badge.pending { background: #fef9c3; color: #854d0e; }
+  .dash-status-badge.expired { background: #fee2e2; color: #991b1b; }
+
+  /* ── Modals ─────────────────────────────────────────────── */
+  .modal {
+    background: var(--white);
+    border-radius: 8px;
+    width: 560px; max-width: 95vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    overflow: hidden;
+  }
+  .modal-header {
+    padding: 16px 20px;
+    font-size: 18px; font-weight: 700; color: var(--ink);
+    border-bottom: 1px solid var(--rule);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .modal-close { font-size: 20px; cursor: pointer; color: var(--muted); background: none; border: none; }
+  .modal-body { padding: 20px; }
+  .modal-footer { padding: 14px 20px; background: var(--canvas); display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--rule); }
+
+  /* ── Forms ──────────────────────────────────────────────── */
+  .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+  .field input, .field select {
+    width: 100%; padding: 9px 12px;
+    border: 1.5px solid var(--rule); border-radius: 6px;
+    font-size: 14px; color: var(--ink); background: var(--white);
+    outline: none;
+  }
+  .field input:focus, .field select:focus { border-color: var(--green); }
+  .checkbox-row { display: flex; gap: 20px; margin-top: 8px; }
+  .checkbox-row label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--body); cursor: pointer; }
+
+  /* ── Auth badge ─────────────────────────────────────────── */
+  .auth-badge {
+    display: none;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #f0f7eb;
+    border: 1px solid var(--green);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--green2);
+    font-weight: 600;
+  }
+  .auth-badge.visible { display: block; }
+
+  /* ── Table action buttons ───────────────────────────────── */
+  .btn-sm {
+    padding: 5px 12px; font-size: 12px; font-weight: 700;
+    border: none; border-radius: 4px; cursor: pointer;
+  }
+  .btn-green { background: var(--green); color: var(--white); }
+  .btn-outline-green { background: var(--white); border: 1.5px solid var(--green); color: var(--green); }
+
+  /* ── Documents tab ──────────────────────────────────────── */
+  .upload-bar {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 16px;
+  }
+  .upload-hint { font-size: 13px; color: var(--muted); }
+  .doc-table { width: 100%; border-collapse: collapse; }
+  .doc-table th { font-size: 11px; font-weight: 700; color: var(--muted); text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--rule); background: var(--canvas); }
+  .doc-table td { font-size: 13px; padding: 12px 12px; border-bottom: 1px solid var(--rule); }
+  .doc-icon { display: inline-block; width: 24px; height: 28px; background: #fee2e2; border-radius: 3px; margin-right: 8px; vertical-align: middle; font-size: 9px; font-weight: 700; color: var(--red); text-align: center; line-height: 28px; }
+
+  /* ── Send tab ───────────────────────────────────────────── */
+  .send-field { margin-bottom: 16px; }
+  .send-field label { display: block; font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .send-field input, .send-field textarea {
+    width: 100%; padding: 10px 14px;
+    border: 1.5px solid var(--rule); border-radius: 6px;
+    font-size: 14px; color: var(--ink); outline: none;
+  }
+  .send-field input:focus, .send-field textarea:focus { border-color: var(--green); }
+  .send-field textarea { min-height: 80px; resize: vertical; }
+  .demo-toggle { display: flex; gap: 20px; align-items: center; }
+  .radio-opt { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+  .expiry-note { font-size: 12px; color: var(--muted); margin-top: 8px; font-style: italic; }
+  .send-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+
+  /* ── Email view ─────────────────────────────────────────── */
+  .email-chrome {
+    border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; margin: 0 auto; max-width: 680px;
+  }
+  .email-header-bar {
+    background: var(--canvas); padding: 12px 16px;
+    border-bottom: 1px solid var(--rule);
+    font-size: 13px; color: var(--body);
+  }
+  .email-header-bar strong { color: var(--ink); }
+  .email-body { padding: 32px 40px; }
+  .email-subject { font-size: 18px; font-weight: 700; color: var(--ink); margin-bottom: 20px; }
+  .email-text { font-size: 14px; line-height: 1.7; color: var(--body); margin-bottom: 16px; }
+  .btn-email-cta {
+    display: block; width: 100%; padding: 14px;
+    background: var(--green); color: var(--white);
+    font-size: 15px; font-weight: 700; text-align: center;
+    border: none; border-radius: 6px; cursor: pointer; margin: 24px 0;
+  }
+  .btn-email-cta:hover { background: var(--green2); }
+  .email-footer { font-size: 11px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 16px; line-height: 1.6; }
+
+  /* ── Consent screen ─────────────────────────────────────── */
+  .consent-wrap { max-width: 680px; margin: 0 auto; }
+  .consent-welcome { font-size: 22px; font-weight: 700; color: var(--green); margin-bottom: 16px; }
+  .consent-text { font-size: 13px; line-height: 1.7; color: var(--body); margin-bottom: 20px; }
+  .consent-question { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 12px; }
+  .consent-radios { display: flex; gap: 24px; margin-bottom: 20px; }
+  .consent-radios label { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+
+  /* ── Auth challenge ─────────────────────────────────────── */
+  .auth-wrap { max-width: 520px; margin: 0 auto; text-align: center; padding: 20px 0; }
+  .auth-icon { font-size: 56px; margin-bottom: 16px; }
+  .auth-title { font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+  .auth-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
+  .auth-method-badge {
+    display: inline-block; padding: 8px 20px; background: #f0f7eb;
+    border: 2px solid var(--green); border-radius: 8px; margin-bottom: 24px;
+    font-size: 14px; font-weight: 700; color: var(--green2);
+  }
+  .auth-input-group { text-align: left; margin-bottom: 20px; }
+  .auth-input-group label { display: block; font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .auth-input-group input {
+    width: 100%; padding: 12px; border: 1.5px solid var(--rule); border-radius: 6px;
+    font-size: 14px; outline: none;
+  }
+  .auth-input-group input:focus { border-color: var(--green); }
+  .btn-verify {
+    width: 100%; padding: 14px; background: var(--green); color: var(--white);
+    font-size: 15px; font-weight: 700; border: none; border-radius: 8px; cursor: pointer;
+  }
+  .btn-verify:hover { background: var(--green2); }
+
+  /* ── Document signing view ──────────────────────────────── */
+  .signing-wrap { max-width: 720px; margin: 0 auto; }
+  .progress-bar-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .progress-label { font-size: 12px; font-weight: 700; color: var(--muted); }
+  .progress-track { flex: 1; height: 8px; background: var(--rule); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.3s; }
+  .doc-header { text-align: center; margin-bottom: 20px; }
+  .doc-org-logo { font-size: 16px; font-weight: 900; color: var(--blue); letter-spacing: -0.02em; }
+  .doc-title-line { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink); margin-top: 8px; }
+  .doc-body-text { font-size: 13px; line-height: 1.8; color: var(--body); margin-bottom: 16px; }
+  .doc-body-text ol { padding-left: 20px; }
+  .doc-body-text ol li { margin-bottom: 10px; }
+  .required-field {
+    background: var(--yellow); border: 2px solid #d97706;
+    border-radius: 4px; padding: 8px 12px; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .required-label { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #92400e; white-space: nowrap; }
+  .required-input {
+    flex: 1; border: none; background: transparent; font-size: 14px; color: var(--ink);
+    font-weight: 600; outline: none;
+  }
+  .sig-block { border-top: 1px solid var(--rule); padding-top: 16px; margin-top: 8px; }
+  .sig-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: end; margin-bottom: 12px; }
+  .sig-field label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .sig-line { border-bottom: 1.5px solid var(--ink); padding: 6px 0; font-size: 15px; font-family: 'Georgia', cursive; color: var(--ink); min-height: 32px; }
+  .sig-line.signed { color: var(--ink); font-style: italic; }
+  .sig-badge { font-size: 10px; font-weight: 700; background: var(--green); color: var(--white); padding: 2px 8px; border-radius: 4px; }
+  .name-field { border-bottom: 1.5px solid var(--ink); padding: 6px 0; font-size: 14px; font-weight: 600; color: var(--ink); }
+
+  /* ── Finished modal ─────────────────────────────────────── */
+  .finish-title { font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
+  .finish-text { font-size: 13px; line-height: 1.7; color: var(--body); margin-bottom: 24px; }
+  .finish-btns { display: flex; justify-content: flex-end; gap: 10px; }
+
+  /* ── Confirmation screen ────────────────────────────────── */
+  .confirm-wrap { max-width: 560px; margin: 40px auto; text-align: left; }
+  .confirm-title { font-size: 22px; font-weight: 700; color: var(--green); margin-bottom: 12px; }
+  .confirm-text { font-size: 14px; line-height: 1.7; color: var(--body); margin-bottom: 8px; }
+  .confirm-btns { display: flex; gap: 12px; margin-top: 24px; }
+
+  /* ── Signer list ────────────────────────────────────────── */
+  .signer-list { margin-bottom: 16px; }
+  .signer-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; background: #f0f7eb;
+    border: 1.5px solid var(--green); border-radius: 8px; margin-bottom: 8px;
+  }
+  .signer-info { display: flex; flex-direction: column; gap: 2px; }
+  .signer-name { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .signer-email { font-size: 12px; color: var(--muted); }
+  .signer-auth-tag {
+    font-size: 11px; font-weight: 700; padding: 3px 10px;
+    background: var(--green); color: var(--white); border-radius: 12px;
+  }
+
+  @media (max-width: 640px) {
+    .dash-grid { grid-template-columns: 1fr; }
+    .form-row, .form-row-2 { grid-template-columns: 1fr; }
+    .sig-row { grid-template-columns: 1fr; }
+    .email-body { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="demo-shell">
+
+  <!-- Control bar -->
+  <div class="ctrl-bar">
+    <span class="demo-label">MyDox Live Demo</span>
+    <span class="step-counter" id="step-counter">Step 1 of 11</span>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-notes" onclick="toggleNotes()">? Notes</button>
+      <button class="btn-reset" onclick="resetDemo()">&#8635; Restart</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SCREEN 1 — Dashboard
+  ══════════════════════════════════════════════════════════ -->
+  <div class="screen active" id="screen-1">
+    <div class="signix-bar">
+      <div class="signix-logo">SIGN<span>iX</span></div>
+      <div class="signix-nav">
+        <span style="font-size:13px;color:var(--body);">MyDoX Sandbox — Workgroup</span>
+        <select style="font-size:13px;padding:3px 8px;border:1px solid var(--rule);border-radius:4px;color:var(--blue);">
+          <option>Corporate Administrator</option>
+        </select>
+        <a>Dashboard</a>
+        <a>Transactions</a>
+        <a>Templates</a>
+        <a>Mass Mailer</a>
+        <a>ENotary Profile</a>
+        <button class="btn-logout">Logout</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="dash-header">
+        <div style="font-size:16px;font-weight:700;color:var(--ink);">Dashboard</div>
+        <button class="btn-create" onclick="goTo(2)">Create New Transaction</button>
+      </div>
+      <div class="dash-grid">
+        <div class="dash-panel">
+          <div class="dash-panel-header">Transactions by Status</div>
+          <div class="dash-panel-body">
+            <div class="dash-chart">
+              <div class="dash-bar-group"><div class="dash-bar" style="height:60px;"></div><div class="dash-bar-label">All</div></div>
+              <div class="dash-bar-group"><div class="dash-bar" style="height:40px;background:#166534;"></div><div class="dash-bar-label">Complete</div></div>
+              <div class="dash-bar-group"><div class="dash-bar" style="height:25px;background:#2563eb;"></div><div class="dash-bar-label">In Process</div></div>
+              <div class="dash-bar-group"><div class="dash-bar" style="height:10px;background:#dc2626;"></div><div class="dash-bar-label">Expired</div></div>
+              <div class="dash-bar-group"><div class="dash-bar" style="height:8px;background:#d97706;"></div><div class="dash-bar-label">Suspended</div></div>
+              <div class="dash-bar-group"><div class="dash-bar" style="height:5px;background:#6b7280;"></div><div class="dash-bar-label">Cancelled</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="dash-panel">
+          <div class="dash-panel-header">Recently Updated Transactions</div>
+          <div class="dash-panel-body">
+            <table class="dash-table">
+              <thead><tr><th>Name</th><th>Status</th><th>Last Modified</th></tr></thead>
+              <tbody>
+                <tr><td><a>County Vendor Agreement</a></td><td><span class="dash-status-badge pending">1 of 2</span></td><td style="font-size:11px;color:var(--muted);">2 hours ago</td></tr>
+                <tr><td><a>Dept. Access Authorization</a></td><td><span class="dash-status-badge">Complete</span></td><td style="font-size:11px;color:var(--muted);">Apr 13</td></tr>
+                <tr><td><a>HR Acknowledgement Form</a></td><td><span class="dash-status-badge expired">Expired</span></td><td style="font-size:11px;color:var(--muted);">Apr 12</td></tr>
+                <tr><td><a>Identity Verification Test</a></td><td><span class="dash-status-badge pending">0 of 2</span></td><td style="font-size:11px;color:var(--muted);">Apr 11</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="dash-panel">
+          <div class="dash-panel-header">Recently Completed Transactions</div>
+          <div class="dash-panel-body">
+            <table class="dash-table">
+              <thead><tr><th>Name</th><th>Last Modified</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><a>Procurement Contract Q1</a></td><td style="font-size:11px;color:var(--muted);">Apr 8</td><td><button class="btn-sm btn-green btn-inert">Download</button></td></tr>
+                <tr><td><a>Benefits Enrollment 2026</a></td><td style="font-size:11px;color:var(--muted);">Mar 30</td><td><button class="btn-sm btn-green btn-inert">Download</button></td></tr>
+                <tr><td><a>Vendor NDA — TechCo</a></td><td style="font-size:11px;color:var(--muted);">Mar 26</td><td><button class="btn-sm btn-green btn-inert">Download</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="dash-panel">
+          <div class="dash-panel-header">Recently Updated Templates</div>
+          <div class="dash-panel-body">
+            <table class="dash-table">
+              <thead><tr><th>Name</th><th>Last Modified</th></tr></thead>
+              <tbody>
+                <tr><td><a>Standard Vendor Agreement</a></td><td style="font-size:11px;color:var(--muted);">2 hours ago</td></tr>
+                <tr><td><a>3-Party Authorization</a></td><td style="font-size:11px;color:var(--muted);">Apr 6</td></tr>
+                <tr><td><a>Document Request Template</a></td><td style="font-size:11px;color:var(--muted);">Mar 19</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes-panel" id="notes-1">
+      <div class="notes-title">Speaker Notes — Screen 1: Dashboard</div>
+      <div class="note-main">"This is where every transaction lives. No paper trail to lose — every document is tracked, timestamped, and accessible from one place."</div>
+      <div class="note-deep">For Pem: Lead with simplicity. For Aspen: Note the status column — departments can see exactly where every document is in real time. That's an audit trail item for government records requests.</div>
+    </div>
+    <div class="nav-bar">
+      <div></div>
+      <button class="btn-nav btn-next" onclick="goTo(2)">Create New Transaction &rarr;</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SCREEN 2 — Add Signer Modal
+  ══════════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-2">
+    <div class="signix-bar">
+      <div class="signix-logo">SIGN<span>iX</span></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-sm btn-green btn-inert" style="font-size:12px;">Save</button>
+        <button class="btn-sm btn-outline-green btn-inert" style="font-size:12px;">Save As</button>
+        <button class="btn-sm btn-inert" style="background:var(--canvas);border:1px solid var(--rule);font-size:12px;">Home</button>
+        <button class="btn-logout">Logout</button>
+      </div>
+    </div>
+    <div class="wizard-tabs">
+      <div class="wizard-tab active">Signers</div>
+      <div class="wizard-tab">Documents</div>
+      <div class="wizard-tab">Signatures</div>
+      <div class="wizard-tab">Send</div>
+      <div class="wizard-tab">Status</div>
+    </div>
+    <div class="content" style="position:relative;">
+      <!-- Background table -->
+      <div style="margin-bottom:12px;display:flex;gap:8px;">
+        <button class="btn-sm btn-green btn-inert">Add New Signer</button>
+        <button class="btn-sm btn-outline-green btn-inert">CC List</button>
+        <button class="btn-sm btn-outline-green btn-inert">Address Book</button>
+      </div>
+      <table class="doc-table">
+        <thead><tr><th>Order</th><th>Role</th><th>Name</th><th>Email</th><th>CC</th></tr></thead>
+        <tbody><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px;font-size:13px;font-style:italic;">No signers added yet</td></tr></tbody>
+      </table>
+
+      <!-- Signer modal -->
+      <div class="modal" style="max-width:560px;margin:20px auto;border:1px solid var(--rule);border-radius:8px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1);">
+          <div class="modal-header" style="background:var(--canvas);">
+            Signer Information
+          </div>
+          <div class="modal-body">
+            <div class="form-row">
+              <div class="field"><label>First</label><input type="text" id="signer-first" placeholder="Jane" oninput="updateSignerName()" /></div>
+              <div class="field"><label>Middle</label><input type="text" placeholder="" /></div>
+              <div class="field"><label>Last</label><input type="text" id="signer-last" placeholder="Smith" oninput="updateSignerName()" /></div>
+            </div>
+            <div class="form-row-2">
+              <div class="field" style="grid-column:span 1;"><label>Email</label><input type="email" id="signer-email" placeholder="jane.smith@lacounty.gov" /></div>
+              <div class="field"><label>Role</label><select><option>Signer</option><option>Approver</option><option>CC</option></select></div>
+              <div class="field">
+                <label>Authentication</label>
+                <select id="auth-select" onchange="handleAuthChange()">
+                  <option value="">Select...</option>
+                  <option value="password">Password Only</option>
+                  <option value="2fa">2 Factor Authentication (Text Message)</option>
+                  <option value="kba">KBA-ID — Knowledge-based Questions with ID Verify SSN4</option>
+                  <option value="idverify">ID Verify — Credential Analysis &amp; Biometrics</option>
+                </select>
+                <div class="auth-badge" id="auth-badge">
+                  &#10003; Highest assurance — Credential Analysis &amp; Biometrics selected.<br>
+                  <span style="font-weight:400;font-size:11px;">Signer will verify a government-issued ID before signing.</span>
+                </div>
+              </div>
+            </div>
+            <div class="checkbox-row">
+              <label><input type="checkbox" id="chk-i-am-signer" onchange="iAmTheSigner(this.checked)" /> I Am The Signer</label>
+              <label><input type="checkbox" class="btn-inert" /> Use Placeholder Info</label>
+              <label><input type="checkbox" class="btn-inert" /> Add To Address Book</label>
+              <label><input type="checkbox" class="btn-inert" /> Notary</label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-sm btn-outline-green btn-inert">Address Book</button>
+            <button class="btn-sm btn-green" onclick="addSignerAndAdvance()">Add Signer</button>
+          </div>
+      </div>
+    </div>
+    <div class="notes-panel" id="notes-2">
+      <div class="notes-title">Speaker Notes — Screen 2: Add Signer</div>
+      <div class="note-main">"Fill in the signer's name and email — then choose how they authenticate. This is where most e-sign platforms stop. We require identity verification before anyone signs."</div>
+      <div class="note-deep">For Aspen: Point to the Authentication dropdown. Select "ID Verify" and show the badge that appears. This is the key differentiator. Other tools don't have this field at all. For Pem: "Before anyone signs, we know exactly who they are."</div>
+    </div>
+    <div class="nav-bar">
+      <button class="btn-nav btn-back" onclick="goTo(1)">&larr; Back</button>
+      <button class="btn-nav btn-next" onclick="addSignerAndAdvance()">Add Signer &rarr;</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SCREEN 3 — Signers tab (signer added)
+  ══════════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-3">
+    <div class="signix-bar">
+      <div class="signix-logo">SIGN<span>iX</span></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-sm btn-green btn-inert" style="font-size:12px;">Save</button>
+        <button class="btn-sm btn-outline-green btn-inert" style="font-size:12px;">Save As</button>
+        <button class="btn-sm btn-inert" style="background:var(--canvas);border:1px solid var(--rule);font-size:12px;">Home</button>
+        <button class="btn-logout">Logout</button>
+      </div>
+    </div>
+    <div class="wizard-tabs">
+      <div class="wizard-tab done">Signers</div>
+      <div class="wizard-tab active">Documents</div>
+      <div class="wizard-tab">Signatures</div>
+      <div class="wizard-tab">Send</div>
+      <div class="wizard-tab">Status</div>
+    </div>
+    <div class="content">
+      <div style="margin-bottom:12px;display:flex;gap:8px;">
+        <button class="btn-sm btn-green btn-inert">Add New Signer</button>
+        <button class="btn-sm btn-outline-green btn-inert">CC List</button>
+        <button class="btn-sm btn-outline-green btn-inert">Address Book</button>
+      </div>
+      <div class="signer-list">
+        <div class="signer-row">
+          <div class="signer-info">
+            <div class="signer-name" id="signer-display-name">Jane Smith</div>
+            <div class="signer-email" id="signer-display-email">jane.smith@lacounty.gov</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="signer-auth-tag" id="signer-display-auth">ID Verify</div>
+            <div style="font-size:11px;color:var(--muted);">Order 1 — Signer</div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--muted);font-style:italic;">Signer added. Proceed to upload your document.</div>
+    </div>
+    <div class="notes-panel" id="notes-3">
+      <div class="notes-title">Speaker Notes — Screen 3: Signer Confirmed</div>
+      <div class="note-main">"The signer is set. Notice the authentication method is locked in — they can't bypass it. Every signing event is tied to a verified identity."</div>
+      <div class="note-deep">For Aspen: This is your proof point when a prospect says "we already use DocuSign." Ask them if DocuSign shows them who authenticated and how. This screen does.</div>
+    </div>
+    <div class="nav-bar">
+      <button class="btn-nav btn-back" onclick="goTo(2)">&larr; Back</button>
+      <button class="btn-nav btn-next" onclick="goTo(4)">Upload Document &rarr;</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SCREEN 4 — Documents tab
+  ══════════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-4">
+    <div class="signix-bar">
+      <div class="signix-logo">SIGN<span>iX</span></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-sm btn-green btn-inert" style="font-size:12px;">Save</button>
+        <button class="btn-logout">Logout</button>
+      </div>
+    </div>
+    <div class="wizard-tabs">
+      <div class="wizard-tab done">Signers</div>
+      <div class="wizard-tab active">Documents</div>
+      <div class="wizard-tab">Signatures</div>
+      <div class="wizard-tab">Send</div>
+      <div class="wizard-tab">Status</div>
+    </div>
+    <div class="content">
+      <div class="upload-bar">
+        <button class="btn-sm btn-green btn-inert">Upload Documents</button>
+        <span class="upload-hint">Click the button or drag and drop files from your computer here</span>
+      </div>
+      <table class="doc-table">
+        <thead><tr><th>Order</th><th>Document Name</th></tr></thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--muted);font-size:13px;">1</td>
+            <td>
+              <span class="doc-icon">PDF</span>
+              County_Vendor_Services_Agreement_2026.pdf
+              <span style="font-size:11px;color:var(--green);margin-left:8px;font-weight:700;">&#10003; Ready</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:16px;">
+        <a style="color:var(--blue);font-size:13px;cursor:pointer;">&rsaquo; Signer Attachments</a>
+      </div>
+    </div>
+    <div class="notes-panel" id="notes-4">
+      <div class="notes-title">Speaker Notes — Screen 4: Documents</div>
+      <div class="note-main">"Upload any document — contracts, authorizations, HR forms, vendor agreements. The system works for every department, not just one workflow."</div>
+      <div class="note-deep">For Aspen: This is the width play. Once IT sees how easy it is to add a document, they start thinking about every department that could use this. Ask: "What other departments in your county handle signed documents today?"</div>
+    </div>
+    <div class="nav-bar">
+      <button class="btn-nav btn-back" onclick="goTo(3)">&larr; Back</button>
+      <button class="btn-nav btn-next" onclick="goTo(5)">Configure &amp; Send &rarr;</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SCREEN 5 — Send tab
+  ══════════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-5">
+    <div class="signix-bar">
+      <div class="signix-logo">SIGN<span>iX</span></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-sm btn-green btn-inert" style="font-size:12px;">Save</button>
+        <button class="btn-logout">Logout</button>
+      </div>
+    </div>
+    <div class="wizard-tabs">
+      <div class="wizard-tab done">Signers</div>
+      <div class="wizard-tab done">Documents</div>
+      <div class="wizard-tab done">Signatures</div>
+      <div class="wizard-tab active">Send</div>
+      <div class="wizard-tab">Status</div>
+    </div>
+    <div class="content">
+      <div class="send-field">
+        <label>Title</label>
+        <input type="text" value="County Vendor Services Agreement — 2026" />
+      </div>
+      <div class="send-field">
+        <label>Demonstration Mode?</label>
+        <div class="demo-toggle">
+          <label class="radio-opt"><input type="radio" name="demo" checked /> Yes</label>
+          <label class="radio-opt"><input type="radio" name="demo" /> No</label>
+        </div>
+      </div>
+      <div class="send-field">
+        <label>Email Message</label>
+        <textarea>Please review and sign the attached document at your earliest convenience. This agreement requires identity verification before signing.</textarea>
+      </div>
+      <div class="send-field">
+        <label>Reminders / Expiration Schedule</label>
+        <input type="range" min="3" max="30" value="10" style="width:100%;" />
+        <div class="expiry-note">The documents will expire after 10 day(s), and signer(s) will receive reminders on day(s) 3 and 7</div>
+        <label style="font-size:13px;margin-top:8px;display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" /> I do not want to send reminders to signer(s)
+        </label>
+      </div>
+      <div class="send-actions">
+        <button class="btn-sm btn-outline-green btn-inert" style="padding:10px 20px;font-size:13px;">Sign Now</button>
+        <button class="btn-sm btn-green" style="padding:10px 20px;font-size:13px;" onclick="goTo(6)">Send</button>
+      </div>
+    </div>
+    <div class="notes-panel" id="notes-5">
+      <div class="notes-title">Speaker Notes — Screen 5: Send</div>
+      <div class="note-main">"Set the expiration, add a message, and send. The signer gets an email within seconds. You control the deadline."</div>
+      <div class="note-deep">For Aspen: Point out Demonstration Mode. This lets you walk a prospect through the full experience without sending a real document — useful for IT directors who want to see the signer side before approving. For Pem: "From upload to sent in under two minutes."</div>
+    </div>
+    <div class="nav-bar">
+      <button class="btn-nav btn-back" onclick="goTo(4)">&larr; Back</button>
+      <button class="btn-nav btn-next" onclick="goTo(6)">Send &rarr;</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SCREEN 6 — Signing email
+  ══════════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-6">
+    <div class="content" style="background:#f1f5f9;">
+      <div class="email-chrome">
+        <div class="email-header-bar">
+          <strong>From:</strong> Signix Online Signatures &lt;noreply@signixmail.com&gt;<br>
+          <strong>To:</strong> <span id="email-to-name">Jane Smith</span><br>
+          <strong>Subject:</strong> Your Documents are Ready — County Vendor Services Agreement 2026<br>
+          <span style="font-size:11px;color:var(--muted);">Retention: Compliance Expires 04/15/2033</span>
+        </div>
+        <div class="email-body">
+          <div class="email-subject">Your Documents Are Ready to Sign</div>
+          <div class="email-text">Hello <span id="email-greeting-name">Jane</span>!</div>
+          <div class="email-text">This is from LA County using SIGNiX to deliver documents to you for your review and signature.</div>
+          <div class="email-text">Click the button below to access your documents.</div>
+          <button class="btn-email-cta" onclick="goTo(7)">Review &amp; Sign Documents</button>
+          <div class="email-text">Thank you,<br>LA County — Procurement Division</div>
+          <div class="email-footer">
+            You received this email because you have been sent documents to review, fill, and/or sign by a person or organization using the SIGNiX electronic signature service.<br><br>
+            SIGNIX, Inc. &nbsp;·&nbsp; www.signix.com &nbsp;·&nbsp; 1110 Market Street, Suite 403 · Chattanooga, TN 37402
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes-panel" id="notes-6">
+      <div class="notes-title">Speaker Notes — Screen 6: Signer Email</div>
+      <div class="note-main">"This is what your signer receives. Branded, clear, one button. Works on any device."</div>
+      <div class="note-deep">For Aspen: Note the compliance expiration date — 2033. That's a 7-year retention trail baked in automatically. For government records requests, that's a meaningful detail. For Pem: "The signer doesn't need an account. They click one button."</div>
+    </div>
+    <div class="nav-bar">
+      <button class="btn-nav btn-back" onclick="goTo(5)">&larr; Back</button>
+      <button class="btn-nav btn-next" onclick="goTo(7)">Signer Opens Email &rarr;</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SCREEN 7 — Legal consent
+  ══════════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-7">
+    <div class="signix-bar">
+      <div class="signix-logo">SIGN<span>iX</span></div>
+      <button class="btn-logout">Logout</button>
+    </div>
+    <div class="content">
+      <div class="consent-wrap">
+        <div class="consent-welcome">Welcome, <span id="consent-name">Jane Smith</span>!</div>
+        <div class="consent-text">You've been asked to review and sign documents online. It's easy!</div>
+        <div class="consent-text">To get started, you need to agree to receive electronic documents using the electronic signature service under the terms of the E-Sign Legal Consent by choosing Accept below. This will confirm that you are able to access all of the documents provided to you in electronic form and you agree to be bound by the <a style="color:var(--blue);">terms of service</a>.</div>
+        <div class="consent-text">Click Next to continue!</div>
+        <div class="consent-question">Agree to Legal Consent and Terms of Service?</div>
+        <div class="consent-radios">
+          <label><input type="radio" name="consent" checked /> Accept</label>
+          <label><input type="radio" name="consent" /> Decline</label>
+        </div>
+        <button class="btn-sm btn-outline-green btn-inert" style="padding:8px 16px;">Read Legal Consent</button>
+      </div>
+    </div>
+    <div class="notes-panel" id="notes-7">
+      <div class="notes-title">Speaker Notes — Screen 7: Legal Consent</div>
+      <div class="note-main">"Before a single field is filled, we capture legal consent. This is E-Sign Act compliance baked into every transaction — not an add-on."</div>
+      <div class="note-deep">For Aspen: This screen is important for government and regulated industries. The consent is timestamped and stored as part of the audit trail. If a document is ever challenged, you can prove the signer agreed to the process. For Pem: "Every county is exposed if a signed document gets challenged. This is how we protect them."</div>
+    </div>
+    <div class="nav-bar">
+      <button class="btn-nav btn-back" onclick="goTo(6)">&larr; Back</button>
+      <button class="btn-nav btn-next" onclick="goTo(8)">Accept &amp; Continue &rarr;</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SCREEN 8 — ID Verify authentication
+  ══════════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-8">
+    <div class="signix-bar">
+      <div class="signix-logo">SIGN<span>iX</span></div>
+      <button class="btn-logout">Logout</button>
+    </div>
+    <div class="content">
+      <div class="auth-wrap">
+        <div class="auth-icon">&#x1F6C2;</div>
+        <div class="auth-title"><span id="auth-name">Jane</span>, Identity Verification Required</div>
+        <div class="auth-sub">This document requires identity verification before you can sign. Your information is encrypted and used only to confirm your identity.</div>
+        <div class="auth-method-badge">ID Verify — Credential Analysis &amp; Biometrics</div>
+        <div class="auth-input-group">
+          <label>Government-Issued ID Number (last 4 digits)</label>
+          <input type="text" placeholder="••••" maxlength="4" value="4892" />
+        </div>
+        <div class="auth-input-group">
+          <label>Date of Birth</label>
+          <input type="text" placeholder="MM/DD/YYYY" value="••/••/••••" />
+        </div>
+        <button class="btn-verify" onclick="goTo(9)">Verify My Identity &amp; Proceed</button>
+      </div>
+    </div>
+    <div class="notes-panel" id="notes-8">
+      <div class="notes-title">Speaker Notes — Screen 8: ID Verify</div>
+      <div class="note-main">"This is where SIGNiX separates from every other platform at this table. Before anyone signs, we verify who they are. That signature is tied to a real, verified identity."</div>
+      <div class="note-deep">For Aspen: This is the answer to "what happens if someone disputes the signature?" You show them this screen. The answer is: we verified their identity before they signed, and we have the proof. For Pem: "No other vendor in this room can show you this screen."</div>
+    </div>
+    <div class="nav-bar">
+      <button class="btn-nav btn-back" onclick="goTo(7)">&larr; Back</button>
+      <button class="btn-nav btn-next" onclick="goTo(9)">Identity Verified &rarr;</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SCREEN 9 — Document view (Required field)
+  ══════════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-9">
+    <div class="signix-bar">
+      <div class="signix-logo">SIGN<span>iX</span></div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="btn-sm btn-outline-green btn-inert" style="font-size:11px;">&#x2193;</button>
+        <button class="btn-sm btn-outline-green btn-inert" style="font-size:11px;">&#x1F5A8;</button>
+        <button class="btn-logout">Logout</button>
+      </div>
+    </div>
+    <div class="content" style="padding:0;">
+      <!-- Progress bar -->
+      <div style="padding:10px 20px;background:var(--canvas);border-bottom:1px solid var(--rule);">
+        <div class="progress-bar-wrap">
+          <span class="progress-label">My Progress</span>
+          <div class="progress-track"><div class="progress-fill" style="width:60%;"></div></div>
+          <span style="font-size:12px;color:var(--muted);">60%</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);text-align:center;">County_Vendor_Services_Agreement_2026.pdf</div>
+      </div>
+      <!-- Document -->
+      <div style="padding:20px;">
+        <div class="signing-wrap">
+          <!-- Ready to sign modal -->
+          <div style="background:var(--white);border:1px solid var(--rule);border-radius:8px;padding:20px;margin-bottom:20px;box-shadow:0 4px 16px rgba(0,0,0,0.1);">
+            <div style="font-size:17px;font-weight:700;color:var(--ink);margin-bottom:10px;">Ready To Review and Sign?</div>
+            <div style="font-size:13px;color:var(--body);line-height:1.6;margin-bottom:16px;">Select <strong>Go</strong> to jump right to your first action and let us guide you through the document. If you'd rather go at your own pace, choose <strong>Let Me Review</strong>.</div>
+            <div style="display:flex;justify-content:flex-end;gap:10px;">
+              <button class="btn-sm btn-outline-green btn-inert" style="padding:8px 16px;font-size:13px;">Let Me Review</button>
+              <button class="btn-sm btn-green" style="padding:8px 16px;font-size:13px;" onclick="goTo(10)">Go!</button>
+            </div>
+          </div>
+          <div class="doc-header">
+            <div class="doc-org-logo" style="font-size:14px;font-weight:900;color:var(--blue);">Los Angeles County</div>
+            <div class="doc-title-line">VENDOR SERVICES AGREEMENT — 2026</div>
+          </div>
+          <div class="required-field">
+            <span class="required-label">Required</span>
+            <span style="font-size:13px;color:var(--body);">I, </span>
+            <input class="required-input" id="doc-name-field" value="" placeholder="Your name" />
+            <span style="font-size:13px;color:var(--body);">, agree to the terms of this agreement.</span>
+          </div>
+          <div class="doc-body-text">
+            <ol>
+              <li>The Vendor agrees to provide services as described in Exhibit A, incorporated herein by reference.</li>
+              <li>All services shall be performed in compliance with applicable federal, state, and local laws, including the California Public Records Act and applicable data security requirements.</li>
+              <li>The County reserves the right to audit all records related to services performed under this agreement upon reasonable notice.</li>
+              <li>This agreement is subject to the approval of the County's Board of Supervisors and shall not be binding until such approval is obtained.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes-panel" id="notes-9">
+      <div class="notes-title">Speaker Notes — Screen 9: Document View</div>
+      <div class="note-main">"The signer sees the document. Required fields are highlighted in yellow — they can't miss them. The system guides them straight to what needs to be done."</div>
+      <div class="note-deep">For Aspen: The name field is pre-filled from their verified identity. The signer doesn't re-type their name — the system already knows who they are. For Pem: "Every required field is tracked. You can't finalize the document with something missing."</div>
+    </div>
+    <div class="nav-bar">
+      <button class="btn-nav btn-back" onclick="goTo(8)">&larr; Back</button>
+      <button class="btn-nav btn-next" onclick="goTo(10)">Place Signature &rarr;</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SCREEN 10 — Signature placed
+  ══════════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-10">
+    <div class="signix-bar">
+      <div class="signix-logo">SIGN<span>iX</span></div>
+      <button class="btn-logout">Logout</button>
+    </div>
+    <div class="content" style="padding:0;">
+      <div style="padding:10px 20px;background:var(--canvas);border-bottom:1px solid var(--rule);">
+        <div class="progress-bar-wrap">
+          <span class="progress-label">My Progress</span>
+          <div class="progress-track"><div class="progress-fill" style="width:95%;"></div></div>
+          <span style="font-size:12px;color:var(--muted);">95%</span>
+        </div>
+      </div>
+      <div style="padding:20px;position:relative;">
+        <!-- Finished modal -->
+        <div style="background:var(--white);border:1px solid var(--rule);border-radius:8px;padding:24px;margin-bottom:20px;box-shadow:0 4px 16px rgba(0,0,0,0.1);max-width:480px;margin-left:auto;margin-right:auto;">
+          <div class="finish-title">Finished Signing?</div>
+          <div class="finish-text">Almost done! If you're finished with this document(s), tap <strong>Finish</strong> below to confirm your signatures. If you want to spend more time reviewing, select <strong>Stay Here</strong>.</div>
+          <div class="finish-btns">
+            <button class="btn-sm btn-outline-green btn-inert" style="padding:10px 20px;">Stay Here</button>
+            <button class="btn-sm btn-green" style="padding:10px 20px;" onclick="goTo(11)">Finish</button>
+          </div>
+        </div>
+        <div class="signing-wrap">
+          <div class="doc-header">
+            <div style="font-size:14px;font-weight:900;color:var(--blue);">Los Angeles County</div>
+            <div class="doc-title-line">VENDOR SERVICES AGREEMENT — 2026</div>
+          </div>
+          <div class="doc-body-text" style="margin-bottom:16px;">
+            <em>By signing below, I confirm that I have read, understand, and agree to each of the terms stated herein.</em>
+          </div>
+          <div class="sig-block">
+            <div class="sig-row">
+              <div>
+                <div class="sig-field"><label>Employee Signature <span class="sig-badge">Image</span></label></div>
+                <div class="sig-line signed" id="sig-display-name" style="font-family:Georgia,serif;font-size:18px;font-style:italic;">Jane Smith</div>
+              </div>
+              <div></div>
+              <div>
+                <div class="sig-field"><label>Signed Date</label></div>
+                <div class="sig-line" id="sig-date"></div>
+              </div>
+            </div>
+            <div>
+              <div class="sig-field"><label>Printed Name</label></div>
+              <div class="name-field" id="sig-printed-name">Jane Smith</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes-panel" id="notes-10">
+      <div class="notes-title">Speaker Notes — Screen 10: Signature Placed</div>
+      <div class="note-main">"Signature is placed. The document is locked the moment they click Finish. Nothing can be altered after this point."</div>
+      <div class="note-deep">For Aspen: The signature is a PKI-embedded digital signature — not an image of a name. It is cryptographically tied to the document. If one character changes after signing, the signature is invalidated. For Pem: "This is the difference between a signature that looks right and one that holds up."</div>
+    </div>
+    <div class="nav-bar">
+      <button class="btn-nav btn-back" onclick="goTo(9)">&larr; Back</button>
+      <button class="btn-nav btn-next" onclick="goTo(11)">Finish &rarr;</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SCREEN 11 — Confirmation
+  ══════════════════════════════════════════════════════════ -->
+  <div class="screen" id="screen-11">
+    <div class="signix-bar">
+      <div class="signix-logo">SIGN<span>iX</span></div>
+      <button class="btn-logout">Logout</button>
+    </div>
+    <div class="content">
+      <div class="confirm-wrap">
+        <div style="font-size:48px;margin-bottom:16px;">&#10003;</div>
+        <div class="confirm-title"><span id="confirm-name">Jane</span>, thanks for signing online!</div>
+        <div class="confirm-text">You have successfully completed all required actions.</div>
+        <div class="confirm-text">Thank you for submitting your signature online.</div>
+        <div style="margin-top:24px;padding:16px;background:#f0f7eb;border:1px solid var(--green);border-radius:8px;">
+          <div style="font-size:12px;font-weight:700;color:var(--green2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">What happens next</div>
+          <div style="font-size:13px;color:var(--body);line-height:1.7;">
+            &#x2022; The document is PKI-signed and cryptographically locked.<br>
+            &#x2022; A full audit trail has been recorded: who signed, when, and how they authenticated.<br>
+            &#x2022; The signed document is stored securely and available for download or records request.<br>
+            &#x2022; You own and control your documents. They do not live on SIGNiX servers.
+          </div>
+        </div>
+        <div class="confirm-btns">
+          <button class="btn-sm btn-outline-green btn-inert" style="padding:10px 20px;">Review Document</button>
+          <button class="btn-sm btn-green" style="padding:10px 20px;" onclick="goTo(1)">Close</button>
+        </div>
+      </div>
+    </div>
+    <div class="notes-panel" id="notes-11">
+      <div class="notes-title">Speaker Notes — Screen 11: Confirmation</div>
+      <div class="note-main">"Done. The document is signed, locked, and stored. You own it. It never lives on our servers. And you have a full audit trail proving who signed, when, and how they authenticated."</div>
+      <div class="note-deep">For Aspen: This is the close. Pause here. Let the "You own and control your documents" line land. Then ask: "What would it mean for your county if you had this level of proof on every signed document?" For Pem: If they're ready, this is the moment to offer a discovery call with Aspen.</div>
+    </div>
+    <div class="nav-bar">
+      <button class="btn-nav btn-back" onclick="goTo(10)">&larr; Back</button>
+      <button class="btn-nav btn-next" onclick="resetDemo()">&#8635; Start New Demo</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let currentScreen = 1;
+  let totalScreens  = 11;
+  let notesVisible  = false;
+  let signerFirst   = 'Jane';
+  let signerLast    = 'Smith';
+  let signerEmail   = 'jane.smith@lacounty.gov';
+  let authMethod    = 'ID Verify';
+
+  function goTo(n) {
+    document.getElementById('screen-' + currentScreen).classList.remove('active');
+    currentScreen = n;
+    document.getElementById('screen-' + currentScreen).classList.add('active');
+    document.getElementById('step-counter').textContent = 'Step ' + n + ' of ' + totalScreens;
+
+    // Sync dynamic fields
+    const fullName = (signerFirst + ' ' + signerLast).trim() || 'Jane Smith';
+    const firstName = signerFirst || 'Jane';
+
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+
+    setEl('signer-display-name', fullName);
+    setEl('signer-display-email', signerEmail);
+    setEl('signer-display-auth', authMethod);
+    setEl('email-to-name', fullName);
+    setEl('email-greeting-name', firstName);
+    setEl('consent-name', fullName);
+    setEl('auth-name', firstName);
+    setEl('confirm-name', firstName);
+    setEl('sig-display-name', fullName);
+    setEl('sig-printed-name', fullName);
+    setVal('doc-name-field', fullName);
+
+    // Set today's date on signature
+    const today = new Date().toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+    setEl('sig-date', today);
+
+    // Update notes visibility
+    updateNotesPanel();
+
+    window.scrollTo(0, 0);
+  }
+
+  function iAmTheSigner(checked) {
+    const f = document.getElementById('signer-first');
+    const l = document.getElementById('signer-last');
+    const e = document.getElementById('signer-email');
+    const a = document.getElementById('auth-select');
+    if (checked) {
+      f.value = 'Aspen';
+      l.value = 'Arias';
+      e.value = 'aarias@signix.com';
+      a.value = 'idverify';
+      handleAuthChange();
+    } else {
+      f.value = '';
+      l.value = '';
+      e.value = '';
+      a.value = '';
+      document.getElementById('auth-badge').classList.remove('visible');
+      authMethod = 'ID Verify';
+    }
+    updateSignerName();
+  }
+
+  function updateSignerName() {
+    signerFirst = document.getElementById('signer-first').value.trim();
+    signerLast  = document.getElementById('signer-last').value.trim();
+    signerEmail = document.getElementById('signer-email').value.trim() || 'jane.smith@lacounty.gov';
+  }
+
+  function handleAuthChange() {
+    const sel = document.getElementById('auth-select');
+    const badge = document.getElementById('auth-badge');
+    if (sel.value === 'idverify') {
+      badge.classList.add('visible');
+      authMethod = 'ID Verify';
+    } else if (sel.value === 'kba') {
+      badge.classList.remove('visible');
+      authMethod = 'KBA-ID';
+    } else if (sel.value === '2fa') {
+      badge.classList.remove('visible');
+      authMethod = '2FA (SMS)';
+    } else {
+      badge.classList.remove('visible');
+      authMethod = sel.options[sel.selectedIndex].text || 'Password';
+    }
+    updateSignerName();
+  }
+
+  function addSigner() {
+    updateSignerName();
+    if (!document.getElementById('signer-first').value.trim()) {
+      document.getElementById('signer-first').value = 'Jane';
+      signerFirst = 'Jane';
+    }
+    if (!document.getElementById('signer-last').value.trim()) {
+      document.getElementById('signer-last').value = 'Smith';
+      signerLast = 'Smith';
+    }
+    if (!document.getElementById('auth-select').value) {
+      document.getElementById('auth-select').value = 'idverify';
+      handleAuthChange();
+    }
+  }
+
+  function addSignerAndAdvance() {
+    addSigner();
+    goTo(3);
+  }
+
+  function toggleNotes() {
+    notesVisible = !notesVisible;
+    updateNotesPanel();
+  }
+
+  function updateNotesPanel() {
+    for (let i = 1; i <= totalScreens; i++) {
+      const panel = document.getElementById('notes-' + i);
+      if (panel) {
+        if (notesVisible && i === currentScreen) {
+          panel.classList.add('visible');
+        } else {
+          panel.classList.remove('visible');
+        }
+      }
+    }
+  }
+
+  function resetDemo() {
+    signerFirst = 'Jane';
+    signerLast  = 'Smith';
+    signerEmail = 'jane.smith@lacounty.gov';
+    authMethod  = 'ID Verify';
+    const f = document.getElementById('signer-first');
+    const l = document.getElementById('signer-last');
+    const e = document.getElementById('signer-email');
+    const a = document.getElementById('auth-select');
+    const b = document.getElementById('auth-badge');
+    if (f) f.value = '';
+    if (l) l.value = '';
+    if (e) e.value = '';
+    if (a) a.value = '';
+    if (b) b.classList.remove('visible');
+    goTo(1);
+  }
+</script>
+
+</body>
+</html>
